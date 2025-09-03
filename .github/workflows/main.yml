@@ -1,0 +1,83 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - migration
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add VPS to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p 2121 51.222.42.143 >> ~/.ssh/known_hosts
+
+      # Recomendado: usar rsync para no subir .git ni node_modules y acelerar
+      - name: Sync files to VPS (api)
+        run: |
+          rsync -az --delete \
+            --exclude ".git" \
+            --exclude "node_modules" \
+            -e "ssh -p 2121" \
+            ./ administrator@51.222.42.143:/home/administrator/zafir-analytics/api/
+
+      - name: Remote deploy with screen + npm run dev
+        run: |
+          ssh -p 2121 administrator@51.222.42.143 << 'EOF'
+            set -e
+
+            APP_DIR="/home/administrator/strapi-2/my-strapi-project"
+            SESSION_NAME="pizquito-backend-strapi"
+            NODE_MAJOR=20
+
+            # Asegurar dependencias del sistema
+            sudo apt-get update -y
+            sudo apt-get install -y curl ca-certificates gnupg screen
+
+            # Asegurar Node.js 20 (NodeSource) si no está o versión distinta
+            if ! command -v node >/dev/null 2>&1 || [ "$(node -v | sed 's/v\([0-9]*\).*/\1/')" -ne "$NODE_MAJOR" ]; then
+              sudo mkdir -p /etc/apt/keyrings
+              curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+              echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list > /dev/null
+              sudo apt-get update -y
+              sudo apt-get install -y nodejs
+            fi
+
+            cd "$APP_DIR"
+
+            # Instalar dependencias (usa package-lock si existe)
+            if [ -f package-lock.json ]; then
+              npm ci
+            else
+              npm install
+            fi
+
+            # (Opcional) Build si tu proyecto lo requiere antes de dev
+            if npm run | grep -qE '^  build'; then
+              npm run build
+            fi
+
+            # Cerrar sesión previa de screen si existe
+            if screen -list | grep -q "$SESSION_NAME"; then
+              screen -S "$SESSION_NAME" -X quit || true
+            fi
+
+            # Iniciar en background con screen
+            # bash -lc para cargar perfil (útil si usas nvm, etc.)
+            screen -dmS "$SESSION_NAME" bash -lc "cd '$APP_DIR' && npm run dev"
+
+            # Mostrar estado
+            echo "Sesiones de screen activas:"
+            screen -list || true
+          EOF
