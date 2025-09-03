@@ -30,7 +30,7 @@ jobs:
             --exclude ".git" \
             --exclude "node_modules" \
             -e "ssh -p 2121" \
-            ./ administrator@51.222.42.143:/home/administrator/zafir-analytics/api/
+            ./ administrator@51.222.42.143:/home/administrator/strapi-2/my-strapi-project
 
       - name: Remote deploy with screen + npm run dev
         run: |
