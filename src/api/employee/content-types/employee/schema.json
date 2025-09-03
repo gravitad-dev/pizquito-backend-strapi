@@ -1,0 +1,143 @@
+{
+  "kind": "collectionType",
+  "collectionName": "employees",
+  "info": {
+    "singularName": "employee",
+    "pluralName": "employees",
+    "displayName": "Employee"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "uid": {
+      "type": "uid"
+    },
+    "profileImage": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "lastname": {
+      "type": "string",
+      "required": true
+    },
+    "email": {
+      "type": "email"
+    },
+    "birthdate": {
+      "type": "date"
+    },
+    "DNI": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "NIF": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "BIC": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "SWIFT": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "profession": {
+      "type": "string"
+    },
+    "role": {
+      "type": "enumeration",
+      "enum": [
+        "Ex:",
+        "director",
+        "administrator",
+        "teacher",
+        "carer",
+        "interim",
+        "security",
+        "janitor",
+        "chef"
+      ]
+    },
+    "phone": {
+      "type": "string"
+    },
+    "nationality": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "postcode": {
+      "type": "string"
+    },
+    "files": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "terms": {
+      "type": "component",
+      "component": "shared.employee-contract-terms",
+      "repeatable": true
+    },
+    "additionalAmount": {
+      "type": "json"
+    },
+    "invoices": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::invoice.invoice",
+      "mappedBy": "employee"
+    },
+    "observations": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::observation.observation",
+      "mappedBy": "employee"
+    },
+    "enrollments": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::enrollment.enrollment",
+      "inversedBy": "employees"
+    },
+    "classroom": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::classroom.classroom",
+      "mappedBy": "employee"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "kind": "collectionType",
+  "collectionName": "school_periods",
+  "info": {
+    "singularName": "school-period",
+    "pluralName": "school-periods",
+    "displayName": "School Period"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "enrollments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::enrollment.enrollment",
+      "mappedBy": "school_period"
+    },
+    "title": {
+      "type": "string"
+    },
+    "period": {
+      "type": "component",
+      "component": "shared.period",
+      "repeatable": true
+    }
+  }
+}

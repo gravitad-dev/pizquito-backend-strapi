@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_shared_periods",
+  "info": {
+    "displayName": "Period"
+  },
+  "options": {},
+  "attributes": {
+    "year": {
+      "type": "string"
+    },
+    "start": {
+      "type": "date"
+    },
+    "end": {
+      "type": "date"
+    }
+  },
+  "config": {}
+}

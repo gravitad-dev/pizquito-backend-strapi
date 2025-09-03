@@ -1,0 +1,98 @@
+{
+  "kind": "collectionType",
+  "collectionName": "invoices",
+  "info": {
+    "singularName": "invoice",
+    "pluralName": "invoices",
+    "displayName": "Invoice"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "uid": {
+      "type": "uid"
+    },
+    "title": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "text"
+    },
+    "issuedby": {
+      "type": "string"
+    },
+    "invoiceStatus": {
+      "type": "enumeration",
+      "enum": [
+        "unpaid",
+        "inprocess",
+        "paid",
+        "canceled"
+      ]
+    },
+    "invoiceType": {
+      "type": "enumeration",
+      "enum": [
+        "charge",
+        "payment",
+        "income",
+        "expense"
+      ]
+    },
+    "registeredBy": {
+      "type": "enumeration",
+      "enum": [
+        "administration",
+        "bank",
+        "system"
+      ]
+    },
+    "invoiceCategory": {
+      "type": "enumeration",
+      "enum": [
+        "invoice_employ",
+        "invoice_enrollment",
+        "invoice_general"
+      ]
+    },
+    "amounts": {
+      "type": "json"
+    },
+    "total": {
+      "type": "decimal"
+    },
+    "IVA": {
+      "type": "decimal"
+    },
+    "files": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "emissionDate": {
+      "type": "datetime"
+    },
+    "expirationDate": {
+      "type": "datetime"
+    },
+    "employee": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::employee.employee",
+      "inversedBy": "invoices"
+    },
+    "enrollment": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::enrollment.enrollment",
+      "inversedBy": "invoices"
+    }
+  }
+}

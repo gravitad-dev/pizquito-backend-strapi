@@ -1,0 +1,50 @@
+{
+  "kind": "collectionType",
+  "collectionName": "services",
+  "info": {
+    "singularName": "service",
+    "pluralName": "services",
+    "displayName": "Service"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "uid": {
+      "type": "uid"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "amount": {
+      "type": "decimal"
+    },
+    "serviceType": {
+      "type": "enumeration",
+      "enum": [
+        "student_service",
+        "employee_service",
+        "school_service",
+        "other"
+      ]
+    },
+    "serviceStatus": {
+      "type": "enumeration",
+      "enum": [
+        "active",
+        "inactive",
+        "canceled"
+      ]
+    },
+    "enrollments": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::enrollment.enrollment",
+      "inversedBy": "services"
+    }
+  }
+}

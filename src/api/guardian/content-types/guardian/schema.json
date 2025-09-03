@@ -1,0 +1,111 @@
+{
+  "kind": "collectionType",
+  "collectionName": "guardians",
+  "info": {
+    "singularName": "guardian",
+    "pluralName": "guardians",
+    "displayName": "Guardian"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "uid": {
+      "type": "uid"
+    },
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "lastname": {
+      "type": "string",
+      "required": true
+    },
+    "DNI": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "NIF": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "birthdate": {
+      "type": "date"
+    },
+    "guardianType": {
+      "type": "enumeration",
+      "enum": [
+        "biological_parent",
+        "adoptive_parent",
+        "legal_guardian",
+        "other"
+      ]
+    },
+    "mail": {
+      "type": "email"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "nationality": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "postcode": {
+      "type": "string"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "files": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "profileImage": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "notes": {
+      "type": "blocks"
+    },
+    "registeredby": {
+      "type": "string"
+    },
+    "observations": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::observation.observation",
+      "mappedBy": "guardian"
+    },
+    "enrollments": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::enrollment.enrollment",
+      "mappedBy": "guardians"
+    }
+  }
+}

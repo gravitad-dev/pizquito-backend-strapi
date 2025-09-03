@@ -1,0 +1,50 @@
+{
+  "collectionName": "components_shared_employee_contract_terms",
+  "info": {
+    "displayName": "Employee contract terms"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "start": {
+      "type": "date"
+    },
+    "end": {
+      "type": "date"
+    },
+    "workedHours": {
+      "type": "decimal"
+    },
+    "hourlyRate": {
+      "type": "decimal"
+    },
+    "paymentPeriod": {
+      "type": "enumeration",
+      "enum": [
+        "daily",
+        "weekly",
+        "biweekly",
+        "monthly",
+        "annual"
+      ]
+    },
+    "contractDuration": {
+      "type": "enumeration",
+      "enum": [
+        "permanent",
+        "temporary",
+        "fixedterm",
+        "parttime",
+        "fulltime",
+        "seasonal",
+        "internship"
+      ]
+    }
+  },
+  "config": {}
+}
