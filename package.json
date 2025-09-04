@@ -4,6 +4,7 @@
   "private": true,
   "description": "A Strapi application",
   "scripts": {
+    "test": "docker compose up -d",
     "build": "strapi build",
     "console": "strapi console",
     "deploy": "strapi deploy",
