@@ -40,6 +40,12 @@ Strapi gives you many possible deployment options for your project including [St
 yarn strapi deploy
 ```
 
+## ⚙️ Deployment with Docker (using package.json script)
+
+```
+npm run test
+```
+
 ## 📚 Learn more
 
 - [Resource center](https://strapi.io/resource-center) - Strapi resource center.
