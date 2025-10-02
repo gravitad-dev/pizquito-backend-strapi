@@ -4,7 +4,6 @@
   "private": true,
   "description": "A Strapi application",
   "scripts": {
-    "test": "docker compose up -d",
     "build": "strapi build",
     "console": "strapi console",
     "deploy": "strapi deploy",
@@ -17,12 +16,14 @@
     "upgrade:dry": "npx @strapi/upgrade latest --dry"
   },
   "dependencies": {
-    "@strapi/plugin-cloud": "5.22.0",
-    "@strapi/plugin-users-permissions": "5.22.0",
-    "@strapi/strapi": "5.22.0",
+    "@strapi/plugin-cloud": "5.23.6",
+    "@strapi/plugin-graphql": "^5.23.6",
+    "@strapi/plugin-users-permissions": "5.23.6",
+    "@strapi/strapi": "5.23.6",
+    "better-sqlite3": "11.3.0",
     "fs-extra": "^10.0.0",
     "mime-types": "^2.1.27",
-    "pg": "8.8.0",
+    "pg": "^8.16.3",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-router-dom": "^6.0.0",
@@ -39,7 +40,7 @@
     "npm": ">=6.0.0"
   },
   "strapi": {
-    "uuid": "a80798d9-d5bf-4b33-903a-8430beaa1640",
-    "installId": "e1e8ee3a81d568a20590fd1490a668d00289b74c544d35bd9c56ec70e896a038"
+    "uuid": "507ad7a6-f59e-4b65-b6cd-3965a7c74817",
+    "installId": "1f6eb216de8ecf8a0ae1fa19c36f23cc42a620c88584f5be655c7259f54c1488"
   }
 }

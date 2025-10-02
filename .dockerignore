@@ -1,1 +1,4 @@
 postgresql_data
+docker-compose.yml
+Dockerfile
+node_modules
