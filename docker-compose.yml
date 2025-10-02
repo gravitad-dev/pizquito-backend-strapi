@@ -1,6 +1,6 @@
 services:
-   pizquito-strapi:
-    container_name:  pizquito-strapi
+  pizquito-strapi:
+    container_name: pizquito-strapi
     build: .
     image: pizquito-strapi:latest
     restart: unless-stopped
