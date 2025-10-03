@@ -1,6 +1,6 @@
-const allowedOrigins = (process.env.CORS_ORIGINS || 'https://pizquito-front-dev.gravitad.xyz').split(',');
+const allowedOrigins = (process.env.CORS_ORIGINS || 'https://patent.gravitad.xyz').split(',');
 
-module.exports = [
+export default [
   'strapi::logger',
   'strapi::errors',
   {
@@ -20,7 +20,8 @@ module.exports = [
   {
     name: 'strapi::cors',
     config: {
-      origin: allowedOrigins, // dominios permitidos dinámicos
+  //    origin: ['https://patent.gravitad.xyz','http://localhost:3000'], // dominios permitidos
+      origin: allowedOrigins,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       headers: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
       keepHeadersOnError: true,
@@ -33,3 +34,4 @@ module.exports = [
   'strapi::favicon',
   'strapi::public',
 ];
+
