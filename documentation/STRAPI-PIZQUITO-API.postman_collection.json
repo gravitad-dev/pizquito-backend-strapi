@@ -1,0 +1,114 @@
+{
+	"info": {
+		"_postman_id": "b64105d7-996c-4b03-8ee9-f3464d33840a",
+		"name": "STRAPI-PIZQUITO-API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "43592215"
+	},
+	"item": [
+		{
+			"name": "AUTH",
+			"item": []
+		},
+		{
+			"name": "USERS",
+			"item": [
+				{
+					"name": "Get User Logged-In (By Token)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}} /api/users/me",
+							"host": [
+								"{{STRAPI_URL_LOCAL}} "
+							],
+							"path": [
+								"api",
+								"users",
+								"me"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "ROLES",
+			"item": [
+				{
+					"name": "GET ALL ROLES",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/users-permissions/roles",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"users-permissions",
+								"roles"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "FILES",
+			"item": []
+		},
+		{
+			"name": "STUDENTS",
+			"item": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzU5NTA0MDE0LCJleHAiOjE3NjIwOTYwMTR9.rq2sXskMK9BHLnWiBguQt6A2tpoQ_E8ySAQehYgGLYI",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "STRAPI_URL_LOCAL",
+			"value": "http://localhost:1337"
+		}
+	]
+}
