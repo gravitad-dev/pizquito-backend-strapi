@@ -122,6 +122,8 @@ coverage
 ############################
 
 .env
+.env.production
+.env.development
 license.txt
 exports
 .strapi
