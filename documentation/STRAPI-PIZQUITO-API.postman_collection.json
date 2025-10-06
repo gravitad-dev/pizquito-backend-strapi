@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "b64105d7-996c-4b03-8ee9-f3464d33840a",
+		"_postman_id": "fdd1e7d2-dad8-44c3-94c5-ede86a53b0f6",
 		"name": "STRAPI-PIZQUITO-API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "43592215"
@@ -8,31 +8,194 @@
 	"item": [
 		{
 			"name": "AUTH",
-			"item": []
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"identifier\": \"benser22@hotmail.com\",\n  \"password\": \"Password1\"\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/auth/local",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"local"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"test\",\n    \"email\": \"test@test.com\",\n    \"password\": \"Password1\"\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/auth/local/register",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"local",
+								"register"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		},
 		{
 			"name": "USERS",
 			"item": [
 				{
-					"name": "Get User Logged-In (By Token)",
+					"name": "Get Me",
 					"request": {
 						"method": "GET",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
+						"header": [],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}} /api/users/me",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/users/me",
 							"host": [
-								"{{STRAPI_URL_LOCAL}} "
+								"{{STRAPI_URL_LOCAL}}"
 							],
 							"path": [
 								"api",
 								"users",
 								"me"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/users",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/users/1",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"createdByAdmin\",\n    \"email\": \"created.admin@example.com\",\n    \"password\": \"Password1\",\n    \"role\": 3, // 1 (Authenticated), 2 (Public), 3 (admin-api)\n    \"confirmed\": true,\n    \"blocked\": false\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/users",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"benser\"\n    //   \"blocked\": false\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/users/1",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/users/8",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"8"
 							]
 						}
 					},
@@ -44,7 +207,7 @@
 			"name": "ROLES",
 			"item": [
 				{
-					"name": "GET ALL ROLES",
+					"name": "Get All Roles",
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -66,11 +229,1841 @@
 		},
 		{
 			"name": "FILES",
-			"item": []
+			"item": [
+				{
+					"name": "List Files",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/upload/files",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"upload",
+								"files"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get File By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/upload/files/4",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"upload",
+								"files",
+								"4"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Files",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "files",
+									"type": "file",
+									"src": "/C:/Users/Benja/Documents/documento de prueba.pdf"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/upload",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"upload"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete File",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/upload/files/4",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"upload",
+								"files",
+								"4"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "GLOBAL (singleType)",
+			"item": [
+				{
+					"name": "Get Global",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/global",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"global"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Global",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"siteName\": \"Pizquito-Api\",\n    \"siteDescription\": \"Backend de Pizquito\",\n    \"defaultSeo\": {\n      \"metaTitle\": \"Pizquito-Api\",\n      \"metaDescription\": \"Descripción SEO\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/global",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"global"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Global",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/global",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"global"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "COMPANY (singleType)",
+			"item": [
+				{
+					"name": "Get Company",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/company",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"company"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Company",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"name\": \"Pizquito\",\n    \"code\": \"PZQ123\",\n    \"address\": \"Calle Principal 123, Madrid\",\n    \"NIF\": \"B12345678\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/company",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"company"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Company",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/company",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"company"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "GUARDIANS",
+			"item": [
+				{
+					"name": "List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/guardians",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"guardians"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"data\": {\n        \"name\": \"Carlos\",\n        \"lastname\": \"López García\",\n        \"DNI\": \"Z98765432\",\n        \"NIF\": \"Y7654321A\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/guardians",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"guardians"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"name\": \"Carlos\",\n    \"lastname\": \"López García\",\n    \"DNI\": \"Z98765432\",\n    \"NIF\": \"Y7654321A\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/guardians/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"guardians",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "l3a06sh23d069zdl27yx70zu"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/guardians/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"guardians",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "l3a06sh23d069zdl27yx70zu"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		},
 		{
 			"name": "STUDENTS",
-			"item": []
+			"item": [
+				{
+					"name": "List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/students?sort[0]=name:asc&pagination[page]=1&pagination[pageSize]=10&populate=*",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"students"
+							],
+							"query": [
+								{
+									"key": "sort[0]",
+									"value": "name:asc",
+									"description": "Sort by name ascending (options: name:asc, name:desc, lastname:asc, lastname:desc, createdAt:asc, createdAt:desc)"
+								},
+								{
+									"key": "pagination[page]",
+									"value": "1",
+									"description": "Page number for pagination"
+								},
+								{
+									"key": "pagination[pageSize]",
+									"value": "10",
+									"description": "Number of items per page (max 100)"
+								},
+								{
+									"key": "populate",
+									"value": "*",
+									"description": "Populate all relations"
+								},
+								{
+									"key": "filters[name][$containsi]",
+									"value": "",
+									"description": "Filter by name (case insensitive contains)",
+									"disabled": true
+								},
+								{
+									"key": "filters[lastname][$containsi]",
+									"value": "",
+									"description": "Filter by lastname (case insensitive contains)",
+									"disabled": true
+								},
+								{
+									"key": "filters[DNI][$eq]",
+									"value": "",
+									"description": "Filter by exact DNI match",
+									"disabled": true
+								},
+								{
+									"key": "filters[createdAt][$gte]",
+									"value": "",
+									"description": "Filter by creation date greater than or equal (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "filters[createdAt][$lte]",
+									"value": "",
+									"description": "Filter by creation date less than or equal (YYYY-MM-DD)",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get By documentID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/students/:documentID?populate=*",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"students",
+								":documentID"
+							],
+							"query": [
+								{
+									"key": "populate",
+									"value": "*"
+								}
+							],
+							"variable": [
+								{
+									"key": "documentID",
+									"value": "wbsoi4srffn1e8rdvy8hoqc8"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"name\": \"Juan\",\n    \"lastname\": \"Pérez\",\n    \"DNI\": \"12345678X\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/students",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"students"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update by documentID",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": { \"city\": \"Madrid\" }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/students/:documentID",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"students",
+								":documentID"
+							],
+							"variable": [
+								{
+									"key": "documentID",
+									"value": "pnwg3aq26b6u0o2j72nc3y22"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete by documentID",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": { \"city\": \"Madrid\" }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/students/:documentID",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"students",
+								":documentID"
+							],
+							"variable": [
+								{
+									"key": "documentID",
+									"value": "nk6x36vgq7vek8kkl1s4lvx1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "EMPLOYEES",
+			"item": [
+				{
+					"name": "List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/employees?sort[0]=name:desc&pagination[page]=1&pagination[pageSize]=10&populate=*",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"employees"
+							],
+							"query": [
+								{
+									"key": "sort[0]",
+									"value": "name:desc",
+									"description": "Sort by name ascending (options: name:asc, name:desc, lastname:asc, lastname:desc, createdAt:asc, createdAt:desc)"
+								},
+								{
+									"key": "pagination[page]",
+									"value": "1",
+									"description": "Page number for pagination"
+								},
+								{
+									"key": "pagination[pageSize]",
+									"value": "10",
+									"description": "Number of items per page (max 100)"
+								},
+								{
+									"key": "populate",
+									"value": "*",
+									"description": "Populate all relations"
+								},
+								{
+									"key": "filters[name][$containsi]",
+									"value": "",
+									"description": "Filter by name (case insensitive contains)",
+									"disabled": true
+								},
+								{
+									"key": "filters[lastname][$containsi]",
+									"value": "",
+									"description": "Filter by lastname (case insensitive contains)",
+									"disabled": true
+								},
+								{
+									"key": "filters[DNI][$eq]",
+									"value": "",
+									"description": "Filter by exact DNI match",
+									"disabled": true
+								},
+								{
+									"key": "filters[NIF][$eq]",
+									"value": "",
+									"description": "Filter by exact NIF match",
+									"disabled": true
+								},
+								{
+									"key": "filters[BIC][$containsi]",
+									"value": "",
+									"description": "Filter by BIC (case insensitive contains)",
+									"disabled": true
+								},
+								{
+									"key": "filters[SWIFT][$containsi]",
+									"value": "",
+									"description": "Filter by SWIFT (case insensitive contains)",
+									"disabled": true
+								},
+								{
+									"key": "filters[createdAt][$gte]",
+									"value": "",
+									"description": "Filter by creation date greater than or equal (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "filters[createdAt][$lte]",
+									"value": "",
+									"description": "Filter by creation date less than or equal (YYYY-MM-DD)",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"name\": \"Luis\",\n    \"lastname\": \"Fernández\",\n    \"DNI\": \"E87654321\",\n    \"NIF\": \"Y7654321X\",\n    \"BIC\": \"BICCODE987\",\n    \"SWIFT\": \"SWIFTCODE987\"\n  }\n}\n"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/employees",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"employees"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get By documentID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/employees/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"employees",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "r8d1mgtjwbtc524o47dznrlv"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    // \"name\": \"Ana\",\n    // \"lastname\": \"García Martínez\",\n    // \"DNI\": \"E12345678\",\n    // \"NIF\": \"X1234567Z\",\n    // \"BIC\": \"BICCODE123\",\n    \"SWIFT\": \"SWIFTCODE999\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/employees/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"employees",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "r8d1mgtjwbtc524o47dznrlv"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/employees/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"employees",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "r8d1mgtjwbtc524o47dznrlv"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "CLASSROOMS",
+			"item": [
+				{
+					"name": "List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/classrooms?sort[0]=title:asc&pagination[page]=1&pagination[pageSize]=10&populate=*",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"classrooms"
+							],
+							"query": [
+								{
+									"key": "sort[0]",
+									"value": "title:asc",
+									"description": "Sort by title ascending (options: title:asc, title:desc, studentLimit:asc, studentLimit:desc, createdAt:asc, createdAt:desc)"
+								},
+								{
+									"key": "pagination[page]",
+									"value": "1",
+									"description": "Page number for pagination"
+								},
+								{
+									"key": "pagination[pageSize]",
+									"value": "10",
+									"description": "Number of items per page (max 100)"
+								},
+								{
+									"key": "populate",
+									"value": "*",
+									"description": "Populate all relations"
+								},
+								{
+									"key": "filters[title][$containsi]",
+									"value": "",
+									"description": "Filter by title (case insensitive contains)",
+									"disabled": true
+								},
+								{
+									"key": "filters[description][$containsi]",
+									"value": "",
+									"description": "Filter by description (case insensitive contains)",
+									"disabled": true
+								},
+								{
+									"key": "filters[classroomStatus][$eq]",
+									"value": "",
+									"description": "Filter by status (available, occupied, maintenance, etc.)",
+									"disabled": true
+								},
+								{
+									"key": "filters[studentLimit][$gte]",
+									"value": "",
+									"description": "Filter by minimum student limit",
+									"disabled": true
+								},
+								{
+									"key": "filters[studentLimit][$lte]",
+									"value": "",
+									"description": "Filter by maximum student limit",
+									"disabled": true
+								},
+								{
+									"key": "filters[createdAt][$gte]",
+									"value": "",
+									"description": "Filter by creation date greater than or equal (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "filters[createdAt][$lte]",
+									"value": "",
+									"description": "Filter by creation date less than or equal (YYYY-MM-DD)",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"title\": \"Aula 1\",\n    \"description\": \"Primaria\",\n    \"studentLimit\": 25,\n    \"classroomStatus\": \"available\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/classrooms",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"classrooms"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get By documentID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/classrooms/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"classrooms",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "sip5l72t9uu33vcr5sm22v6n"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"title\": \"Aula 1 - Renovada\",\n    \"description\": \"Primaria - Equipada con tecnología\",\n    \"studentLimit\": 30,\n    \"classroomStatus\": \"available\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/classrooms/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"classrooms",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "b198h5h3elg3nunl5h74bba8"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/classrooms/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"classrooms",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "b198h5h3elg3nunl5h74bba8"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "ENROLLMENTS",
+			"item": [
+				{
+					"name": "List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/enrollments?sort[0]=title:asc&pagination[page]=1&pagination[pageSize]=10&populate=*",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"enrollments"
+							],
+							"query": [
+								{
+									"key": "sort[0]",
+									"value": "title:asc",
+									"description": "Sort by title ascending (options: title:asc, title:desc, createdAt:asc, createdAt:desc)"
+								},
+								{
+									"key": "pagination[page]",
+									"value": "1",
+									"description": "Page number for pagination"
+								},
+								{
+									"key": "pagination[pageSize]",
+									"value": "10",
+									"description": "Number of items per page (max 100)"
+								},
+								{
+									"key": "populate",
+									"value": "*",
+									"description": "Populate all relations"
+								},
+								{
+									"key": "filters[title][$containsi]",
+									"value": "",
+									"description": "Filter by title (case insensitive contains)",
+									"disabled": true
+								},
+								{
+									"key": "filters[description][$containsi]",
+									"value": "",
+									"description": "Filter by description (case insensitive contains)",
+									"disabled": true
+								},
+								{
+									"key": "filters[isActive][$eq]",
+									"value": "",
+									"description": "Filter by active status (true/false)",
+									"disabled": true
+								},
+								{
+									"key": "filters[createdAt][$gte]",
+									"value": "",
+									"description": "Filter by creation date greater than or equal (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "filters[createdAt][$lte]",
+									"value": "",
+									"description": "Filter by creation date less than or equal (YYYY-MM-DD)",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"title\": \"Matrícula 2025\",\n    \"description\": \"Inicial\",\n    \"isActive\": true\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/enrollments",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"enrollments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get By documentID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/enrollments/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"enrollments",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "bl0afbsz535fuf9z3jbpljze"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"title\": \"Matrícula 2025 - Actualizada\",\n    \"description\": \"Inicial - Proceso completado\",\n    \"isActive\": false\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/enrollments/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"enrollments",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "bl0afbsz535fuf9z3jbpljze"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/enrollments/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"enrollments",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "bl0afbsz535fuf9z3jbpljze"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "INVOICES",
+			"item": [
+				{
+					"name": "List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"invoices"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{JWT_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"title\": \"Factura ejemplo\",\n    \"invoiceStatus\": \"unpaid\",\n    \"invoiceType\": \"charge\",\n    \"registeredBy\": \"administration\",\n    \"amounts\": {\n      \"subtotal\": 82.64,\n      \"tax\": 17.36\n    },\n    \"total\": 100.00,\n    \"IVA\": 21,\n    \"dueDate\": \"2025-02-15\",\n    \"issueDate\": \"2025-01-15\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"invoices"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get By documentID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{JWT_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "{{invoiceId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{JWT_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"title\": \"Factura ejemplo - Actualizada\",\n    \"invoiceStatus\": \"paid\",\n    \"invoiceType\": \"charge\",\n    \"registeredBy\": \"administration\",\n    \"amounts\": {\n      \"subtotal\": 165.29,\n      \"tax\": 34.71\n    },\n    \"total\": 200.00,\n    \"IVA\": 21,\n    \"dueDate\": \"2025-02-15\",\n    \"issueDate\": \"2025-01-15\",\n    \"paymentDate\": \"2025-01-20\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "{{invoiceId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{JWT_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "{{invoiceId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "OBSERVATIONS",
+			"item": [
+				{
+					"name": "List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/observations?populate=*",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"observations"
+							],
+							"query": [
+								{
+									"key": "populate",
+									"value": "*"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"title\": \"Observación\",\n    \"description\": \"Detalle\",\n    \"date\": \"2025-10-01\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/observations",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"observations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get By documentID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/observations/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"observations",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "o46pn2s6zh77t7bczwo5tz5h"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"title\": \"Observación Actualizada\",\n    \"description\": \"Detalle modificado con información adicional\",\n    \"date\": \"2025-10-15\",\n    \"status\": \"reviewed\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/observations/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"observations",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "o46pn2s6zh77t7bczwo5tz5h"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/observations/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"observations",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "o46pn2s6zh77t7bczwo5tz5h"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "PROMOTIONS",
+			"item": [
+				{
+					"name": "List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/promotions?populate=*",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"promotions"
+							],
+							"query": [
+								{
+									"key": "populate",
+									"value": "*"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"title\": \"Promo octubre\",\n    \"discount\": 10,\n    \"promotionType\": \"one_time\",\n    \"isActive\": true,\n    \"start\": \"2025-10-01\",\n    \"end\": \"2025-10-31\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/promotions",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"promotions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get By documentID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/promotions/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"promotions",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "mi3dzosd90t7oda0lmtszz4p"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"title\": \"Promo octubre - Actualizada\",\n    \"discount\": 15,\n    \"promotionType\": \"one_time\", // one_time | monthly\n    \"isActive\": false,\n    \"start\": \"2025-10-01\",\n    \"end\": \"2025-11-15\",\n    \"description\": \"Promoción extendida hasta noviembre\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/promotions/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"promotions",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "mi3dzosd90t7oda0lmtszz4p"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/promotions/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"promotions",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "mi3dzosd90t7oda0lmtszz4p"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "SERVICES",
+			"item": [
+				{
+					"name": "List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/services?populate=*",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"services"
+							],
+							"query": [
+								{
+									"key": "populate",
+									"value": "*"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"title\": \"Servicio escolar\",\n    \"amount\": 10,\n    \"serviceType\": \"school_service\", // student_service | employee_service | school_service | other\n    \"serviceStatus\": \"active\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/services",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"services"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get By documentID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/services/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"services",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "{{serviceId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"data\": {\n        \"title\": \"Servicio de empleado\",\n        \"serviceType\": \"employee_service\" // student_service | employee_service | school_service | other\n    }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/services/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"services",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "d1o36rsgqxl27h0oat4qoz1b"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/services/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"services",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "d1o36rsgqxl27h0oat4qoz1b"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "SCHOOL PERIODS",
+			"item": [
+				{
+					"name": "List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/school-periods?populate=*",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"school-periods"
+							],
+							"query": [
+								{
+									"key": "populate",
+									"value": "*"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"data\": {\n        \"title\": \"Curso 2026\",\n        \"period\": [\n            {\n                \"year\": \"2026\",\n                \"start\": \"2026-01-01\",\n                \"end\": \"2026-06-30\"\n            }\n        ]\n    }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/school-periods",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"school-periods"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get By documentID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/school-periods/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"school-periods",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "w85yde8vq32ncrlbnnf03ylm"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"data\": {\n        \"title\": \"Curso 2025 - Actualizado\",\n        \"status\": \"active\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/school-periods/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"school-periods",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "w85yde8vq32ncrlbnnf03ylm"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/school-periods/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"school-periods",
+								":documentId"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "{{schoolPeriodId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"auth": {
@@ -78,7 +2071,7 @@
 		"bearer": [
 			{
 				"key": "token",
-				"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzU5NTA0MDE0LCJleHAiOjE3NjIwOTYwMTR9.rq2sXskMK9BHLnWiBguQt6A2tpoQ_E8ySAQehYgGLYI",
+				"value": "{{token}}",
 				"type": "string"
 			}
 		]
@@ -89,6 +2082,7 @@
 			"script": {
 				"type": "text/javascript",
 				"packages": {},
+				"requests": {},
 				"exec": [
 					""
 				]
@@ -99,6 +2093,7 @@
 			"script": {
 				"type": "text/javascript",
 				"packages": {},
+				"requests": {},
 				"exec": [
 					""
 				]
@@ -109,6 +2104,10 @@
 		{
 			"key": "STRAPI_URL_LOCAL",
 			"value": "http://localhost:1337"
+		},
+		{
+			"key": "token",
+			"value": ""
 		}
 	]
 }
