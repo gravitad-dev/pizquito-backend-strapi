@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "fdd1e7d2-dad8-44c3-94c5-ede86a53b0f6",
+		"_postman_id": "b863590b-ef4b-45e1-8caa-a61c8285a530",
 		"name": "STRAPI-PIZQUITO-API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "43592215"
@@ -96,13 +96,71 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/users",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/users?sort[0]=username:asc&pagination[page]=1&pagination[pageSize]=10&populate=*",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
 							"path": [
 								"api",
 								"users"
+							],
+							"query": [
+								{
+									"key": "sort[0]",
+									"value": "username:asc",
+									"description": "Ordenar por nombre de usuario ascendente (opciones: username:asc, username:desc, email:asc, email:desc, createdAt:asc, createdAt:desc)"
+								},
+								{
+									"key": "pagination[page]",
+									"value": "1",
+									"description": "Número de página para paginación"
+								},
+								{
+									"key": "pagination[pageSize]",
+									"value": "10",
+									"description": "Número de elementos por página (máximo 100)"
+								},
+								{
+									"key": "populate",
+									"value": "*",
+									"description": "Poblar todas las relaciones"
+								},
+								{
+									"key": "filters[username][$containsi]",
+									"value": "",
+									"description": "Filtrar por nombre de usuario (contiene, sin distinción de mayúsculas)",
+									"disabled": true
+								},
+								{
+									"key": "filters[email][$containsi]",
+									"value": "",
+									"description": "Filtrar por email (contiene, sin distinción de mayúsculas)",
+									"disabled": true
+								},
+								{
+									"key": "filters[confirmed][$eq]",
+									"value": "",
+									"description": "Filtrar por estado de confirmación (true/false)",
+									"disabled": true
+								},
+								{
+									"key": "filters[blocked][$eq]",
+									"value": "",
+									"description": "Filtrar por estado bloqueado (true/false)",
+									"disabled": true
+								},
+								{
+									"key": "filters[createdAt][$gte]",
+									"value": "",
+									"description": "Filtrar por fecha de creación mayor o igual (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "filters[createdAt][$lte]",
+									"value": "",
+									"description": "Filtrar por fecha de creación menor o igual (YYYY-MM-DD)",
+									"disabled": true
+								}
 							]
 						}
 					},
@@ -464,13 +522,77 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/guardians",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/guardians?sort[0]=name:asc&pagination[page]=1&pagination[pageSize]=10&populate=*",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
 							"path": [
 								"api",
 								"guardians"
+							],
+							"query": [
+								{
+									"key": "sort[0]",
+									"value": "name:asc",
+									"description": "Ordenar por nombre ascendente (opciones: name:asc, name:desc, lastname:asc, lastname:desc, createdAt:asc, createdAt:desc)"
+								},
+								{
+									"key": "pagination[page]",
+									"value": "1",
+									"description": "Número de página para paginación"
+								},
+								{
+									"key": "pagination[pageSize]",
+									"value": "10",
+									"description": "Número de elementos por página (máximo 100)"
+								},
+								{
+									"key": "populate",
+									"value": "*",
+									"description": "Poblar todas las relaciones"
+								},
+								{
+									"key": "filters[name][$containsi]",
+									"value": "",
+									"description": "Filtrar por nombre (contiene, sin distinción de mayúsculas)",
+									"disabled": true
+								},
+								{
+									"key": "filters[lastname][$containsi]",
+									"value": "",
+									"description": "Filtrar por apellido (contiene, sin distinción de mayúsculas)",
+									"disabled": true
+								},
+								{
+									"key": "filters[DNI][$eq]",
+									"value": "",
+									"description": "Filtrar por DNI exacto",
+									"disabled": true
+								},
+								{
+									"key": "filters[email][$containsi]",
+									"value": "",
+									"description": "Filtrar por email (contiene, sin distinción de mayúsculas)",
+									"disabled": true
+								},
+								{
+									"key": "filters[phone][$containsi]",
+									"value": "",
+									"description": "Filtrar por teléfono (contiene, sin distinción de mayúsculas)",
+									"disabled": true
+								},
+								{
+									"key": "filters[createdAt][$gte]",
+									"value": "",
+									"description": "Filtrar por fecha de creación mayor o igual (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "filters[createdAt][$lte]",
+									"value": "",
+									"description": "Filtrar por fecha de creación menor o igual (YYYY-MM-DD)",
+									"disabled": true
+								}
 							]
 						}
 					},
@@ -585,51 +707,51 @@
 								{
 									"key": "sort[0]",
 									"value": "name:asc",
-									"description": "Sort by name ascending (options: name:asc, name:desc, lastname:asc, lastname:desc, createdAt:asc, createdAt:desc)"
+									"description": "Ordenar por nombre ascendente (opciones: name:asc, name:desc, lastname:asc, lastname:desc, createdAt:asc, createdAt:desc)"
 								},
 								{
 									"key": "pagination[page]",
 									"value": "1",
-									"description": "Page number for pagination"
+									"description": "Número de página para paginación"
 								},
 								{
 									"key": "pagination[pageSize]",
 									"value": "10",
-									"description": "Number of items per page (max 100)"
+									"description": "Número de elementos por página (máximo 100)"
 								},
 								{
 									"key": "populate",
 									"value": "*",
-									"description": "Populate all relations"
+									"description": "Poblar todas las relaciones"
 								},
 								{
 									"key": "filters[name][$containsi]",
 									"value": "",
-									"description": "Filter by name (case insensitive contains)",
+									"description": "Filtrar por nombre (contiene, sin distinción de mayúsculas)",
 									"disabled": true
 								},
 								{
 									"key": "filters[lastname][$containsi]",
 									"value": "",
-									"description": "Filter by lastname (case insensitive contains)",
+									"description": "Filtrar por apellido (contiene, sin distinción de mayúsculas)",
 									"disabled": true
 								},
 								{
 									"key": "filters[DNI][$eq]",
 									"value": "",
-									"description": "Filter by exact DNI match",
+									"description": "Filtrar por DNI exacto",
 									"disabled": true
 								},
 								{
 									"key": "filters[createdAt][$gte]",
 									"value": "",
-									"description": "Filter by creation date greater than or equal (YYYY-MM-DD)",
+									"description": "Filtrar por fecha de creación mayor o igual (YYYY-MM-DD)",
 									"disabled": true
 								},
 								{
 									"key": "filters[createdAt][$lte]",
 									"value": "",
-									"description": "Filter by creation date less than or equal (YYYY-MM-DD)",
+									"description": "Filtrar por fecha de creación menor o igual (YYYY-MM-DD)",
 									"disabled": true
 								}
 							]
@@ -786,69 +908,69 @@
 								{
 									"key": "sort[0]",
 									"value": "name:desc",
-									"description": "Sort by name ascending (options: name:asc, name:desc, lastname:asc, lastname:desc, createdAt:asc, createdAt:desc)"
+									"description": "Ordenar por nombre descendente (opciones: name:asc, name:desc, lastname:asc, lastname:desc, createdAt:asc, createdAt:desc)"
 								},
 								{
 									"key": "pagination[page]",
 									"value": "1",
-									"description": "Page number for pagination"
+									"description": "Número de página para paginación"
 								},
 								{
 									"key": "pagination[pageSize]",
 									"value": "10",
-									"description": "Number of items per page (max 100)"
+									"description": "Número de elementos por página (máximo 100)"
 								},
 								{
 									"key": "populate",
 									"value": "*",
-									"description": "Populate all relations"
+									"description": "Poblar todas las relaciones"
 								},
 								{
 									"key": "filters[name][$containsi]",
 									"value": "",
-									"description": "Filter by name (case insensitive contains)",
+									"description": "Filtrar por nombre (contiene, sin distinción de mayúsculas)",
 									"disabled": true
 								},
 								{
 									"key": "filters[lastname][$containsi]",
 									"value": "",
-									"description": "Filter by lastname (case insensitive contains)",
+									"description": "Filtrar por apellido (contiene, sin distinción de mayúsculas)",
 									"disabled": true
 								},
 								{
 									"key": "filters[DNI][$eq]",
 									"value": "",
-									"description": "Filter by exact DNI match",
+									"description": "Filtrar por DNI exacto",
 									"disabled": true
 								},
 								{
 									"key": "filters[NIF][$eq]",
 									"value": "",
-									"description": "Filter by exact NIF match",
+									"description": "Filtrar por NIF exacto",
 									"disabled": true
 								},
 								{
 									"key": "filters[BIC][$containsi]",
 									"value": "",
-									"description": "Filter by BIC (case insensitive contains)",
+									"description": "Filtrar por BIC (contiene, sin distinción de mayúsculas)",
 									"disabled": true
 								},
 								{
 									"key": "filters[SWIFT][$containsi]",
 									"value": "",
-									"description": "Filter by SWIFT (case insensitive contains)",
+									"description": "Filtrar por SWIFT (contiene, sin distinción de mayúsculas)",
 									"disabled": true
 								},
 								{
 									"key": "filters[createdAt][$gte]",
 									"value": "",
-									"description": "Filter by creation date greater than or equal (YYYY-MM-DD)",
+									"description": "Filtrar por fecha de creación mayor o igual (YYYY-MM-DD)",
 									"disabled": true
 								},
 								{
 									"key": "filters[createdAt][$lte]",
 									"value": "",
-									"description": "Filter by creation date less than or equal (YYYY-MM-DD)",
+									"description": "Filtrar por fecha de creación menor o igual (YYYY-MM-DD)",
 									"disabled": true
 								}
 							]
@@ -990,63 +1112,63 @@
 								{
 									"key": "sort[0]",
 									"value": "title:asc",
-									"description": "Sort by title ascending (options: title:asc, title:desc, studentLimit:asc, studentLimit:desc, createdAt:asc, createdAt:desc)"
+									"description": "Ordenar por título ascendente (opciones: title:asc, title:desc, studentLimit:asc, studentLimit:desc, createdAt:asc, createdAt:desc)"
 								},
 								{
 									"key": "pagination[page]",
 									"value": "1",
-									"description": "Page number for pagination"
+									"description": "Número de página para paginación"
 								},
 								{
 									"key": "pagination[pageSize]",
 									"value": "10",
-									"description": "Number of items per page (max 100)"
+									"description": "Número de elementos por página (máximo 100)"
 								},
 								{
 									"key": "populate",
 									"value": "*",
-									"description": "Populate all relations"
+									"description": "Poblar todas las relaciones"
 								},
 								{
 									"key": "filters[title][$containsi]",
 									"value": "",
-									"description": "Filter by title (case insensitive contains)",
+									"description": "Filtrar por título (contiene, sin distinción de mayúsculas)",
 									"disabled": true
 								},
 								{
 									"key": "filters[description][$containsi]",
 									"value": "",
-									"description": "Filter by description (case insensitive contains)",
+									"description": "Filtrar por descripción (contiene, sin distinción de mayúsculas)",
 									"disabled": true
 								},
 								{
 									"key": "filters[classroomStatus][$eq]",
 									"value": "",
-									"description": "Filter by status (available, occupied, maintenance, etc.)",
+									"description": "Filtrar por estado (disponible, ocupado, mantenimiento, etc.)",
 									"disabled": true
 								},
 								{
 									"key": "filters[studentLimit][$gte]",
 									"value": "",
-									"description": "Filter by minimum student limit",
+									"description": "Filtrar por límite mínimo de estudiantes",
 									"disabled": true
 								},
 								{
 									"key": "filters[studentLimit][$lte]",
 									"value": "",
-									"description": "Filter by maximum student limit",
+									"description": "Filtrar por límite máximo de estudiantes",
 									"disabled": true
 								},
 								{
 									"key": "filters[createdAt][$gte]",
 									"value": "",
-									"description": "Filter by creation date greater than or equal (YYYY-MM-DD)",
+									"description": "Filtrar por fecha de creación mayor o igual (YYYY-MM-DD)",
 									"disabled": true
 								},
 								{
 									"key": "filters[createdAt][$lte]",
 									"value": "",
-									"description": "Filter by creation date less than or equal (YYYY-MM-DD)",
+									"description": "Filtrar por fecha de creación menor o igual (YYYY-MM-DD)",
 									"disabled": true
 								}
 							]
@@ -1188,51 +1310,51 @@
 								{
 									"key": "sort[0]",
 									"value": "title:asc",
-									"description": "Sort by title ascending (options: title:asc, title:desc, createdAt:asc, createdAt:desc)"
+									"description": "Ordenar por título ascendente (opciones: title:asc, title:desc, createdAt:asc, createdAt:desc)"
 								},
 								{
 									"key": "pagination[page]",
 									"value": "1",
-									"description": "Page number for pagination"
+									"description": "Número de página para paginación"
 								},
 								{
 									"key": "pagination[pageSize]",
 									"value": "10",
-									"description": "Number of items per page (max 100)"
+									"description": "Número de elementos por página (máximo 100)"
 								},
 								{
 									"key": "populate",
 									"value": "*",
-									"description": "Populate all relations"
+									"description": "Poblar todas las relaciones"
 								},
 								{
 									"key": "filters[title][$containsi]",
 									"value": "",
-									"description": "Filter by title (case insensitive contains)",
+									"description": "Filtrar por título (contiene, sin distinción de mayúsculas)",
 									"disabled": true
 								},
 								{
 									"key": "filters[description][$containsi]",
 									"value": "",
-									"description": "Filter by description (case insensitive contains)",
+									"description": "Filtrar por descripción (contiene, sin distinción de mayúsculas)",
 									"disabled": true
 								},
 								{
 									"key": "filters[isActive][$eq]",
 									"value": "",
-									"description": "Filter by active status (true/false)",
+									"description": "Filtrar por estado activo (true/false)",
 									"disabled": true
 								},
 								{
 									"key": "filters[createdAt][$gte]",
 									"value": "",
-									"description": "Filter by creation date greater than or equal (YYYY-MM-DD)",
+									"description": "Filtrar por fecha de creación mayor o igual (YYYY-MM-DD)",
 									"disabled": true
 								},
 								{
 									"key": "filters[createdAt][$lte]",
 									"value": "",
-									"description": "Filter by creation date less than or equal (YYYY-MM-DD)",
+									"description": "Filtrar por fecha de creación menor o igual (YYYY-MM-DD)",
 									"disabled": true
 								}
 							]
@@ -1362,13 +1484,107 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices?sort[0]=title:asc&pagination[page]=1&pagination[pageSize]=10&populate=*",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
 							"path": [
 								"api",
 								"invoices"
+							],
+							"query": [
+								{
+									"key": "sort[0]",
+									"value": "title:asc",
+									"description": "Ordenar por título ascendente (opciones: title:asc, title:desc, total:asc, total:desc, emissionDate:asc, emissionDate:desc, expirationDate:asc, expirationDate:desc, createdAt:asc, createdAt:desc)"
+								},
+								{
+									"key": "pagination[page]",
+									"value": "1",
+									"description": "Número de página para paginación"
+								},
+								{
+									"key": "pagination[pageSize]",
+									"value": "10",
+									"description": "Número de elementos por página (máximo 100)"
+								},
+								{
+									"key": "populate",
+									"value": "*",
+									"description": "Poblar todas las relaciones"
+								},
+								{
+									"key": "filters[title][$containsi]",
+									"value": "",
+									"description": "Filtrar por título (contiene, sin distinción de mayúsculas)",
+									"disabled": true
+								},
+								{
+									"key": "filters[invoiceStatus][$eq]",
+									"value": "",
+									"description": "Filtrar por estado de factura (unpaid, inprocess, paid, canceled)",
+									"disabled": true
+								},
+								{
+									"key": "filters[invoiceType][$eq]",
+									"value": "",
+									"description": "Filtrar por tipo de factura (charge, payment, income, expense)",
+									"disabled": true
+								},
+								{
+									"key": "filters[registeredBy][$eq]",
+									"value": "",
+									"description": "Filtrar por registrado por (administration, bank, system)",
+									"disabled": true
+								},
+								{
+									"key": "filters[total][$gte]",
+									"value": "",
+									"description": "Filtrar por total mayor o igual",
+									"disabled": true
+								},
+								{
+									"key": "filters[total][$lte]",
+									"value": "",
+									"description": "Filtrar por total menor o igual",
+									"disabled": true
+								},
+								{
+									"key": "filters[emissionDate][$gte]",
+									"value": "",
+									"description": "Filtrar por fecha de emisión mayor o igual (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "filters[emissionDate][$lte]",
+									"value": "",
+									"description": "Filtrar por fecha de emisión menor o igual (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "filters[expirationDate][$gte]",
+									"value": "",
+									"description": "Filtrar por fecha de vencimiento mayor o igual (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "filters[expirationDate][$lte]",
+									"value": "",
+									"description": "Filtrar por fecha de vencimiento menor o igual (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "filters[createdAt][$gte]",
+									"value": "",
+									"description": "Filtrar por fecha de creación mayor o igual (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "filters[createdAt][$lte]",
+									"value": "",
+									"description": "Filtrar por fecha de creación menor o igual (YYYY-MM-DD)",
+									"disabled": true
+								}
 							]
 						}
 					},
@@ -1385,12 +1601,12 @@
 							},
 							{
 								"key": "Authorization",
-								"value": "Bearer {{JWT_TOKEN}}"
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"data\": {\n    \"title\": \"Factura ejemplo\",\n    \"invoiceStatus\": \"unpaid\",\n    \"invoiceType\": \"charge\",\n    \"registeredBy\": \"administration\",\n    \"amounts\": {\n      \"subtotal\": 82.64,\n      \"tax\": 17.36\n    },\n    \"total\": 100.00,\n    \"IVA\": 21,\n    \"dueDate\": \"2025-02-15\",\n    \"issueDate\": \"2025-01-15\"\n  }\n}"
+							"raw": "{\n    \"data\": {\n        \"title\": \"Factura de ejemplo\",\n        \"notes\": \"Notas de la factura\",\n        \"issuedby\": \"Administración\",\n        \"invoiceStatus\": \"unpaid\",\n        \"invoiceType\": \"charge\",\n        \"registeredBy\": \"administration\",\n        \"invoiceCategory\": \"invoice_general\",\n        \"amounts\": {\n            \"subtotal\": 100,\n            \"tax\": 21,\n            \"total\": 121\n        },\n        \"total\": 121.00,\n        \"IVA\": 21,\n        \"emissionDate\": \"2025-01-15T10:00:00.000Z\",\n        \"expirationDate\": \"2025-02-15T10:00:00.000Z\",\n        \"employee\": 1,\n        \"enrollment\": 1\n    }\n}"
 						},
 						"url": {
 							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices",
@@ -1412,7 +1628,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{JWT_TOKEN}}"
+								"value": "Bearer {{token}}"
 							}
 						],
 						"url": {
@@ -1428,7 +1644,7 @@
 							"variable": [
 								{
 									"key": "documentId",
-									"value": "{{invoiceId}}"
+									"value": "vpiovieb0wbibcyqor6icppv"
 								}
 							]
 						}
@@ -1446,12 +1662,12 @@
 							},
 							{
 								"key": "Authorization",
-								"value": "Bearer {{JWT_TOKEN}}"
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"data\": {\n    \"title\": \"Factura ejemplo - Actualizada\",\n    \"invoiceStatus\": \"paid\",\n    \"invoiceType\": \"charge\",\n    \"registeredBy\": \"administration\",\n    \"amounts\": {\n      \"subtotal\": 165.29,\n      \"tax\": 34.71\n    },\n    \"total\": 200.00,\n    \"IVA\": 21,\n    \"dueDate\": \"2025-02-15\",\n    \"issueDate\": \"2025-01-15\",\n    \"paymentDate\": \"2025-01-20\"\n  }\n}"
+							"raw": "{\n  \"data\": {\n    \"title\": \"Factura ejemplo - Actualizada\",\n    \"invoiceStatus\": \"paid\",\n    \"invoiceType\": \"charge\",\n    \"registeredBy\": \"administration\",\n    \"amounts\": {\n      \"subtotal\": 165.29,\n      \"tax\": 34.71,\n      \"total\": 200.00\n    },\n    \"total\": 200.00,\n    \"IVA\": 21,\n    \"expirationDate\": \"2025-02-15T10:00:00.000Z\",\n    \"emissionDate\": \"2025-01-15T10:00:00.000Z\",\n    \"notes\": \"Factura actualizada y pagada\"\n  }\n}"
 						},
 						"url": {
 							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices/:documentId",
@@ -1466,7 +1682,7 @@
 							"variable": [
 								{
 									"key": "documentId",
-									"value": "{{invoiceId}}"
+									"value": "vpiovieb0wbibcyqor6icppv"
 								}
 							]
 						}
@@ -1480,7 +1696,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{JWT_TOKEN}}"
+								"value": "Bearer {{token}}"
 							}
 						],
 						"url": {
@@ -1496,7 +1712,7 @@
 							"variable": [
 								{
 									"key": "documentId",
-									"value": "{{invoiceId}}"
+									"value": "vpiovieb0wbibcyqor6icppv"
 								}
 							]
 						}
@@ -1596,7 +1812,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"data\": {\n    \"title\": \"Observación Actualizada\",\n    \"description\": \"Detalle modificado con información adicional\",\n    \"date\": \"2025-10-15\",\n    \"status\": \"reviewed\"\n  }\n}"
+							"raw": "{\n  \"data\": {\n    \"title\": \"Observación Actualizada\",\n    \"description\": \"Detalle modificado con información adicional\",\n    \"date\": \"2025-10-15\"\n  }\n}"
 						},
 						"url": {
 							"raw": "{{STRAPI_URL_LOCAL}}/api/observations/:documentId",
@@ -1611,7 +1827,7 @@
 							"variable": [
 								{
 									"key": "documentId",
-									"value": "o46pn2s6zh77t7bczwo5tz5h"
+									"value": "vjv3zapvrv7m498denjw4v02"
 								}
 							]
 						}
@@ -2016,7 +2232,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"data\": {\n        \"title\": \"Curso 2025 - Actualizado\",\n        \"status\": \"active\"\n    }\n}"
+							"raw": "{\n    \"data\": {\n        \"title\": \"Curso 2025 - Actualizado\",\n        \"period\": [\n            {\n                \"year\": \"2025\",\n                \"start\": \"2025-01-01\",\n                \"end\": \"2025-12-31\"\n            }\n        ]\n    }\n}"
 						},
 						"url": {
 							"raw": "{{STRAPI_URL_LOCAL}}/api/school-periods/:documentId",
