@@ -74,6 +74,16 @@
     },
     "phone": {
       "type": "string"
+    },
+    "profileImage": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
     }
   }
 }
