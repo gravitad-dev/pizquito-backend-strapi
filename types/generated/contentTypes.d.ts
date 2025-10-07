@@ -591,6 +591,41 @@ export interface ApiEnrollmentEnrollment extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiFiscalReportFiscalReport
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'fiscal_reports';
+  info: {
+    description: 'Fiscal reports management';
+    displayName: 'Fiscal Report';
+    pluralName: 'fiscal-reports';
+    singularName: 'fiscal-report';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::fiscal-report.fiscal-report'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    quarter: Schema.Attribute.Enumeration<['Q1', 'Q2', 'Q3', 'Q4']> &
+      Schema.Attribute.Required;
+    status: Schema.Attribute.Enumeration<['draft', 'generated', 'published']> &
+      Schema.Attribute.DefaultTo<'draft'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    year: Schema.Attribute.Integer & Schema.Attribute.Required;
+  };
+}
+
 export interface ApiGlobalGlobal extends Struct.SingleTypeSchema {
   collectionName: 'globals';
   info: {
@@ -1464,6 +1499,7 @@ declare module '@strapi/strapi' {
       'api::company.company': ApiCompanyCompany;
       'api::employee.employee': ApiEmployeeEmployee;
       'api::enrollment.enrollment': ApiEnrollmentEnrollment;
+      'api::fiscal-report.fiscal-report': ApiFiscalReportFiscalReport;
       'api::global.global': ApiGlobalGlobal;
       'api::guardian.guardian': ApiGuardianGuardian;
       'api::invoice.invoice': ApiInvoiceInvoice;

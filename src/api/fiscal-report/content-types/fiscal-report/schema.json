@@ -1,0 +1,34 @@
+{
+  "kind": "collectionType",
+  "collectionName": "fiscal_reports",
+  "info": {
+    "singularName": "fiscal-report",
+    "pluralName": "fiscal-reports",
+    "displayName": "Fiscal Report",
+    "description": "Fiscal reports management"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "year": {
+      "type": "integer",
+      "required": true
+    },
+    "quarter": {
+      "type": "enumeration",
+      "enum": ["Q1", "Q2", "Q3", "Q4"],
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["draft", "generated", "published"],
+      "default": "draft"
+    }
+  }
+}

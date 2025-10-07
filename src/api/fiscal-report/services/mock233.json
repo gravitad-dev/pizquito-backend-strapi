@@ -1,0 +1,47 @@
+{
+  "company": {
+    "nif": "B12345678",
+    "authorizationCode": "CEN-001-ABC",
+    "name": "Centro Infantil Pizquito"
+  },
+  "data": [
+    {
+      "studentId": 1,
+      "student": {
+        "dni": "12345678A",
+        "name": "María",
+        "lastname": "González",
+        "birthdate": "2021-05-15"
+      },
+      "guardians": [
+        { "nif": "45678901P", "name": "Luis", "lastname": "González" },
+        { "nif": "78901234P", "name": "Ana", "lastname": "García" }
+      ],
+      "servicePeriod": { "start": "2024-01-01", "end": "2024-12-31" },
+      "invoices": [
+        { "date": "2024-01-10", "concept": "matricula", "amount": 250.0 },
+        { "date": "2024-01-10", "concept": "comedor", "amount": 120.0 },
+        { "date": "2024-02-10", "concept": "comedor", "amount": 120.0 },
+        { "date": "2024-03-10", "concept": "comedor", "amount": 120.0 }
+      ]
+    },
+    {
+      "studentId": 2,
+      "student": {
+        "dni": "23456789B",
+        "name": "Carlos",
+        "lastname": "Rodríguez",
+        "birthdate": "2020-08-22"
+      },
+      "guardians": [
+        { "nif": "56789012P", "name": "Roberto", "lastname": "Rodríguez" }
+      ],
+      "servicePeriod": { "start": "2024-01-15", "end": "2024-07-31" },
+      "invoices": [
+        { "date": "2024-02-05", "concept": "matricula", "amount": 300.0 },
+        { "date": "2024-02-05", "concept": "comedor", "amount": 100.0 },
+        { "date": "2024-03-05", "concept": "comedor", "amount": 100.0 }
+      ]
+    }
+  ]
+}

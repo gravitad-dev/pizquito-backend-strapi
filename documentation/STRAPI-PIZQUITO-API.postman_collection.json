@@ -2281,6 +2281,73 @@
 				}
 			]
 		}
+		,
+		{
+			"name": "FISCAL REPORT",
+			"item": [
+				{
+					"name": "233 Preview",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/fiscal-report/233/preview?year=2024&quarter=Q1&includeMonths=true",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"fiscal-report",
+								"233",
+								"preview"
+							],
+							"query": [
+								{ "key": "year", "value": "2024" },
+								{ "key": "quarter", "value": "Q1" },
+								{ "key": "concept", "value": "all", "disabled": true },
+								{ "key": "studentId", "value": "1", "disabled": true },
+								{ "key": "includeMonths", "value": "true" },
+								{ "key": "page", "value": "1", "disabled": true },
+								{ "key": "pageSize", "value": "25", "disabled": true }
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "233 Generate",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"year\": 2024,\n  \"quarter\": \"Q1\",\n  \"concept\": \"all\",\n  \"format\": \"xlsx\"\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/fiscal-report/233/generate",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"fiscal-report",
+								"233",
+								"generate"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
 	],
 	"auth": {
 		"type": "bearer",
