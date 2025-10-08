@@ -1,1 +1,1 @@
-export { default } from './schema.json';
+export { default } from "./schema.json";
