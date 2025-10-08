@@ -28,7 +28,7 @@ module.exports = ({ env }) => {
               const yyyy = now.getFullYear();
               const mm = String(now.getMonth() + 1).padStart(2, "0");
               const dd = String(now.getDate()).padStart(2, "0");
-              return `Strapi/pizquito/${yyyy}_${mm}_${dd}`;
+              return `Strapi/pizquito/files/${yyyy}_${mm}_${dd}`;
             })(),
             resource_type: "auto",
             use_filename: true,
@@ -40,7 +40,7 @@ module.exports = ({ env }) => {
               const yyyy = now.getFullYear();
               const mm = String(now.getMonth() + 1).padStart(2, "0");
               const dd = String(now.getDate()).padStart(2, "0");
-              return `Strapi/pizquito/${yyyy}_${mm}_${dd}`;
+              return `Strapi/pizquito/files/${yyyy}_${mm}_${dd}`;
             })(),
             resource_type: "auto",
             use_filename: true,
