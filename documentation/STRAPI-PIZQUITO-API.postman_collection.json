@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "062ad464-317a-450d-b9b2-555ebad1ffc5",
+		"_postman_id": "cc724b6b-be32-4ffa-bcbd-867726f20348",
 		"name": "STRAPI-PIZQUITO-API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "43592215"
@@ -61,6 +61,104 @@
 								"auth",
 								"local",
 								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Enrollments",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices/enrollments?populate=*",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"enrollments"
+							],
+							"query": [
+								{
+									"key": "populate",
+									"value": "*",
+									"description": "Poblar todas las relaciones (enrollment, student)"
+								},
+								{
+									"key": "filters[invoiceStatus][$eq]",
+									"value": "",
+									"description": "Filtrar por estado (unpaid, inprocess, paid, canceled)",
+									"disabled": true
+								},
+								{
+									"key": "filters[emissionDate][$gte]",
+									"value": "",
+									"description": "Filtrar por fecha de emisión mayor o igual (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "filters[emissionDate][$lte]",
+									"value": "",
+									"description": "Filtrar por fecha de emisión menor o igual (YYYY-MM-DD)",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Payrolls",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices/payrolls?populate=*",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"payrolls"
+							],
+							"query": [
+								{
+									"key": "populate",
+									"value": "*",
+									"description": "Poblar todas las relaciones (employee)"
+								},
+								{
+									"key": "filters[invoiceStatus][$eq]",
+									"value": "",
+									"description": "Filtrar por estado (unpaid, inprocess, paid, canceled)",
+									"disabled": true
+								},
+								{
+									"key": "filters[emissionDate][$gte]",
+									"value": "",
+									"description": "Filtrar por fecha de emisión mayor o igual (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "filters[emissionDate][$lte]",
+									"value": "",
+									"description": "Filtrar por fecha de emisión menor o igual (YYYY-MM-DD)",
+									"disabled": true
+								}
 							]
 						}
 					},
@@ -1535,6 +1633,12 @@
 									"disabled": true
 								},
 								{
+									"key": "filters[invoiceCategory][$eq]",
+									"value": "",
+									"description": "Filtrar por categoría (invoice_enrollment, invoice_service, invoice_employ)",
+									"disabled": true
+								},
+								{
 									"key": "filters[registeredBy][$eq]",
 									"value": "",
 									"description": "Filtrar por registrado por (administration, bank, system)",
@@ -1685,7 +1789,7 @@
 							"variable": [
 								{
 									"key": "documentId",
-									"value": "vpiovieb0wbibcyqor6icppv"
+									"value": "vl4fuv32wbmxvwotuzxfrktj"
 								}
 							]
 						}
@@ -2363,6 +2467,167 @@
 								"reports",
 								"233",
 								"generate"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "PDF REPORTS",
+			"item": [
+				{
+					"name": "Invoice PDF (inline)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/pdf"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/pdf/invoice/:id?store=false",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"pdf",
+								"invoice",
+								":id"
+							],
+							"query": [
+								{
+									"key": "store",
+									"value": "false",
+									"description": "Si true, sube el PDF a Cloudinary y devuelve URL JSON. Por defecto false: stream inline"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "73"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Payroll PDF (inline)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/pdf"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/pdf/payroll/:id?store=false",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"pdf",
+								"payroll",
+								":id"
+							],
+							"query": [
+								{
+									"key": "store",
+									"value": "false",
+									"description": "Si true, sube el PDF a Cloudinary y devuelve URL JSON. Por defecto false: stream inline"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "68"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Service Invoice PDF (inline)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/pdf"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/pdf/service/:id?store=false",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"pdf",
+								"service",
+								":id"
+							],
+							"query": [
+								{
+									"key": "store",
+									"value": "false",
+									"description": "Si true, sube el PDF a Cloudinary y devuelve URL JSON. Por defecto false: stream inline"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "75"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "General Invoice PDF (inline)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/pdf"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/pdf/general/:id?store=false",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"pdf",
+								"general",
+								":id"
+							],
+							"query": [
+								{
+									"key": "store",
+									"value": "false",
+									"description": "Si true, sube el PDF a Cloudinary y devuelve URL JSON. Por defecto false: stream inline"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "77"
+								}
 							]
 						}
 					},

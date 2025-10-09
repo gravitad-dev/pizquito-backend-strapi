@@ -54,7 +54,8 @@
       "enum": [
         "invoice_employ",
         "invoice_enrollment",
-        "invoice_general"
+        "invoice_general",
+        "invoice_service"
       ]
     },
     "amounts": {

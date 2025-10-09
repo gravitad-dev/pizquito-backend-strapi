@@ -401,6 +401,26 @@ export default {
         "Fecha Presentación",
       ];
       ws.addRow(headers);
+      // Estilos para la fila de títulos (cabecera)
+      const headerRow = ws.getRow(1);
+      headerRow.height = 20;
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true, color: { argb: "FF000000" } };
+        cell.alignment = { vertical: "middle", horizontal: "center" };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFEEEEEE" },
+        }; // gris claro
+        cell.border = {
+          top: { style: "thin", color: { argb: "FFCCCCCC" } },
+          left: { style: "thin", color: { argb: "FFCCCCCC" } },
+          bottom: { style: "thin", color: { argb: "FFCCCCCC" } },
+          right: { style: "thin", color: { argb: "FFCCCCCC" } },
+        };
+      });
+      // Congelar la primera fila para mantener la cabecera visible
+      ws.views = [{ state: "frozen", ySplit: 1 }];
       const today = new Date().toISOString().slice(0, 10);
       (preview.data || []).forEach((r: any) => {
         ws.addRow([
