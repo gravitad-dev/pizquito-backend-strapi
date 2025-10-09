@@ -65,3 +65,50 @@ Feel free to check out the [Strapi GitHub repository](https://github.com/strapi/
 ---
 
 <sub>🤫 Psst! [Strapi is hiring](https://strapi.io/careers).</sub>
+
+## 🧾 Monthly Billing Cron
+
+This project includes an automated monthly billing cron that generates:
+- Student invoices based on active enrollment services
+- Employee payroll invoices based on active contract terms
+
+Location: `config/cron-tasks.ts` (task key: `monthly_billing`)
+
+### Default schedule
+- Runs at 00:00 (midnight) on the configured day of the month
+- Timezone: `Europe/Madrid`
+- Default day: `25` (configurable via environment)
+
+Default rule: `0 0 0 ${CRON_BILLING_DAY || 25} * *`
+
+### Configuration (environment variables)
+- `CRON_BILLING_DAY` (optional): Day of month to run (defaults to `25`)
+- `BILLING_CRON_RULE` (optional): Full cron rule to override the default
+  - Examples:
+    - `0 0 5 25 * *` → run on the 25th at 05:00 (Europe/Madrid)
+    - `0 0 0 1 * *` → run on the 1st at 00:00 (Europe/Madrid)
+    - `* * * * *` → every minute (development testing only)
+
+See examples in `.env.example`, `.env.example.development`, and `.env.example.production`.
+
+### What gets created
+- Enrollment invoices
+  - Only for active enrollments
+  - Aggregates amounts from active `student_service` services with `amount > 0`
+  - Avoids duplicates by checking invoices within the current month window
+- Employee payroll invoices
+  - Only for active employees
+  - Uses the latest contract term:
+    - Monthly: `hourlyRate * workedHours` (or falls back to fixed `hourlyRate`)
+    - Weekly/Biweekly/Daily: `hourlyRate * workedHours` (basic estimate)
+  - Avoids duplicates by checking invoices within the current month window
+
+### Logs
+- On each run, Strapi logs entries like:
+  - `[Cron] Ejecutando facturación mensual (alumnos y nóminas)`
+  - `[Cron] Facturas de alumnos creadas: <n>`
+  - `[Cron] Nóminas de empleados creadas: <n>`
+
+### Testing tips
+- Temporarily set `BILLING_CRON_RULE="* * * * *"` in development to verify creation
+- Revert to the default monthly schedule once tested
