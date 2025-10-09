@@ -1,3 +1,5 @@
+import cronTasks from './cron-tasks';
+
 export default ({ env }) => ({
   host: env("HOST", "0.0.0.0"),
   port: env.int("PORT", 1337),
@@ -7,5 +9,9 @@ export default ({ env }) => ({
   transfer: {
     remote: { enabled: true }, // <- habilita transfer remotas
     token: { salt: env("TRANSFER_TOKEN_SALT") }, // <- usa tu SALT
+  },
+  cron: {
+    enabled: true,
+    tasks: cronTasks as any,
   },
 });

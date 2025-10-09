@@ -1585,7 +1585,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices?sort[0]=title:asc&pagination[page]=1&pagination[pageSize]=10&populate=*",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices?filters[invoiceCategory][$eq]=invoice_employ&sort[0]=title:asc&pagination[page]=1&pagination[pageSize]=10&populate=*",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
@@ -1594,6 +1594,11 @@
 								"invoices"
 							],
 							"query": [
+								{
+									"key": "filters[invoiceCategory][$eq]",
+									"value": "invoice_employ",
+									"description": "Filtrar por categoría (invoice_enrollment, invoice_service, invoice_employ, invoice_general)"
+								},
 								{
 									"key": "sort[0]",
 									"value": "title:asc",
@@ -1630,12 +1635,6 @@
 									"key": "filters[invoiceType][$eq]",
 									"value": "",
 									"description": "Filtrar por tipo de factura (charge, payment, income, expense)",
-									"disabled": true
-								},
-								{
-									"key": "filters[invoiceCategory][$eq]",
-									"value": "",
-									"description": "Filtrar por categoría (invoice_enrollment, invoice_service, invoice_employ)",
 									"disabled": true
 								},
 								{
@@ -2509,7 +2508,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "73"
+									"value": "79"
 								}
 							]
 						}
@@ -2548,7 +2547,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "68"
+									"value": "81"
 								}
 							]
 						}
