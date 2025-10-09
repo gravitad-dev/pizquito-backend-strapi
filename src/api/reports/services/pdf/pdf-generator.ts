@@ -56,7 +56,17 @@ const currency = (n?: number) =>
     currency: "EUR",
   });
 
-const prettyDate = (d?: string) => (d ? new Date(d).toLocaleDateString("es-ES") : "-");
+const prettyDate = (d?: string) =>
+  d ? new Date(d).toLocaleDateString("es-ES") : "-";
+
+// Mes y año en español con capitalización adecuada (Ej.: "Enero 2024")
+const prettyMonthYear = (d?: string) => {
+  if (!d) return "-";
+  const dt = new Date(d);
+  const month = dt.toLocaleDateString("es-ES", { month: "long" });
+  const capMonth = month.charAt(0).toUpperCase() + month.slice(1);
+  return `${capMonth} ${dt.getFullYear()}`;
+};
 
 // Friendly labels (ES)
 const prettyStatus = (s?: string) => {
@@ -67,7 +77,7 @@ const prettyStatus = (s?: string) => {
     canceled: "Cancelada",
     unpaid: "No pagado",
   };
-  return s ? map[s] ?? s : "-";
+  return s ? (map[s] ?? s) : "-";
 };
 
 const prettyCategory = (c?: string) => {
@@ -81,31 +91,104 @@ const prettyCategory = (c?: string) => {
   return map[c] ?? c.replace(/_/g, " ").replace(/\binvoice\b/i, "Factura");
 };
 
-const addHeader = (doc: PDFDocument, company: any, title: string) => {
+// Helpers de UI: métricas de página, títulos de sección y badges
+const pageMetrics = (doc: PDFDocument) => {
+  const left = (doc.page as any).margins?.left ?? 40;
+  const right = doc.page.width - ((doc.page as any).margins?.right ?? 40);
+  const width = right - left;
+  return { left, right, width };
+};
+
+const sectionTitle = (
+  doc: PDFDocument,
+  title: string,
+  x: number,
+  y: number,
+) => {
+  doc.fontSize(16).fillColor("#2F5597").text(title, x, y);
+  const { left, right } = pageMetrics(doc);
+  doc
+    .moveTo(left, y + 22)
+    .lineTo(right, y + 22)
+    .strokeColor("#e0e6ef")
+    .lineWidth(1)
+    .stroke();
+  return y + 28;
+};
+
+const addBadge = (
+  doc: PDFDocument,
+  text: string,
+  x: number,
+  y: number,
+  opts?: { bg?: string; fg?: string },
+) => {
+  const bg = opts?.bg ?? "#EAF2FB";
+  const fg = opts?.fg ?? "#2F5597";
+  const padX = 12;
+  const padY = 6;
+  doc.fontSize(12);
+  const tw = doc.widthOfString(text);
+  const w = tw + padX * 2;
+  const h = 22;
+  doc.save();
+  // rectángulo redondeado tipo chip
+  (doc as any).roundedRect?.(x, y, w, h, 8) ?? doc.rect(x, y, w, h);
+  doc.fill(bg);
+  (doc as any).roundedRect?.(x, y, w, h, 8) ?? doc.rect(x, y, w, h);
+  doc.stroke("#D0E3F7");
+  doc.fillColor(fg).text(text, x + padX, y + padY - 1);
+  doc.restore();
+  return y + h + 10;
+};
+
+const addHeader = (
+  doc: PDFDocument,
+  company: any,
+  title: string,
+  titleBadge?: string,
+) => {
   // Header bar
   doc.rect(0, 0, doc.page.width, 80).fill("#2F5597");
-  doc.fillColor("#ffffff").fontSize(20).text(company?.name || "", 40, 25, {
-    align: "left",
-  });
+  doc
+    .fillColor("#ffffff")
+    .fontSize(20)
+    .text(company?.name || "", 40, 25, {
+      align: "left",
+    });
   doc.fontSize(10).text(`NIF: ${company?.NIF || "-"}`, 40, 50);
   doc.fontSize(10).text(company?.address || "", 40, 65);
 
   // Title
   doc.fillColor("#2F5597").fontSize(26).text(title, 40, 110);
+  if (titleBadge) {
+    // Colocar badge a la par del título
+    const titleWidth = doc.widthOfString(title);
+    const xBadge = 40 + titleWidth + 16;
+    const yBadge = 110; // altura alineada con el título
+    addBadge(doc, titleBadge, xBadge, yBadge, { bg: "#EAF2FB", fg: "#2F5597" });
+  }
 
   // Reset to black for body
   doc.fillColor("#000000");
 };
 
 const addFooter = (doc: PDFDocument) => {
-  const y = doc.page.height - 60;
-  doc.strokeColor("#cccccc").moveTo(40, y).lineTo(doc.page.width - 40, y).stroke();
-  doc.fontSize(9).fillColor("#666666").text("Generado por Pizquito", 40, y + 10, {
-    align: "left",
-  });
-  doc.fillColor("#666666").text(new Date().toLocaleString("es-ES"), 40, y + 10, {
-    align: "right",
-  });
+  // Footer seguro: dibujar sin provocar saltos de página
+  const { left, right } = pageMetrics(doc);
+  const bottomMargin = (doc.page as any).margins?.bottom ?? 40;
+  const y = doc.page.height - bottomMargin - 30;
+  const leftText = "Generado por Pizquito";
+  const rightText = new Date().toLocaleString("es-ES");
+
+  doc.save();
+  doc.strokeColor("#cccccc").moveTo(left, y).lineTo(right, y).stroke();
+  doc.fontSize(9).fillColor("#666666");
+  // Colocar ambos textos en la misma línea, sin lineBreak
+  doc.text(leftText, left, y + 10, { lineBreak: false });
+  const rtWidth = doc.widthOfString(rightText);
+  doc.text(rightText, right - rtWidth, y + 10, { lineBreak: false });
+  doc.restore();
   doc.fillColor("#000000");
 };
 
@@ -118,7 +201,10 @@ const addKeyValue = (
   width = 250,
 ) => {
   doc.fontSize(10).fillColor("#666").text(label, x, y);
-  doc.fontSize(12).fillColor("#000").text(value, x, y + 14, { width });
+  doc
+    .fontSize(12)
+    .fillColor("#000")
+    .text(value, x, y + 14, { width });
 };
 
 const addAmountsTable = (
@@ -126,66 +212,81 @@ const addAmountsTable = (
   amounts: Record<string, number> | null | undefined,
   startY: number,
 ) => {
-  const entries = Object.entries(amounts || {}).filter(([_, v]) => typeof v === "number");
+  const entries = Object.entries(amounts || {}).filter(
+    ([_, v]) => typeof v === "number",
+  );
   const left = (doc.page as any).margins?.left ?? 40;
   const right = doc.page.width - ((doc.page as any).margins?.right ?? 40);
   const tableWidth = right - left; // full usable width inside margins
   const x = left;
   const amountColWidth = 200; // width for the amount column
-  const col2 = right - amountColWidth - 10; // start position for amount text
+  const col2 = right - amountColWidth; // start position for amount text
   let y = startY;
 
   // Header
-  doc.rect(x, y, tableWidth, 24).fill("#eeeeee");
-  doc.fillColor("#000").fontSize(12).text("Concepto", x + 10, y + 6);
-  doc.text("Importe", col2 + 10, y + 6);
-  y += 30;
+  doc.rect(x, y, tableWidth, 26).fill("#eeeeee");
+  doc
+    .fillColor("#000")
+    .fontSize(12)
+    .text("Concepto", x + 10, y + 7);
+  doc.text("Importe", col2 + 10, y + 7);
+  y += 28;
 
   // Helper function to format concept names with special cases
   const formatConceptName = (key: string): string => {
     const specialCases: Record<string, string> = {
-      'subvencion': 'Subvención',
-      'subvencion_comedor': 'Subvención Comedor',
-      'beca': 'Beca',
-      'descuento': 'Descuento',
-      'comedor': 'Comedor',
-      'matricula': 'Matrícula',
-      'transporte': 'Transporte',
-      'material': 'Material',
+      subvencion: "Subvención",
+      subvencion_comedor: "Subvención Comedor",
+      beca: "Beca",
+      descuento: "Descuento",
+      comedor: "Comedor",
+      matricula: "Matrícula",
+      transporte: "Transporte",
+      material: "Material",
     };
-    
-    const normalized = key.toLowerCase().replace(/_/g, '_');
+
+    const normalized = key.toLowerCase().replace(/_/g, "_");
     if (specialCases[normalized]) {
       return specialCases[normalized];
     }
-    
+
     // Default transformation - capitalizar cada palabra correctamente
     return key
       .replace(/_/g, " ")
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
   };
 
   // Helper function to check if a concept should be subtracted
   const isSubtractionConcept = (key: string): boolean => {
-    const subtractionKeywords = ['subvencion', 'beca', 'descuento', 'ayuda', 'rebaja', 'bonificacion'];
+    const subtractionKeywords = [
+      "subvencion",
+      "beca",
+      "descuento",
+      "ayuda",
+      "rebaja",
+      "bonificacion",
+    ];
     const normalized = key.toLowerCase();
-    return subtractionKeywords.some(keyword => normalized.includes(keyword));
+    return subtractionKeywords.some((keyword) => normalized.includes(keyword));
   };
 
   // Rows
   entries.forEach(([k, v], i) => {
     if (i % 2 === 0) {
-      doc.rect(x, y - 6, tableWidth, 24).fill("#f8f8f8");
+      doc.rect(x, y, tableWidth, 24).fill("#f8f8f8");
       doc.fillColor("#000");
     }
     const label = formatConceptName(k);
     // Si es un concepto de descuento/subvención, convertir a negativo para restar
     const displayValue = isSubtractionConcept(k) ? -Math.abs(v) : v;
-    
-    doc.fontSize(11).text(label, x + 10, y);
-    doc.text(currency(displayValue), col2 + 10, y, { width: amountColWidth, align: "right" });
+
+    doc.fontSize(11).text(label, x + 10, y + 6);
+    doc.text(currency(displayValue), col2 + 10, y + 6, {
+      width: amountColWidth - 20,
+      align: "right",
+    });
     y += 24;
   });
 
@@ -195,17 +296,28 @@ const addAmountsTable = (
 const bufferFromDoc = (doc: PDFDocument) =>
   new Promise<Buffer>((resolve) => {
     const chunks: Buffer[] = [];
-    doc.on("data", (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+    doc.on("data", (chunk) =>
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)),
+    );
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.end();
   });
 
-const uploadBufferAsFile = async (buf: Buffer, fileName: string, mime = "application/pdf") => {
-  const tmpFilePath = path.join(os.tmpdir(), `upload-${Date.now()}-${fileName}`);
+const uploadBufferAsFile = async (
+  buf: Buffer,
+  fileName: string,
+  mime = "application/pdf",
+) => {
+  const tmpFilePath = path.join(
+    os.tmpdir(),
+    `upload-${Date.now()}-${fileName}`,
+  );
   await fs.promises.writeFile(tmpFilePath, buf);
   let uploaded;
   try {
-    const uploadService = (global as any).strapi.plugin("upload").service("upload");
+    const uploadService = (global as any).strapi
+      .plugin("upload")
+      .service("upload");
     [uploaded] = await uploadService.upload({
       files: {
         filepath: tmpFilePath,
@@ -238,7 +350,14 @@ export default {
     }
 
     const doc = new PDFDocument({ size: "A4", margin: 40 });
-    addHeader(doc, company, inv.invoiceCategory === "invoice_employ" ? "Nómina" : "Factura");
+    const mainTitle =
+      inv.invoiceCategory === "invoice_employ" ? "Nómina" : "Factura";
+    const titleBadge =
+      inv.invoiceCategory === "invoice_employ" ||
+      inv.invoiceCategory === "invoice_enrollment"
+        ? prettyMonthYear(inv.emissionDate)
+        : undefined;
+    addHeader(doc, company, mainTitle, titleBadge);
 
     // Meta block
     let y = 150;
@@ -252,28 +371,48 @@ export default {
     // Subject details
     if (inv.invoiceCategory === "invoice_enrollment") {
       const student = inv.enrollment?.student;
-      doc.fontSize(16).fillColor("#2F5597").text("Alumno", 40, y);
+      y = sectionTitle(doc, "Alumno", 40, y);
       doc.fillColor("#000");
-      y += 24;
-      addKeyValue(doc, "Nombre", `${student?.name || ""} ${student?.lastname || ""}`, 40, y);
+      addKeyValue(
+        doc,
+        "Nombre",
+        `${student?.name || ""} ${student?.lastname || ""}`,
+        40,
+        y,
+      );
       addKeyValue(doc, "DNI", student?.dni || student?.DNI || "-", 300, y);
       y += 40;
+
+      // Periodo se muestra junto al título en el encabezado
     } else if (inv.invoiceCategory === "invoice_employ") {
       const emp = inv.employee;
-      doc.fontSize(16).fillColor("#2F5597").text("Empleado", 40, y);
+      y = sectionTitle(doc, "Empleado", 40, y);
       doc.fillColor("#000");
-      y += 24;
-      addKeyValue(doc, "Nombre", `${emp?.name || ""} ${emp?.lastname || ""}`, 40, y);
+      addKeyValue(
+        doc,
+        "Nombre",
+        `${emp?.name || ""} ${emp?.lastname || ""}`,
+        40,
+        y,
+      );
       addKeyValue(doc, "DNI", emp?.DNI || "-", 300, y);
       y += 40;
+
+      // Periodo se muestra junto al título en el encabezado
     }
 
     // Amounts table
     y = addAmountsTable(doc, inv.amounts || {}, y + 10);
 
     // Totals
-    doc.fontSize(12).fillColor("#000").text(`IVA: ${currency(inv.IVA)}`, 40, y + 10);
-    doc.fontSize(16).fillColor("#000").text(`Total: ${currency(inv.total)}`, 300, y + 6, { align: "right" });
+    doc
+      .fontSize(12)
+      .fillColor("#000")
+      .text(`IVA: ${currency(inv.IVA)}`, 40, y + 10);
+    doc
+      .fontSize(16)
+      .fillColor("#000")
+      .text(`Total: ${currency(inv.total)}`, 300, y + 6, { align: "right" });
 
     addFooter(doc);
 
@@ -296,11 +435,22 @@ export default {
     const company = await fetchCompany();
     const inv = await fetchInvoice(id);
     if (!inv) {
-      return { buffer: null, fileName: null, message: `Invoice ${id} not found` };
+      return {
+        buffer: null,
+        fileName: null,
+        message: `Invoice ${id} not found`,
+      };
     }
 
     const doc = new PDFDocument({ size: "A4", margin: 40 });
-    addHeader(doc, company, inv.invoiceCategory === "invoice_employ" ? "Nómina" : "Factura");
+    const mainTitle =
+      inv.invoiceCategory === "invoice_employ" ? "Nómina" : "Factura";
+    const titleBadge =
+      inv.invoiceCategory === "invoice_employ" ||
+      inv.invoiceCategory === "invoice_enrollment"
+        ? prettyMonthYear(inv.emissionDate)
+        : undefined;
+    addHeader(doc, company, mainTitle, titleBadge);
 
     // Meta block
     let y = 150;
@@ -314,33 +464,57 @@ export default {
     // Subject details
     if (inv.invoiceCategory === "invoice_enrollment") {
       const student = inv.enrollment?.student;
-      doc.fontSize(16).fillColor("#2F5597").text("Alumno", 40, y);
+      y = sectionTitle(doc, "Alumno", 40, y);
       doc.fillColor("#000");
-      y += 24;
-      addKeyValue(doc, "Nombre", `${student?.name || ""} ${student?.lastname || ""}`, 40, y);
+      addKeyValue(
+        doc,
+        "Nombre",
+        `${student?.name || ""} ${student?.lastname || ""}`,
+        40,
+        y,
+      );
       addKeyValue(doc, "DNI", student?.dni || student?.DNI || "-", 300, y);
       y += 40;
+
+      // Periodo se muestra junto al título en el encabezado
     } else if (inv.invoiceCategory === "invoice_employ") {
       const emp = inv.employee;
-      doc.fontSize(16).fillColor("#2F5597").text("Empleado", 40, y);
+      y = sectionTitle(doc, "Empleado", 40, y);
       doc.fillColor("#000");
-      y += 24;
-      addKeyValue(doc, "Nombre", `${emp?.name || ""} ${emp?.lastname || ""}`, 40, y);
+      addKeyValue(
+        doc,
+        "Nombre",
+        `${emp?.name || ""} ${emp?.lastname || ""}`,
+        40,
+        y,
+      );
       addKeyValue(doc, "DNI", emp?.DNI || "-", 300, y);
       y += 40;
+
+      // Periodo se muestra junto al título en el encabezado
     }
 
     // Amounts table
     y = addAmountsTable(doc, inv.amounts || {}, y + 10);
 
     // Totals
-    doc.fontSize(12).fillColor("#000").text(`IVA: ${currency(inv.IVA)}`, 40, y + 10);
-    doc.fontSize(16).fillColor("#000").text(`Total: ${currency(inv.total)}`, 300, y + 6, { align: "right" });
+    doc
+      .fontSize(12)
+      .fillColor("#000")
+      .text(`IVA: ${currency(inv.IVA)}`, 40, y + 10);
+    doc
+      .fontSize(16)
+      .fillColor("#000")
+      .text(`Total: ${currency(inv.total)}`, 300, y + 6, { align: "right" });
 
     addFooter(doc);
 
     const buf = await bufferFromDoc(doc);
     const fileName = `${inv.invoiceCategory === "invoice_employ" ? "nomina" : "factura"}_${inv.uid || inv.id}.pdf`;
-    return { buffer: buf, fileName, meta: { invoiceId: inv.id, category: inv.invoiceCategory } };
+    return {
+      buffer: buf,
+      fileName,
+      meta: { invoiceId: inv.id, category: inv.invoiceCategory },
+    };
   },
 };
