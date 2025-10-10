@@ -688,6 +688,44 @@ export interface ApiGuardianGuardian extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiHistoryHistory extends Struct.CollectionTypeSchema {
+  collectionName: 'histories';
+  info: {
+    displayName: 'History';
+    pluralName: 'histories';
+    singularName: 'history';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    duration_ms: Schema.Attribute.String;
+    event_type: Schema.Attribute.String;
+    level: Schema.Attribute.Enumeration<['INFO', 'WARN', 'ERROR', 'DEBUG']>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::history.history'
+    > &
+      Schema.Attribute.Private;
+    message: Schema.Attribute.Text;
+    module: Schema.Attribute.String;
+    payload: Schema.Attribute.JSON;
+    publishedAt: Schema.Attribute.DateTime;
+    status_code: Schema.Attribute.String;
+    timestamp: Schema.Attribute.DateTime;
+    title: Schema.Attribute.String;
+    trace_id: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user_id: Schema.Attribute.String;
+  };
+}
+
 export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
   collectionName: 'invoices';
   info: {
@@ -1478,6 +1516,7 @@ declare module '@strapi/strapi' {
       'api::enrollment.enrollment': ApiEnrollmentEnrollment;
       'api::global.global': ApiGlobalGlobal;
       'api::guardian.guardian': ApiGuardianGuardian;
+      'api::history.history': ApiHistoryHistory;
       'api::invoice.invoice': ApiInvoiceInvoice;
       'api::observation.observation': ApiObservationObservation;
       'api::promotion.promotion': ApiPromotionPromotion;

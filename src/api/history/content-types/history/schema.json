@@ -1,0 +1,54 @@
+{
+  "kind": "collectionType",
+  "collectionName": "histories",
+  "info": {
+    "singularName": "history",
+    "pluralName": "histories",
+    "displayName": "History"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "message": {
+      "type": "text"
+    },
+    "trace_id": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "datetime"
+    },
+    "module": {
+      "type": "string"
+    },
+    "event_type": {
+      "type": "string"
+    },
+    "level": {
+      "type": "enumeration",
+      "enum": [
+        "INFO",
+        "WARN",
+        "ERROR",
+        "DEBUG"
+      ]
+    },
+    "status_code": {
+      "type": "string"
+    },
+    "duration_ms": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "json"
+    }
+  }
+}
