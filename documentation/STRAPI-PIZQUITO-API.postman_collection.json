@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "047ca8aa-9336-4774-9f92-1ea43591a19e",
+		"_postman_id": "918282b5-37e0-48a2-bcb0-971f1fb853b6",
 		"name": "STRAPI-PIZQUITO-API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "43592215"
@@ -61,104 +61,6 @@
 								"auth",
 								"local",
 								"register"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "List Enrollments",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
-						],
-						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices/enrollments?populate=*",
-							"host": [
-								"{{STRAPI_URL_LOCAL}}"
-							],
-							"path": [
-								"api",
-								"invoices",
-								"enrollments"
-							],
-							"query": [
-								{
-									"key": "populate",
-									"value": "*",
-									"description": "Poblar todas las relaciones (enrollment, student)"
-								},
-								{
-									"key": "filters[invoiceStatus][$eq]",
-									"value": "",
-									"description": "Filtrar por estado (unpaid, inprocess, paid, canceled)",
-									"disabled": true
-								},
-								{
-									"key": "filters[emissionDate][$gte]",
-									"value": "",
-									"description": "Filtrar por fecha de emisión mayor o igual (YYYY-MM-DD)",
-									"disabled": true
-								},
-								{
-									"key": "filters[emissionDate][$lte]",
-									"value": "",
-									"description": "Filtrar por fecha de emisión menor o igual (YYYY-MM-DD)",
-									"disabled": true
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "List Payrolls",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
-						],
-						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices/payrolls?populate=*",
-							"host": [
-								"{{STRAPI_URL_LOCAL}}"
-							],
-							"path": [
-								"api",
-								"invoices",
-								"payrolls"
-							],
-							"query": [
-								{
-									"key": "populate",
-									"value": "*",
-									"description": "Poblar todas las relaciones (employee)"
-								},
-								{
-									"key": "filters[invoiceStatus][$eq]",
-									"value": "",
-									"description": "Filtrar por estado (unpaid, inprocess, paid, canceled)",
-									"disabled": true
-								},
-								{
-									"key": "filters[emissionDate][$gte]",
-									"value": "",
-									"description": "Filtrar por fecha de emisión mayor o igual (YYYY-MM-DD)",
-									"disabled": true
-								},
-								{
-									"key": "filters[emissionDate][$lte]",
-									"value": "",
-									"description": "Filtrar por fecha de emisión menor o igual (YYYY-MM-DD)",
-									"disabled": true
-								}
 							]
 						}
 					},
@@ -473,6 +375,96 @@
 								"18"
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete All Files (Bulk)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/upload/files",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"upload",
+								"files"
+							]
+						},
+						"description": "Borra TODOS los archivos registrados (base de datos y provider). Usa con extremo cuidado. Requiere Admin API Token."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Files (Scoped)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "files",
+									"description": "Archivo(s) a subir (puede ser múltiple).",
+									"type": "file",
+									"src": "/C:/Users/Benja/Documents/documento de prueba.pdf"
+								},
+								{
+									"key": "scope",
+									"value": "guardian",
+									"description": "Enum: user, student, guardian, employee, company, classroom, enrollment, history, observation, promotion, school-period, service, invoice, report.",
+									"type": "text"
+								},
+								{
+									"key": "docId",
+									"value": "x9396ccntibi2b3lfc8o7nc8",
+									"description": "Identificador para carpeta por documento (p.ej. DNI/ID interno). Si no se envía y hay refId, se usa refId.",
+									"type": "text"
+								},
+								{
+									"key": "ref",
+									"value": "api::student.student",
+									"description": "Opcional: content-type para asociar media (comportamiento nativo de Strapi).",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "refId",
+									"value": "11",
+									"description": "Opcional: id de la entrada para asociar media. También puede servir como docId si no se envía docId.",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/upload/files/scoped",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"upload",
+								"files",
+								"scoped"
+							]
+						},
+						"description": "Sube archivos organizándolos por carpeta según scope y docId. Reglas: invoice → invoices/YYYY/MM; report(s) → reports/YYYY/MM/DD; otros → {scope}/{docId} o {scope}/misc/YYYY/MM/DD si no hay docId."
 					},
 					"response": []
 				}
@@ -2388,6 +2380,210 @@
 			]
 		},
 		{
+			"name": "HISTORIES",
+			"item": [
+				{
+					"name": "List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/histories?sort[0]=timestamp:desc&pagination[page]=1&pagination[pageSize]=10&populate=*",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"histories"
+							],
+							"query": [
+								{
+									"key": "sort[0]",
+									"value": "timestamp:desc",
+									"description": "Order by timestamp desc"
+								},
+								{
+									"key": "pagination[page]",
+									"value": "1",
+									"description": "Page number"
+								},
+								{
+									"key": "pagination[pageSize]",
+									"value": "10",
+									"description": "Items per page (max 100)"
+								},
+								{
+									"key": "populate",
+									"value": "*",
+									"description": "Populate relations (if any)"
+								},
+								{
+									"key": "filters[level][$eq]",
+									"value": "",
+									"description": "Filter by level (INFO, WARN, ERROR, DEBUG)",
+									"disabled": true
+								},
+								{
+									"key": "filters[event_type][$containsi]",
+									"value": "",
+									"description": "Filter by event type (contains, case-insensitive)",
+									"disabled": true
+								},
+								{
+									"key": "filters[module][$containsi]",
+									"value": "",
+									"description": "Filter by module (contains, case-insensitive)",
+									"disabled": true
+								},
+								{
+									"key": "filters[trace_id][$eq]",
+									"value": "",
+									"description": "Filter by trace_id (exact)",
+									"disabled": true
+								},
+								{
+									"key": "filters[status_code][$eq]",
+									"value": "",
+									"description": "Filter by status_code (exact)",
+									"disabled": true
+								},
+								{
+									"key": "filters[timestamp][$gte]",
+									"value": "",
+									"description": "Filter timestamp greater or equal (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "filters[timestamp][$lte]",
+									"value": "",
+									"description": "Filter timestamp less or equal (YYYY-MM-DD)",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get By documentID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/histories/:documentID?populate=*",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"histories",
+								":documentID"
+							],
+							"query": [
+								{
+									"key": "populate",
+									"value": "*"
+								}
+							],
+							"variable": [
+								{
+									"key": "documentID",
+									"value": "xxxxxxxxxxxxxxxxxxxxxxxx"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"title\": \"User login\",\n    \"message\": \"User logged in successfully.\",\n    \"trace_id\": \"trace-123\",\n    \"timestamp\": \"2025-10-09T00:00:00.000Z\",\n    \"module\": \"auth\",\n    \"event_type\": \"login\",\n    \"level\": \"INFO\",\n    \"status_code\": \"200\",\n    \"duration_ms\": \"35\",\n    \"user_id\": \"user-1\",\n    \"payload\": { \"ip\": \"127.0.0.1\" }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/histories",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"histories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update by documentID",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": { \"message\": \"Updated message\" }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/histories/:documentID",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"histories",
+								":documentID"
+							],
+							"variable": [
+								{
+									"key": "documentID",
+									"value": "xxxxxxxxxxxxxxxxxxxxxxxx"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete by documentID",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/histories/:documentID",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"histories",
+								":documentID"
+							],
+							"variable": [
+								{
+									"key": "documentID",
+									"value": "xxxxxxxxxxxxxxxxxxxxxxxx"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "FISCAL REPORT",
 			"item": [
 				{
@@ -2466,141 +2662,6 @@
 								"reports",
 								"233",
 								"generate"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "HISTORIES",
-			"item": [
-				{
-					"name": "List",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/histories?sort[0]=timestamp:desc&pagination[page]=1&pagination[pageSize]=10&populate=*",
-							"host": [
-								"{{STRAPI_URL_LOCAL}}"
-							],
-							"path": [
-								"api",
-								"histories"
-							],
-							"query": [
-								{ "key": "sort[0]", "value": "timestamp:desc", "description": "Order by timestamp desc" },
-								{ "key": "pagination[page]", "value": "1", "description": "Page number" },
-								{ "key": "pagination[pageSize]", "value": "10", "description": "Items per page (max 100)" },
-								{ "key": "populate", "value": "*", "description": "Populate relations (if any)" },
-								{ "key": "filters[level][$eq]", "value": "", "description": "Filter by level (INFO, WARN, ERROR, DEBUG)", "disabled": true },
-								{ "key": "filters[event_type][$containsi]", "value": "", "description": "Filter by event type (contains, case-insensitive)", "disabled": true },
-								{ "key": "filters[module][$containsi]", "value": "", "description": "Filter by module (contains, case-insensitive)", "disabled": true },
-								{ "key": "filters[trace_id][$eq]", "value": "", "description": "Filter by trace_id (exact)", "disabled": true },
-								{ "key": "filters[status_code][$eq]", "value": "", "description": "Filter by status_code (exact)", "disabled": true },
-								{ "key": "filters[timestamp][$gte]", "value": "", "description": "Filter timestamp greater or equal (YYYY-MM-DD)", "disabled": true },
-								{ "key": "filters[timestamp][$lte]", "value": "", "description": "Filter timestamp less or equal (YYYY-MM-DD)", "disabled": true }
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get By documentID",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/histories/:documentID?populate=*",
-							"host": [
-								"{{STRAPI_URL_LOCAL}}"
-							],
-							"path": [
-								"api",
-								"histories",
-								":documentID"
-							],
-							"query": [
-								{ "key": "populate", "value": "*" }
-							],
-							"variable": [
-								{ "key": "documentID", "value": "xxxxxxxxxxxxxxxxxxxxxxxx" }
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Create",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Content-Type", "value": "application/json" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"data\": {\n    \"title\": \"User login\",\n    \"message\": \"User logged in successfully.\",\n    \"trace_id\": \"trace-123\",\n    \"timestamp\": \"2025-10-09T00:00:00.000Z\",\n    \"module\": \"auth\",\n    \"event_type\": \"login\",\n    \"level\": \"INFO\",\n    \"status_code\": \"200\",\n    \"duration_ms\": \"35\",\n    \"user_id\": \"user-1\",\n    \"payload\": { \"ip\": \"127.0.0.1\" }\n  }\n}"
-						},
-						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/histories",
-							"host": [
-								"{{STRAPI_URL_LOCAL}}"
-							],
-							"path": [
-								"api",
-								"histories"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Update by documentID",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{ "key": "Content-Type", "value": "application/json" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"data\": { \"message\": \"Updated message\" }\n}"
-						},
-						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/histories/:documentID",
-							"host": [
-								"{{STRAPI_URL_LOCAL}}"
-							],
-							"path": [
-								"api",
-								"histories",
-								":documentID"
-							],
-							"variable": [
-								{ "key": "documentID", "value": "xxxxxxxxxxxxxxxxxxxxxxxx" }
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Delete by documentID",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/histories/:documentID",
-							"host": [
-								"{{STRAPI_URL_LOCAL}}"
-							],
-							"path": [
-								"api",
-								"histories",
-								":documentID"
-							],
-							"variable": [
-								{ "key": "documentID", "value": "xxxxxxxxxxxxxxxxxxxxxxxx" }
 							]
 						}
 					},

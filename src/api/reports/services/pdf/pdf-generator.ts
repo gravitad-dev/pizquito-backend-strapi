@@ -306,6 +306,7 @@ const bufferFromDoc = (doc: PDFDocument) =>
 const uploadBufferAsFile = async (
   buf: Buffer,
   fileName: string,
+  folder: string,
   mime = "application/pdf",
 ) => {
   const tmpFilePath = path.join(
@@ -313,32 +314,56 @@ const uploadBufferAsFile = async (
     `upload-${Date.now()}-${fileName}`,
   );
   await fs.promises.writeFile(tmpFilePath, buf);
-  let uploaded;
+
   try {
-    const uploadService = (global as any).strapi
-      .plugin("upload")
-      .service("upload");
-    [uploaded] = await uploadService.upload({
-      files: {
-        filepath: tmpFilePath,
-        originalFilename: fileName,
-        mimetype: mime,
-        size: buf.length,
-      },
-      data: {
-        fileInfo: {
-          name: fileName,
-          caption: fileName,
-          alternativeText: fileName,
-        },
-      },
+    const cloudinary = require("cloudinary").v2;
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_NAME,
+      api_key: process.env.CLOUDINARY_KEY,
+      api_secret: process.env.CLOUDINARY_SECRET,
     });
+
+    const uploadResult = await cloudinary.uploader.upload(tmpFilePath, {
+      folder,
+      resource_type: "auto",
+      use_filename: true,
+      unique_filename: true,
+      filename_override: fileName,
+    });
+
+    const sizeKB = parseFloat(((buf.length || 0) / 1024).toFixed(2));
+    const ext = ".pdf";
+    const fileData = {
+      name: fileName,
+      alternativeText: null,
+      caption: null,
+      width: uploadResult.width || null,
+      height: uploadResult.height || null,
+      formats: null,
+      hash: (uploadResult.public_id || "").split("/").pop() || undefined,
+      ext,
+      mime,
+      size: sizeKB,
+      url: uploadResult.secure_url || uploadResult.url,
+      previewUrl: null,
+      provider: "cloudinary",
+      provider_metadata: {
+        public_id: uploadResult.public_id,
+        resource_type: uploadResult.resource_type,
+      },
+      folderPath: folder,
+    } as any;
+
+    const savedFile = await (global as any).strapi.entityService.create(
+      "plugin::upload.file",
+      { data: fileData },
+    );
+    return savedFile;
   } finally {
     try {
       await fs.promises.unlink(tmpFilePath);
     } catch {}
   }
-  return uploaded;
 };
 
 export default {
@@ -418,7 +443,12 @@ export default {
 
     const buf = await bufferFromDoc(doc);
     const fileName = `${inv.invoiceCategory === "invoice_employ" ? "nomina" : "factura"}_${inv.uid || inv.id}.pdf`;
-    const uploaded = await uploadBufferAsFile(buf, fileName);
+    const base = process.env.CLOUDINARY_BASE_FOLDER || "Strapi/pizquito";
+    const date = inv.emissionDate ? new Date(inv.emissionDate) : new Date();
+    const YYYY = String(date.getFullYear());
+    const MM = String(date.getMonth() + 1).padStart(2, "0");
+    const folder = `${base}/invoices/${YYYY}/${MM}`;
+    const uploaded = await uploadBufferAsFile(buf, fileName, folder);
 
     return {
       stored: true,
@@ -426,6 +456,7 @@ export default {
       cloudinary: uploaded?.provider_metadata || null,
       meta: {
         fileName,
+        folder,
         invoiceId: inv.id,
         category: inv.invoiceCategory,
       },

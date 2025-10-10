@@ -455,26 +455,57 @@ export default {
         `upload-${Date.now()}-${fileName}`,
       );
       await fs.promises.writeFile(tmpFilePath, buf);
-      let uploaded;
+      // Subir con SDK de Cloudinary usando carpeta específica reports/233/YYYY/MM
+      const base = process.env.CLOUDINARY_BASE_FOLDER || "Strapi/pizquito";
+      const date = new Date();
+      const YYYY = String(date.getFullYear());
+      const MM = String(date.getMonth() + 1).padStart(2, "0");
+      const folder = `${base}/reports/233/${YYYY}/${MM}`;
+
+      let savedFile;
       try {
-        const uploadService = (global as any).strapi
-          .plugin("upload")
-          .service("upload");
-        [uploaded] = await uploadService.upload({
-          files: {
-            filepath: tmpFilePath,
-            originalFilename: fileName,
-            mimetype: mime,
-            size: buf.length,
-          },
-          data: {
-            fileInfo: {
-              name: fileName,
-              caption: fileName,
-              alternativeText: fileName,
-            },
-          },
+        const cloudinary = require("cloudinary").v2;
+        cloudinary.config({
+          cloud_name: process.env.CLOUDINARY_NAME,
+          api_key: process.env.CLOUDINARY_KEY,
+          api_secret: process.env.CLOUDINARY_SECRET,
         });
+
+        const uploadResult = await cloudinary.uploader.upload(tmpFilePath, {
+          folder,
+          resource_type: "auto",
+          use_filename: true,
+          unique_filename: true,
+          filename_override: fileName,
+        });
+
+        const sizeKB = parseFloat(((buf.length || 0) / 1024).toFixed(2));
+        const ext = ".xlsx";
+        const fileData = {
+          name: fileName,
+          alternativeText: null,
+          caption: null,
+          width: uploadResult.width || null,
+          height: uploadResult.height || null,
+          formats: null,
+          hash: (uploadResult.public_id || "").split("/").pop() || undefined,
+          ext,
+          mime,
+          size: sizeKB,
+          url: uploadResult.secure_url || uploadResult.url,
+          previewUrl: null,
+          provider: "cloudinary",
+          provider_metadata: {
+            public_id: uploadResult.public_id,
+            resource_type: uploadResult.resource_type,
+          },
+          folderPath: folder,
+        } as any;
+
+        savedFile = await (global as any).strapi.entityService.create(
+          "plugin::upload.file",
+          { data: fileData },
+        );
       } finally {
         // Limpiar archivo temporal
         try {
@@ -484,8 +515,8 @@ export default {
 
       return {
         stored: true,
-        cloudinary: uploaded?.provider_metadata || null,
-        url: uploaded?.url || null,
+        cloudinary: savedFile?.provider_metadata || null,
+        url: savedFile?.url || null,
         meta: {
           year,
           quarter,
@@ -493,6 +524,7 @@ export default {
           centerCode,
           declarantNIF: preview.meta?.declarantNIF,
           format: "xlsx",
+          folder,
         },
       };
     }

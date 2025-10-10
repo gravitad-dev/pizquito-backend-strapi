@@ -1,53 +1,52 @@
 // config/plugins/upload.js
 module.exports = ({ env }) => {
-  const CLOUDINARY_NAME = env("CLOUDINARY_NAME", "");
-  const CLOUDINARY_KEY = env("CLOUDINARY_KEY", "");
-  const CLOUDINARY_SECRET = env("CLOUDINARY_SECRET", "");
-
-  if (!CLOUDINARY_NAME || !CLOUDINARY_KEY || !CLOUDINARY_SECRET) {
-    // Fallar rápido con mensaje claro
-    throw new Error(
-      "[Config error] Cloudinary env vars missing. Please set CLOUDINARY_NAME, CLOUDINARY_KEY and CLOUDINARY_SECRET.",
-    );
-  }
-
   return {
     upload: {
       config: {
         provider: "cloudinary",
         providerOptions: {
-          cloud_name: CLOUDINARY_NAME,
-          api_key: CLOUDINARY_KEY,
-          api_secret: CLOUDINARY_SECRET,
+          cloud_name: env("CLOUDINARY_NAME"),
+          api_key: env("CLOUDINARY_KEY"),
+          api_secret: env("CLOUDINARY_SECRET"),
         },
+
+        // Deshabilitar completamente optimizaciones locales para evitar EBUSY en Windows
+        breakpoints: {},
+        sizeOptimization: false,
+        responsiveDimensions: false,
+        autoOrientation: false,
+        
+        // Configuración adicional para evitar procesamiento local
+        optimization: {
+          enabled: false,
+        },
+        
+        // Evitar generación de thumbnails y formatos adicionales
+        generateThumbnails: false,
+        generateFormats: false,
+
         actionOptions: {
-          upload: {
-            // ejemplo: carpeta por dia en un solo slug YYYY_MM_DD
-            folder: (() => {
-              const now = new Date();
-              const yyyy = now.getFullYear();
-              const mm = String(now.getMonth() + 1).padStart(2, "0");
-              const dd = String(now.getDate()).padStart(2, "0");
-              return `Strapi/pizquito/files/${yyyy}_${mm}_${dd}`;
-            })(),
+          upload: { 
             resource_type: "auto",
             use_filename: true,
             unique_filename: true,
           },
-          uploadStream: {
-            folder: (() => {
-              const now = new Date();
-              const yyyy = now.getFullYear();
-              const mm = String(now.getMonth() + 1).padStart(2, "0");
-              const dd = String(now.getDate()).padStart(2, "0");
-              return `Strapi/pizquito/files/${yyyy}_${mm}_${dd}`;
-            })(),
+          uploadStream: { 
             resource_type: "auto",
             use_filename: true,
             unique_filename: true,
           },
           delete: {},
         },
+        
+        // Configuración específica para evitar archivos temporales
+        localServer: {
+          maxage: 0,
+        },
+        
+        // Deshabilitar completamente el procesamiento local
+        skipLocalProcessing: true,
+        disableLocalOptimization: true,
       },
     },
   };
