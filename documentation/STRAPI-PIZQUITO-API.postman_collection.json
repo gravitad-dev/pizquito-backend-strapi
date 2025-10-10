@@ -2474,6 +2474,141 @@
 			]
 		},
 		{
+			"name": "HISTORIES",
+			"item": [
+				{
+					"name": "List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/histories?sort[0]=timestamp:desc&pagination[page]=1&pagination[pageSize]=10&populate=*",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"histories"
+							],
+							"query": [
+								{ "key": "sort[0]", "value": "timestamp:desc", "description": "Order by timestamp desc" },
+								{ "key": "pagination[page]", "value": "1", "description": "Page number" },
+								{ "key": "pagination[pageSize]", "value": "10", "description": "Items per page (max 100)" },
+								{ "key": "populate", "value": "*", "description": "Populate relations (if any)" },
+								{ "key": "filters[level][$eq]", "value": "", "description": "Filter by level (INFO, WARN, ERROR, DEBUG)", "disabled": true },
+								{ "key": "filters[event_type][$containsi]", "value": "", "description": "Filter by event type (contains, case-insensitive)", "disabled": true },
+								{ "key": "filters[module][$containsi]", "value": "", "description": "Filter by module (contains, case-insensitive)", "disabled": true },
+								{ "key": "filters[trace_id][$eq]", "value": "", "description": "Filter by trace_id (exact)", "disabled": true },
+								{ "key": "filters[status_code][$eq]", "value": "", "description": "Filter by status_code (exact)", "disabled": true },
+								{ "key": "filters[timestamp][$gte]", "value": "", "description": "Filter timestamp greater or equal (YYYY-MM-DD)", "disabled": true },
+								{ "key": "filters[timestamp][$lte]", "value": "", "description": "Filter timestamp less or equal (YYYY-MM-DD)", "disabled": true }
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get By documentID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/histories/:documentID?populate=*",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"histories",
+								":documentID"
+							],
+							"query": [
+								{ "key": "populate", "value": "*" }
+							],
+							"variable": [
+								{ "key": "documentID", "value": "xxxxxxxxxxxxxxxxxxxxxxxx" }
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"title\": \"User login\",\n    \"message\": \"User logged in successfully.\",\n    \"trace_id\": \"trace-123\",\n    \"timestamp\": \"2025-10-09T00:00:00.000Z\",\n    \"module\": \"auth\",\n    \"event_type\": \"login\",\n    \"level\": \"INFO\",\n    \"status_code\": \"200\",\n    \"duration_ms\": \"35\",\n    \"user_id\": \"user-1\",\n    \"payload\": { \"ip\": \"127.0.0.1\" }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/histories",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"histories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update by documentID",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": { \"message\": \"Updated message\" }\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/histories/:documentID",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"histories",
+								":documentID"
+							],
+							"variable": [
+								{ "key": "documentID", "value": "xxxxxxxxxxxxxxxxxxxxxxxx" }
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete by documentID",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/histories/:documentID",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"histories",
+								":documentID"
+							],
+							"variable": [
+								{ "key": "documentID", "value": "xxxxxxxxxxxxxxxxxxxxxxxx" }
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "PDF REPORTS",
 			"item": [
 				{
