@@ -17,13 +17,13 @@
     "code": {
       "type": "string"
     },
-    "address": {
-      "type": "boolean"
-    },
     "NIF": {
       "type": "string",
       "required": true,
       "unique": true
+    },
+    "address": {
+      "type": "string"
     }
   }
 }
