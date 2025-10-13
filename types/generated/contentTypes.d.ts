@@ -391,7 +391,7 @@ export interface ApiClassroomClassroom extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     description: Schema.Attribute.Text;
-    employee: Schema.Attribute.Relation<'oneToOne', 'api::employee.employee'>;
+    employee: Schema.Attribute.Relation<'manyToOne', 'api::employee.employee'>;
     enrollments: Schema.Attribute.Relation<
       'oneToMany',
       'api::enrollment.enrollment'
@@ -462,13 +462,11 @@ export interface ApiEmployeeEmployee extends Struct.CollectionTypeSchema {
   attributes: {
     additionalAmount: Schema.Attribute.JSON;
     address: Schema.Attribute.String;
-    BIC: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
+    BIC: Schema.Attribute.String & Schema.Attribute.Required;
     birthdate: Schema.Attribute.Date;
     city: Schema.Attribute.String;
-    classroom: Schema.Attribute.Relation<
-      'oneToOne',
+    classrooms: Schema.Attribute.Relation<
+      'oneToMany',
       'api::classroom.classroom'
     >;
     country: Schema.Attribute.String;
@@ -525,9 +523,7 @@ export interface ApiEmployeeEmployee extends Struct.CollectionTypeSchema {
         'chef',
       ]
     >;
-    SWIFT: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
+    SWIFT: Schema.Attribute.String & Schema.Attribute.Required;
     terms: Schema.Attribute.Component<'shared.employee-contract-terms', true>;
     uid: Schema.Attribute.UID;
     updatedAt: Schema.Attribute.DateTime;

@@ -51,12 +51,12 @@
     "BIC": {
       "type": "string",
       "required": true,
-      "unique": true
+      "unique": false
     },
     "SWIFT": {
       "type": "string",
       "required": true,
-      "unique": true
+      "unique": false
     },
     "profession": {
       "type": "string"
@@ -133,9 +133,9 @@
       "target": "api::enrollment.enrollment",
       "inversedBy": "employees"
     },
-    "classroom": {
+    "classrooms": {
       "type": "relation",
-      "relation": "oneToOne",
+      "relation": "oneToMany",
       "target": "api::classroom.classroom",
       "mappedBy": "employee"
     }
