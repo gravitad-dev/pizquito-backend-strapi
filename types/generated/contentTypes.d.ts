@@ -749,7 +749,12 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
       true
     >;
     invoiceCategory: Schema.Attribute.Enumeration<
-      ['invoice_employ', 'invoice_enrollment', 'invoice_general']
+      [
+        'invoice_employ',
+        'invoice_enrollment',
+        'invoice_general',
+        'invoice_service',
+      ]
     >;
     invoiceStatus: Schema.Attribute.Enumeration<
       ['unpaid', 'inprocess', 'paid', 'canceled']

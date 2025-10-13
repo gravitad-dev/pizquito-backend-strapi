@@ -17,6 +17,9 @@
     "code": {
       "type": "string"
     },
+    "address": {
+      "type": "string"
+    },
     "NIF": {
       "type": "string",
       "required": true,
