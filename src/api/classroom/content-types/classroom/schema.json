@@ -33,9 +33,9 @@
     },
     "employee": {
       "type": "relation",
-      "relation": "oneToOne",
+      "relation": "manyToOne",
       "target": "api::employee.employee",
-      "inversedBy": "classroom"
+      "inversedBy": "classrooms"
     },
     "enrollments": {
       "type": "relation",
