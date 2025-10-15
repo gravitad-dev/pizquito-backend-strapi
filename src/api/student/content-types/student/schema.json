@@ -74,11 +74,17 @@
       "target": "api::observation.observation",
       "mappedBy": "student"
     },
-    "enrollment": {
+    "enrollments": {
       "type": "relation",
-      "relation": "oneToOne",
+      "relation": "oneToMany",
       "target": "api::enrollment.enrollment",
       "mappedBy": "student"
+    },
+    "guardian": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::guardian.guardian",
+      "inversedBy": "students"
     }
   }
 }

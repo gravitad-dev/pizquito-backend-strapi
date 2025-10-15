@@ -512,7 +512,6 @@ export interface ApiEmployeeEmployee extends Struct.CollectionTypeSchema {
     publishedAt: Schema.Attribute.DateTime;
     role: Schema.Attribute.Enumeration<
       [
-        'Ex:',
         'director',
         'administrator',
         'teacher',
@@ -578,7 +577,7 @@ export interface ApiEnrollmentEnrollment extends Struct.CollectionTypeSchema {
       'api::school-period.school-period'
     >;
     services: Schema.Attribute.Relation<'manyToMany', 'api::service.service'>;
-    student: Schema.Attribute.Relation<'oneToOne', 'api::student.student'>;
+    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
     title: Schema.Attribute.String;
     uid: Schema.Attribute.UID;
     updatedAt: Schema.Attribute.DateTime;
@@ -677,6 +676,7 @@ export interface ApiGuardianGuardian extends Struct.CollectionTypeSchema {
     >;
     publishedAt: Schema.Attribute.DateTime;
     registeredby: Schema.Attribute.String;
+    students: Schema.Attribute.Relation<'oneToMany', 'api::student.student'>;
     uid: Schema.Attribute.UID;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -957,14 +957,15 @@ export interface ApiStudentStudent extends Struct.CollectionTypeSchema {
     DNI: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
-    enrollment: Schema.Attribute.Relation<
-      'oneToOne',
+    enrollments: Schema.Attribute.Relation<
+      'oneToMany',
       'api::enrollment.enrollment'
     >;
     files: Schema.Attribute.Media<
       'images' | 'files' | 'videos' | 'audios',
       true
     >;
+    guardian: Schema.Attribute.Relation<'manyToOne', 'api::guardian.guardian'>;
     lastname: Schema.Attribute.String & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
