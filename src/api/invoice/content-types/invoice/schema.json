@@ -94,6 +94,12 @@
       "relation": "manyToOne",
       "target": "api::enrollment.enrollment",
       "inversedBy": "invoices"
+    },
+    "guardian": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::guardian.guardian",
+      "inversedBy": "invoices"
     }
   }
 }

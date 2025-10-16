@@ -55,9 +55,9 @@
     },
     "student": {
       "type": "relation",
-      "relation": "oneToOne",
+      "relation": "manyToOne",
       "target": "api::student.student",
-      "inversedBy": "enrollment"
+      "inversedBy": "enrollments"
     },
     "classroom": {
       "type": "relation",

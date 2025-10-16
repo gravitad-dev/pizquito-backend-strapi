@@ -106,6 +106,18 @@
       "relation": "manyToMany",
       "target": "api::enrollment.enrollment",
       "mappedBy": "guardians"
+    },
+    "students": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::student.student",
+      "mappedBy": "guardian"
+    },
+    "invoices": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::invoice.invoice",
+      "mappedBy": "guardian"
     }
   }
 }

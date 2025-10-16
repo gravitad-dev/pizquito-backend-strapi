@@ -64,7 +64,6 @@
     "role": {
       "type": "enumeration",
       "enum": [
-        "Ex:",
         "director",
         "administrator",
         "teacher",
