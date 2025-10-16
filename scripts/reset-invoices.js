@@ -71,6 +71,37 @@ const getSecondEmployee = async () => {
 };
 
 /**
+ * Obtiene el guardian principal de un enrollment
+ * Prioriza por guardianType: biological_parent > adoptive_parent > legal_guardian > other
+ */
+const getPrimaryGuardianFromEnrollment = async (enrollmentId) => {
+  const enrollment = await strapi.entityService.findOne(
+    'api::enrollment.enrollment', 
+    enrollmentId, 
+    { populate: { guardians: true } }
+  );
+  
+  const guardians = enrollment?.guardians || [];
+  if (guardians.length === 0) return null;
+  
+  // Orden de prioridad para seleccionar guardian responsable
+  const priorityOrder = ['biological_parent', 'adoptive_parent', 'legal_guardian', 'other'];
+  
+  // Ordenar guardians por prioridad de tipo
+  const sortedGuardians = guardians.sort((a, b) => {
+    const aPriority = priorityOrder.indexOf(a.guardianType) !== -1 
+      ? priorityOrder.indexOf(a.guardianType) 
+      : 999;
+    const bPriority = priorityOrder.indexOf(b.guardianType) !== -1 
+      ? priorityOrder.indexOf(b.guardianType) 
+      : 999;
+    return aPriority - bPriority;
+  });
+  
+  return sortedGuardians[0];
+};
+
+/**
  * Elimina todas las facturas existentes
  */
 const deleteAllInvoices = async () => {
@@ -107,54 +138,75 @@ const createEnrollmentInvoices = async () => {
     return;
   }
   
+  // Obtener guardian principal para enrollment1
+  const primaryGuardian1 = await getPrimaryGuardianFromEnrollment(enrollment1.id);
+  
   // Factura 1: Matrícula
   const matriculaAmount = 250;
   const { iva: ivaMatricula, total: totalMatricula } = calculateIVA(matriculaAmount);
   
+  const matriculaInvoiceData = {
+    title: `Matrícula ${enrollment1.student?.name || 'Estudiante'} - ${new Date().getFullYear()}`,
+    invoiceCategory: 'invoice_enrollment',
+    invoiceType: 'charge',
+    invoiceStatus: 'unpaid',
+    registeredBy: 'administration',
+    issuedby: 'Administración',
+    enrollment: enrollment1.id,
+    emissionDate: isoDate(2024, 12, 1),
+    expirationDate: isoDate(2024, 12, 31),
+    amounts: { matricula: matriculaAmount },
+    total: totalMatricula,
+    IVA: ivaMatricula,
+    notes: 'Factura de matrícula generada por script de prueba',
+    publishedAt: new Date().toISOString(),
+  };
+  
+  // Asociar guardian si existe
+  if (primaryGuardian1) {
+    matriculaInvoiceData.guardian = primaryGuardian1.id;
+    console.log(`🔗 Asociando factura de matrícula con guardian: ${primaryGuardian1.name} ${primaryGuardian1.lastname}`);
+  }
+  
   await strapi.entityService.create('api::invoice.invoice', {
-    data: {
-      title: `Matrícula ${enrollment1.student?.name || 'Estudiante'} - ${new Date().getFullYear()}`,
-      invoiceCategory: 'invoice_enrollment',
-      invoiceType: 'charge',
-      invoiceStatus: 'unpaid',
-      registeredBy: 'administration',
-      issuedby: 'Administración',
-      enrollment: enrollment1.id,
-      emissionDate: isoDate(2024, 12, 1),
-      expirationDate: isoDate(2024, 12, 31),
-      amounts: { matricula: matriculaAmount },
-      total: totalMatricula,
-      IVA: ivaMatricula,
-      notes: 'Factura de matrícula generada por script de prueba',
-      publishedAt: new Date().toISOString(),
-    },
+    data: matriculaInvoiceData,
   });
   
   // Factura 2: Comedor (usar enrollment2 si existe, sino enrollment1)
   const targetEnrollment = enrollment2 || enrollment1;
+  const primaryGuardian2 = await getPrimaryGuardianFromEnrollment(targetEnrollment.id);
+  
   const comedorAmount = 120;
   const { iva: ivaComedor, total: totalComedor } = calculateIVA(comedorAmount);
   
+  const comedorInvoiceData = {
+    title: `Comedor ${targetEnrollment.student?.name || 'Estudiante'} - Diciembre 2024`,
+    invoiceCategory: 'invoice_enrollment',
+    invoiceType: 'charge',
+    invoiceStatus: 'paid',
+    registeredBy: 'administration',
+    issuedby: 'Administración',
+    enrollment: targetEnrollment.id,
+    emissionDate: isoDate(2024, 12, 15),
+    expirationDate: isoDate(2024, 12, 31),
+    amounts: { comedor: comedorAmount },
+    total: totalComedor,
+    IVA: ivaComedor,
+    notes: 'Factura de comedor generada por script de prueba',
+    publishedAt: new Date().toISOString(),
+  };
+  
+  // Asociar guardian si existe
+  if (primaryGuardian2) {
+    comedorInvoiceData.guardian = primaryGuardian2.id;
+    console.log(`🔗 Asociando factura de comedor con guardian: ${primaryGuardian2.name} ${primaryGuardian2.lastname}`);
+  }
+  
   await strapi.entityService.create('api::invoice.invoice', {
-    data: {
-      title: `Comedor ${targetEnrollment.student?.name || 'Estudiante'} - Diciembre 2024`,
-      invoiceCategory: 'invoice_enrollment',
-      invoiceType: 'charge',
-      invoiceStatus: 'paid',
-      registeredBy: 'administration',
-      issuedby: 'Administración',
-      enrollment: targetEnrollment.id,
-      emissionDate: isoDate(2024, 12, 15),
-      expirationDate: isoDate(2024, 12, 31),
-      amounts: { comedor: comedorAmount },
-      total: totalComedor,
-      IVA: ivaComedor,
-      notes: 'Factura de comedor generada por script de prueba',
-      publishedAt: new Date().toISOString(),
-    },
+    data: comedorInvoiceData,
   });
   
-  console.log('✅ Creadas 2 facturas de enrollment');
+  console.log('✅ Creadas 2 facturas de enrollment con guardians asociados');
 };
 
 /**

@@ -24,6 +24,7 @@ type InvoiceEntity = {
   expirationDate?: string;
   enrollment?: any;
   employee?: any;
+  guardian?: any; // Guardian directo asociado a la factura
 };
 
 const fetchCompany = async () => {
@@ -52,6 +53,7 @@ const fetchInvoice = async (id: number): Promise<InvoiceEntity | null> => {
           },
         },
         employee: true,
+        guardian: true, // Guardian directo asociado a la factura
       },
     },
   );
@@ -108,6 +110,37 @@ const prettyRegisteredBy = (r?: string) => {
   // Si no hay valor, asumir que es administración (facturas manuales antiguas)
   const registeredBy = r || "administration";
   return map[registeredBy] ?? registeredBy;
+};
+
+/**
+ * Obtiene el guardian principal para mostrar en el PDF
+ * Prioriza: 1) Guardian directo de la factura, 2) Guardian principal del enrollment
+ */
+const getPrimaryGuardianForPdf = (inv: InvoiceEntity) => {
+  // Prioridad 1: Guardian directo asociado a la factura
+  if (inv.guardian) {
+    return inv.guardian;
+  }
+  
+  // Prioridad 2: Guardian principal del enrollment (por guardianType)
+  const guardians = inv.enrollment?.guardians || [];
+  if (guardians.length === 0) return null;
+  
+  // Orden de prioridad para seleccionar guardian responsable
+  const priorityOrder = ['biological_parent', 'adoptive_parent', 'legal_guardian', 'other'];
+  
+  // Ordenar guardians por prioridad de tipo
+  const sortedGuardians = guardians.sort((a: any, b: any) => {
+    const aPriority = priorityOrder.indexOf(a.guardianType) !== -1 
+      ? priorityOrder.indexOf(a.guardianType) 
+      : 999;
+    const bPriority = priorityOrder.indexOf(b.guardianType) !== -1 
+      ? priorityOrder.indexOf(b.guardianType) 
+      : 999;
+    return aPriority - bPriority;
+  });
+  
+  return sortedGuardians[0];
 };
 
 // Helpers de UI: métricas de página, títulos de sección y badges
@@ -445,7 +478,7 @@ export default {
       const student = inv.enrollment?.student;
       const classroom = inv.enrollment?.classroom;
       const guardians = inv.enrollment?.guardians;
-      const primaryGuardian = guardians?.[0]; // Tomamos el primer guardian como principal
+      const primaryGuardian = getPrimaryGuardianForPdf(inv); // Prioriza guardian directo o principal del enrollment
 
       y = sectionTitle(doc, "Alumno", 40, y);
       doc.fillColor("#000");
@@ -614,7 +647,7 @@ export default {
       const student = inv.enrollment?.student;
       const classroom = inv.enrollment?.classroom;
       const guardians = inv.enrollment?.guardians;
-      const primaryGuardian = guardians?.[0]; // Tomamos el primer guardian como principal
+      const primaryGuardian = getPrimaryGuardianForPdf(inv); // Prioriza guardian directo o principal del enrollment
 
       y = sectionTitle(doc, "Alumno", 40, y);
       doc.fillColor("#000");

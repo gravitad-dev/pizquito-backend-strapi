@@ -53,13 +53,18 @@ const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
   const now = new Date();
   const { start, end } = getMonthBounds(now);
 
+  strapi.log.info(`📅 [Cron] Período de facturación: ${start} a ${end}`);
+
   const enrollments = await strapi.entityService.findMany('api::enrollment.enrollment', {
     filters: { isActive: true },
     populate: { services: true, student: true },
     limit: 10000,
   });
   const enrollmentList = Array.isArray(enrollments) ? enrollments : [];
+  
+  strapi.log.info(`👥 [Cron] Enrollments activos encontrados: ${enrollmentList.length}`);
   let createdCount = 0;
+  let skippedCount = 0;
 
   for (const enr of enrollmentList) {
     const services = Array.isArray((enr as any).services) ? (enr as any).services : [];
@@ -88,7 +93,10 @@ const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
       },
       limit: 1,
     });
-    if (existing && existing.length > 0) continue;
+    if (existing && existing.length > 0) {
+      skippedCount++;
+      continue;
+    }
 
     await strapi.entityService.create('api::invoice.invoice', {
       data: {
@@ -108,7 +116,7 @@ const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
     createdCount++;
   }
 
-  strapi.log.info(`[Cron] Facturas de alumnos creadas: ${createdCount}`);
+  strapi.log.info(`📊 [Cron] Facturas de alumnos - Creadas: ${createdCount}, Omitidas (duplicadas): ${skippedCount}`);
 };
 
 /**
@@ -126,7 +134,10 @@ const generateEmployeePayrolls = async ({ strapi }: TaskContext) => {
     limit: 10000,
   });
   const employeeList = Array.isArray(employees) ? employees : [];
+  
+  strapi.log.info(`👷 [Cron] Empleados activos encontrados: ${employeeList.length}`);
   let createdCount = 0;
+  let skippedCount = 0;
 
   for (const emp of employeeList) {
     const terms = Array.isArray((emp as any).terms) ? (emp as any).terms : [];
@@ -160,7 +171,10 @@ const generateEmployeePayrolls = async ({ strapi }: TaskContext) => {
       },
       limit: 1,
     });
-    if (existing && existing.length > 0) continue;
+    if (existing && existing.length > 0) {
+      skippedCount++;
+      continue;
+    }
 
     await strapi.entityService.create('api::invoice.invoice', {
       data: {
@@ -180,7 +194,7 @@ const generateEmployeePayrolls = async ({ strapi }: TaskContext) => {
     createdCount++;
   }
 
-  strapi.log.info(`[Cron] Nóminas de empleados creadas: ${createdCount}`);
+  strapi.log.info(`📊 [Cron] Nóminas de empleados - Creadas: ${createdCount}, Omitidas (duplicadas): ${skippedCount}`);
 };
 
 export default {
@@ -190,9 +204,31 @@ export default {
       tz: 'Europe/Madrid',
     },
     task: async (ctx: TaskContext) => {
-      ctx.strapi.log.info('[Cron] Ejecutando facturación mensual (alumnos y nóminas)');
-      await generateEnrollmentInvoices(ctx);
-      await generateEmployeePayrolls(ctx);
+      const timestamp = new Date().toLocaleString('es-ES', { 
+        timeZone: 'Europe/Madrid',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      
+      ctx.strapi.log.info(`🕐 [Cron] INICIO - Ejecutando facturación mensual (${timestamp})`);
+      ctx.strapi.log.info(`⚙️  [Cron] Configuración: cada 6 horas (MODO PRUEBA)`);
+      
+      try {
+        ctx.strapi.log.info(`📋 [Cron] Generando facturas de enrollment...`);
+        await generateEnrollmentInvoices(ctx);
+        
+        ctx.strapi.log.info(`💰 [Cron] Generando nóminas de empleados...`);
+        await generateEmployeePayrolls(ctx);
+        
+        ctx.strapi.log.info(`✅ [Cron] COMPLETADO - Facturación mensual finalizada (${timestamp})`);
+      } catch (error) {
+        ctx.strapi.log.error(`❌ [Cron] ERROR - Falló la facturación mensual: ${error.message}`);
+        throw error;
+      }
     },
   },
 };
