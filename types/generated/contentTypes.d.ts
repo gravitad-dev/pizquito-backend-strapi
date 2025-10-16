@@ -650,6 +650,7 @@ export interface ApiGuardianGuardian extends Struct.CollectionTypeSchema {
     guardianType: Schema.Attribute.Enumeration<
       ['biological_parent', 'adoptive_parent', 'legal_guardian', 'other']
     >;
+    invoices: Schema.Attribute.Relation<'oneToMany', 'api::invoice.invoice'>;
     isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     lastname: Schema.Attribute.String & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
@@ -748,6 +749,7 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
       'images' | 'files' | 'videos' | 'audios',
       true
     >;
+    guardian: Schema.Attribute.Relation<'manyToOne', 'api::guardian.guardian'>;
     invoiceCategory: Schema.Attribute.Enumeration<
       [
         'invoice_employ',
