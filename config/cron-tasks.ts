@@ -3,8 +3,16 @@ import type { Core } from '@strapi/types';
 // Cron rule can be configured via .env using BILLING_CRON_RULE.
 // The day of month is configurable via CRON_BILLING_DAY (default 25).
 const BILLING_DAY = String(process.env.CRON_BILLING_DAY || 25);
+
+// Tasa de IVA (21% en España)
+const IVA_RATE = 0.21;
+
+// CONFIGURACIÓN ORIGINAL (COMENTADA PARA MODO TEST)
 // Ejecutar a las 00:00 (medianoche) del día configurado, en horario de Madrid.
-const DEFAULT_MONTHLY_RULE = `0 0 0 ${BILLING_DAY} * *`;
+// const DEFAULT_MONTHLY_RULE = `0 0 0 ${BILLING_DAY} * *`;
+
+// CONFIGURACIÓN DE PRUEBA: Ejecutar cada 6 horas
+const DEFAULT_MONTHLY_RULE = `0 0 */6 * * *`;
 
 type TaskContext = { strapi: Core.Strapi };
 
@@ -23,6 +31,17 @@ const getMonthBounds = (date = new Date()) => {
 const num = (v: unknown, fallback = 0): number => {
   const n = typeof v === 'string' ? Number(v) : typeof v === 'number' ? v : fallback;
   return Number.isFinite(n) ? n : fallback;
+};
+
+/**
+ * Calcula el IVA y el total con IVA incluido
+ * @param subtotal - Importe sin IVA
+ * @returns Objeto con IVA calculado y total con IVA
+ */
+const calculateIVA = (subtotal: number) => {
+  const iva = Math.round(subtotal * IVA_RATE * 100) / 100; // Redondear a 2 decimales
+  const total = Math.round((subtotal + iva) * 100) / 100; // Redondear a 2 decimales
+  return { iva, total };
 };
 
 /**
@@ -54,8 +73,11 @@ const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
       }
     }
 
-    const total = Object.values(amounts).reduce((a, b) => a + b, 0);
-    if (total <= 0) continue; // Nothing to bill
+    const subtotal = Object.values(amounts).reduce((a, b) => a + b, 0);
+    if (subtotal <= 0) continue; // Nothing to bill
+
+    // Calcular IVA y total con IVA incluido
+    const { iva, total } = calculateIVA(subtotal);
 
     // Check duplicate invoice for this enrollment in current month
     const existing = await strapi.entityService.findMany('api::invoice.invoice', {
@@ -78,7 +100,7 @@ const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
         expirationDate: new Date(now.getFullYear(), now.getMonth(), 30).toISOString(),
         amounts,
         total,
-        IVA: 0,
+        IVA: iva,
         issuedby: 'Sistema',
         registeredBy: 'system',
       },
@@ -126,6 +148,9 @@ const generateEmployeePayrolls = async ({ strapi }: TaskContext) => {
 
     if (!Number.isFinite(salary) || salary <= 0) continue; // Nothing to bill
 
+    // Calcular IVA y total con IVA incluido
+    const { iva, total } = calculateIVA(salary);
+
     // Check duplicate payroll for this employee in current month
     const existing = await strapi.entityService.findMany('api::invoice.invoice', {
       filters: {
@@ -146,8 +171,8 @@ const generateEmployeePayrolls = async ({ strapi }: TaskContext) => {
         emissionDate: now.toISOString(),
         expirationDate: new Date(now.getFullYear(), now.getMonth(), 30).toISOString(),
         amounts: { salario: salary },
-        total: salary,
-        IVA: 0,
+        total,
+        IVA: iva,
         issuedby: 'Sistema',
         registeredBy: 'system',
       },
