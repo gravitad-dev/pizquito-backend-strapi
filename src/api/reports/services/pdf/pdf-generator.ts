@@ -10,11 +10,13 @@ import * as os from "os";
 type InvoiceEntity = {
   id: number;
   uid?: string;
+  documentId?: string;
   title?: string;
   notes?: string;
   invoiceStatus?: string;
   invoiceType?: string;
   invoiceCategory?: string;
+  registeredBy?: string;
   total?: number;
   IVA?: number;
   amounts?: Record<string, number> | null;
@@ -22,6 +24,7 @@ type InvoiceEntity = {
   expirationDate?: string;
   enrollment?: any;
   employee?: any;
+  guardian?: any; // Guardian directo asociado a la factura
 };
 
 const fetchCompany = async () => {
@@ -42,8 +45,15 @@ const fetchInvoice = async (id: number): Promise<InvoiceEntity | null> => {
     id,
     {
       populate: {
-        enrollment: { populate: { student: true } },
+        enrollment: {
+          populate: {
+            student: true,
+            guardians: true,
+            classroom: true,
+          },
+        },
         employee: true,
+        guardian: true, // Guardian directo asociado a la factura
       },
     },
   );
@@ -89,6 +99,48 @@ const prettyCategory = (c?: string) => {
   };
   if (!c) return "-";
   return map[c] ?? c.replace(/_/g, " ").replace(/\binvoice\b/i, "Factura");
+};
+
+const prettyRegisteredBy = (r?: string) => {
+  const map: Record<string, string> = {
+    system: "Sistema (Automático)",
+    administration: "Administración",
+    bank: "Banco",
+  };
+  // Si no hay valor, asumir que es administración (facturas manuales antiguas)
+  const registeredBy = r || "administration";
+  return map[registeredBy] ?? registeredBy;
+};
+
+/**
+ * Obtiene el guardian principal para mostrar en el PDF
+ * Prioriza: 1) Guardian directo de la factura, 2) Guardian principal del enrollment
+ */
+const getPrimaryGuardianForPdf = (inv: InvoiceEntity) => {
+  // Prioridad 1: Guardian directo asociado a la factura
+  if (inv.guardian) {
+    return inv.guardian;
+  }
+  
+  // Prioridad 2: Guardian principal del enrollment (por guardianType)
+  const guardians = inv.enrollment?.guardians || [];
+  if (guardians.length === 0) return null;
+  
+  // Orden de prioridad para seleccionar guardian responsable
+  const priorityOrder = ['biological_parent', 'adoptive_parent', 'legal_guardian', 'other'];
+  
+  // Ordenar guardians por prioridad de tipo
+  const sortedGuardians = guardians.sort((a: any, b: any) => {
+    const aPriority = priorityOrder.indexOf(a.guardianType) !== -1 
+      ? priorityOrder.indexOf(a.guardianType) 
+      : 999;
+    const bPriority = priorityOrder.indexOf(b.guardianType) !== -1 
+      ? priorityOrder.indexOf(b.guardianType) 
+      : 999;
+    return aPriority - bPriority;
+  });
+  
+  return sortedGuardians[0];
 };
 
 // Helpers de UI: métricas de página, títulos de sección y badges
@@ -157,6 +209,7 @@ const addHeader = (
       align: "left",
     });
   doc.fontSize(10).text(`NIF: ${company?.NIF || "-"}`, 40, 50);
+  doc.fontSize(10).text(`Código: ${company?.code || "-"}`, 200, 50);
   doc.fontSize(10).text(company?.address || "", 40, 65);
 
   // Title
@@ -173,21 +226,34 @@ const addHeader = (
   doc.fillColor("#000000");
 };
 
-const addFooter = (doc: PDFDocument) => {
+const addFooter = (doc: PDFDocument, documentId?: string) => {
   // Footer seguro: dibujar sin provocar saltos de página
   const { left, right } = pageMetrics(doc);
   const bottomMargin = (doc.page as any).margins?.bottom ?? 40;
   const y = doc.page.height - bottomMargin - 30;
   const leftText = "Generado por Pizquito";
   const rightText = new Date().toLocaleString("es-ES");
+  const centerText = documentId ? documentId : "";
 
   doc.save();
   doc.strokeColor("#cccccc").moveTo(left, y).lineTo(right, y).stroke();
   doc.fontSize(9).fillColor("#666666");
-  // Colocar ambos textos en la misma línea, sin lineBreak
+
+  // Texto izquierdo
   doc.text(leftText, left, y + 10, { lineBreak: false });
+
+  // Texto derecho
   const rtWidth = doc.widthOfString(rightText);
   doc.text(rightText, right - rtWidth, y + 10, { lineBreak: false });
+
+  // Texto central (documentId) en gris más claro y fuente más pequeña
+  if (centerText) {
+    doc.fontSize(7).fillColor("#999999");
+    const centerWidth = doc.widthOfString(centerText);
+    const centerX = left + (right - left) / 2 - centerWidth / 2;
+    doc.text(centerText, centerX, y + 12, { lineBreak: false });
+  }
+
   doc.restore();
   doc.fillColor("#000000");
 };
@@ -200,11 +266,14 @@ const addKeyValue = (
   y: number,
   width = 250,
 ) => {
-  doc.fontSize(10).fillColor("#666").text(label, x, y);
   doc
-    .fontSize(12)
+    .fontSize(10)
+    .fillColor("#666")
+    .text(label + ":", x, y);
+  doc
+    .fontSize(10)
     .fillColor("#000")
-    .text(value, x, y + 14, { width });
+    .text(value, x + 80, y, { width });
 };
 
 const addAmountsTable = (
@@ -326,9 +395,9 @@ const uploadBufferAsFile = async (
     const uploadResult = await cloudinary.uploader.upload(tmpFilePath, {
       folder,
       resource_type: "auto",
-      use_filename: true,
-      unique_filename: true,
-      filename_override: fileName,
+      use_filename: false,
+      unique_filename: false,
+      public_id: fileName.replace('.pdf', ''), // Usar el nombre sin extensión como public_id
     });
 
     const sizeKB = parseFloat(((buf.length || 0) / 1024).toFixed(2));
@@ -367,7 +436,7 @@ const uploadBufferAsFile = async (
 };
 
 export default {
-  async generateInvoicePdf(id: number) {
+  async generateInvoicePdf(id: number, reportType?: string) {
     const company = await fetchCompany();
     const inv = await fetchInvoice(id);
     if (!inv) {
@@ -388,14 +457,29 @@ export default {
     let y = 150;
     addKeyValue(doc, "Número", inv.uid || String(inv.id), 40, y);
     addKeyValue(doc, "Fecha emisión", prettyDate(inv.emissionDate), 300, y);
-    y += 40;
+    y += 15;
     addKeyValue(doc, "Estado", prettyStatus(inv.invoiceStatus), 40, y);
     addKeyValue(doc, "Tipo", prettyCategory(inv.invoiceCategory), 300, y);
-    y += 50;
+    y += 15;
+    addKeyValue(
+      doc,
+      "Registrado por",
+      prettyRegisteredBy(inv.registeredBy),
+      40,
+      y,
+    );
+    y += 25;
+
+    // Espacio adicional antes de los datos del alumno
+    y += 15;
 
     // Subject details
     if (inv.invoiceCategory === "invoice_enrollment") {
       const student = inv.enrollment?.student;
+      const classroom = inv.enrollment?.classroom;
+      const guardians = inv.enrollment?.guardians;
+      const primaryGuardian = getPrimaryGuardianForPdf(inv); // Prioriza guardian directo o principal del enrollment
+
       y = sectionTitle(doc, "Alumno", 40, y);
       doc.fillColor("#000");
       addKeyValue(
@@ -406,7 +490,39 @@ export default {
         y,
       );
       addKeyValue(doc, "DNI", student?.dni || student?.DNI || "-", 300, y);
-      y += 40;
+      y += 20;
+
+      // Información del curso
+      if (classroom?.name) {
+        addKeyValue(doc, "Curso", classroom.name, 40, y);
+        y += 20;
+      }
+
+      // Espacio adicional antes de la sección del padre/tutor
+      y += 15;
+
+      // Información del guardian principal
+      if (primaryGuardian) {
+        y = sectionTitle(doc, "Padre/Tutor", 40, y);
+        doc.fillColor("#000");
+        addKeyValue(
+          doc,
+          "Nombre",
+          `${primaryGuardian.name || ""} ${primaryGuardian.lastname || ""}`,
+          40,
+          y,
+        );
+        addKeyValue(
+          doc,
+          "DNI",
+          primaryGuardian.DNI || primaryGuardian.dni || "-",
+          300,
+          y,
+        );
+        y += 20;
+      }
+
+      y += 20; // Espacio adicional antes de la siguiente sección
 
       // Periodo se muestra junto al título en el encabezado
     } else if (inv.invoiceCategory === "invoice_employ") {
@@ -421,7 +537,21 @@ export default {
         y,
       );
       addKeyValue(doc, "DNI", emp?.DNI || "-", 300, y);
-      y += 40;
+      y += 20;
+
+      // Fecha de nacimiento del empleado
+      if (emp?.birthdate) {
+        addKeyValue(
+          doc,
+          "Fecha de Nacimiento",
+          prettyDate(emp.birthdate),
+          40,
+          y,
+        );
+        y += 20;
+      }
+
+      y += 20; // Espacio adicional antes de la siguiente sección
 
       // Periodo se muestra junto al título en el encabezado
     }
@@ -439,10 +569,19 @@ export default {
       .fillColor("#000")
       .text(`Total: ${currency(inv.total)}`, 300, y + 6, { align: "right" });
 
-    addFooter(doc);
+    addFooter(doc, inv.documentId || `ID: ${inv.id}`);
 
     const buf = await bufferFromDoc(doc);
-    const fileName = `${inv.invoiceCategory === "invoice_employ" ? "nomina" : "factura"}_${inv.uid || inv.id}.pdf`;
+    // Determinar el tipo de archivo basado en reportType o invoiceCategory
+    let fileType = reportType || "invoice";
+    if (!reportType) {
+      // Fallback basado en invoiceCategory
+      if (inv.invoiceCategory === "invoice_employ") fileType = "payroll";
+      else if (inv.invoiceCategory === "invoice_service") fileType = "service";
+      else if (inv.invoiceCategory === "invoice_general") fileType = "general";
+      else fileType = "invoice";
+    }
+    const fileName = `${fileType}_${inv.documentId || inv.id}.pdf`;
     const base = process.env.CLOUDINARY_BASE_FOLDER || "Strapi/pizquito";
     const date = inv.emissionDate ? new Date(inv.emissionDate) : new Date();
     const YYYY = String(date.getFullYear());
@@ -462,7 +601,7 @@ export default {
       },
     };
   },
-  async generateInvoicePdfBuffer(id: number) {
+  async generateInvoicePdfBuffer(id: number, reportType?: string) {
     const company = await fetchCompany();
     const inv = await fetchInvoice(id);
     if (!inv) {
@@ -487,14 +626,29 @@ export default {
     let y = 150;
     addKeyValue(doc, "Número", inv.uid || String(inv.id), 40, y);
     addKeyValue(doc, "Fecha emisión", prettyDate(inv.emissionDate), 300, y);
-    y += 40;
+    y += 15;
     addKeyValue(doc, "Estado", prettyStatus(inv.invoiceStatus), 40, y);
     addKeyValue(doc, "Tipo", prettyCategory(inv.invoiceCategory), 300, y);
-    y += 50;
+    y += 15;
+    addKeyValue(
+      doc,
+      "Registrado por",
+      prettyRegisteredBy(inv.registeredBy),
+      40,
+      y,
+    );
+    y += 25;
+
+    // Espacio adicional antes de los datos del alumno
+    y += 15;
 
     // Subject details
     if (inv.invoiceCategory === "invoice_enrollment") {
       const student = inv.enrollment?.student;
+      const classroom = inv.enrollment?.classroom;
+      const guardians = inv.enrollment?.guardians;
+      const primaryGuardian = getPrimaryGuardianForPdf(inv); // Prioriza guardian directo o principal del enrollment
+
       y = sectionTitle(doc, "Alumno", 40, y);
       doc.fillColor("#000");
       addKeyValue(
@@ -505,7 +659,39 @@ export default {
         y,
       );
       addKeyValue(doc, "DNI", student?.dni || student?.DNI || "-", 300, y);
-      y += 40;
+      y += 20;
+
+      // Información del curso
+      if (classroom?.name) {
+        addKeyValue(doc, "Curso", classroom.name, 40, y);
+        y += 20;
+      }
+
+      // Espacio adicional antes de la sección del padre/tutor
+      y += 15;
+
+      // Información del guardian principal
+      if (primaryGuardian) {
+        y = sectionTitle(doc, "Padre/Tutor", 40, y);
+        doc.fillColor("#000");
+        addKeyValue(
+          doc,
+          "Nombre",
+          `${primaryGuardian.name || ""} ${primaryGuardian.lastname || ""}`,
+          40,
+          y,
+        );
+        addKeyValue(
+          doc,
+          "DNI",
+          primaryGuardian.DNI || primaryGuardian.dni || "-",
+          300,
+          y,
+        );
+        y += 20;
+      }
+
+      y += 20; // Espacio adicional antes de la siguiente sección
 
       // Periodo se muestra junto al título en el encabezado
     } else if (inv.invoiceCategory === "invoice_employ") {
@@ -538,10 +724,19 @@ export default {
       .fillColor("#000")
       .text(`Total: ${currency(inv.total)}`, 300, y + 6, { align: "right" });
 
-    addFooter(doc);
+    addFooter(doc, inv.documentId || `ID: ${inv.id}`);
 
     const buf = await bufferFromDoc(doc);
-    const fileName = `${inv.invoiceCategory === "invoice_employ" ? "nomina" : "factura"}_${inv.uid || inv.id}.pdf`;
+    // Determinar el tipo de archivo basado en reportType o invoiceCategory
+    let fileType = reportType || "invoice";
+    if (!reportType) {
+      // Fallback basado en invoiceCategory
+      if (inv.invoiceCategory === "invoice_employ") fileType = "payroll";
+      else if (inv.invoiceCategory === "invoice_service") fileType = "service";
+      else if (inv.invoiceCategory === "invoice_general") fileType = "general";
+      else fileType = "invoice";
+    }
+    const fileName = `${fileType}_${inv.documentId || inv.id}.pdf`;
     return {
       buffer: buf,
       fileName,

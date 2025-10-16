@@ -3,8 +3,16 @@ import type { Core } from '@strapi/types';
 // Cron rule can be configured via .env using BILLING_CRON_RULE.
 // The day of month is configurable via CRON_BILLING_DAY (default 25).
 const BILLING_DAY = String(process.env.CRON_BILLING_DAY || 25);
+
+// Tasa de IVA (21% en España)
+const IVA_RATE = 0.21;
+
+// CONFIGURACIÓN ORIGINAL (COMENTADA PARA MODO TEST)
 // Ejecutar a las 00:00 (medianoche) del día configurado, en horario de Madrid.
-const DEFAULT_MONTHLY_RULE = `0 0 0 ${BILLING_DAY} * *`;
+// const DEFAULT_MONTHLY_RULE = `0 0 0 ${BILLING_DAY} * *`;
+
+// CONFIGURACIÓN DE PRUEBA: Ejecutar cada 6 horas
+const DEFAULT_MONTHLY_RULE = `0 0 */6 * * *`;
 
 type TaskContext = { strapi: Core.Strapi };
 
@@ -26,6 +34,17 @@ const num = (v: unknown, fallback = 0): number => {
 };
 
 /**
+ * Calcula el IVA y el total con IVA incluido
+ * @param subtotal - Importe sin IVA
+ * @returns Objeto con IVA calculado y total con IVA
+ */
+const calculateIVA = (subtotal: number) => {
+  const iva = Math.round(subtotal * IVA_RATE * 100) / 100; // Redondear a 2 decimales
+  const total = Math.round((subtotal + iva) * 100) / 100; // Redondear a 2 decimales
+  return { iva, total };
+};
+
+/**
  * Create monthly invoices for active enrollments that are unpaid.
  * - Aggregates active student services amounts per enrollment.
  * - Avoids duplicates within the month.
@@ -34,13 +53,18 @@ const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
   const now = new Date();
   const { start, end } = getMonthBounds(now);
 
+  strapi.log.info(`📅 [Cron] Período de facturación: ${start} a ${end}`);
+
   const enrollments = await strapi.entityService.findMany('api::enrollment.enrollment', {
     filters: { isActive: true },
     populate: { services: true, student: true },
     limit: 10000,
   });
   const enrollmentList = Array.isArray(enrollments) ? enrollments : [];
+  
+  strapi.log.info(`👥 [Cron] Enrollments activos encontrados: ${enrollmentList.length}`);
   let createdCount = 0;
+  let skippedCount = 0;
 
   for (const enr of enrollmentList) {
     const services = Array.isArray((enr as any).services) ? (enr as any).services : [];
@@ -54,8 +78,11 @@ const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
       }
     }
 
-    const total = Object.values(amounts).reduce((a, b) => a + b, 0);
-    if (total <= 0) continue; // Nothing to bill
+    const subtotal = Object.values(amounts).reduce((a, b) => a + b, 0);
+    if (subtotal <= 0) continue; // Nothing to bill
+
+    // Calcular IVA y total con IVA incluido
+    const { iva, total } = calculateIVA(subtotal);
 
     // Check duplicate invoice for this enrollment in current month
     const existing = await strapi.entityService.findMany('api::invoice.invoice', {
@@ -66,7 +93,10 @@ const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
       },
       limit: 1,
     });
-    if (existing && existing.length > 0) continue;
+    if (existing && existing.length > 0) {
+      skippedCount++;
+      continue;
+    }
 
     await strapi.entityService.create('api::invoice.invoice', {
       data: {
@@ -78,7 +108,7 @@ const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
         expirationDate: new Date(now.getFullYear(), now.getMonth(), 30).toISOString(),
         amounts,
         total,
-        IVA: 0,
+        IVA: iva,
         issuedby: 'Sistema',
         registeredBy: 'system',
       },
@@ -86,7 +116,7 @@ const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
     createdCount++;
   }
 
-  strapi.log.info(`[Cron] Facturas de alumnos creadas: ${createdCount}`);
+  strapi.log.info(`📊 [Cron] Facturas de alumnos - Creadas: ${createdCount}, Omitidas (duplicadas): ${skippedCount}`);
 };
 
 /**
@@ -104,7 +134,10 @@ const generateEmployeePayrolls = async ({ strapi }: TaskContext) => {
     limit: 10000,
   });
   const employeeList = Array.isArray(employees) ? employees : [];
+  
+  strapi.log.info(`👷 [Cron] Empleados activos encontrados: ${employeeList.length}`);
   let createdCount = 0;
+  let skippedCount = 0;
 
   for (const emp of employeeList) {
     const terms = Array.isArray((emp as any).terms) ? (emp as any).terms : [];
@@ -126,6 +159,9 @@ const generateEmployeePayrolls = async ({ strapi }: TaskContext) => {
 
     if (!Number.isFinite(salary) || salary <= 0) continue; // Nothing to bill
 
+    // Calcular IVA y total con IVA incluido
+    const { iva, total } = calculateIVA(salary);
+
     // Check duplicate payroll for this employee in current month
     const existing = await strapi.entityService.findMany('api::invoice.invoice', {
       filters: {
@@ -135,7 +171,10 @@ const generateEmployeePayrolls = async ({ strapi }: TaskContext) => {
       },
       limit: 1,
     });
-    if (existing && existing.length > 0) continue;
+    if (existing && existing.length > 0) {
+      skippedCount++;
+      continue;
+    }
 
     await strapi.entityService.create('api::invoice.invoice', {
       data: {
@@ -146,8 +185,8 @@ const generateEmployeePayrolls = async ({ strapi }: TaskContext) => {
         emissionDate: now.toISOString(),
         expirationDate: new Date(now.getFullYear(), now.getMonth(), 30).toISOString(),
         amounts: { salario: salary },
-        total: salary,
-        IVA: 0,
+        total,
+        IVA: iva,
         issuedby: 'Sistema',
         registeredBy: 'system',
       },
@@ -155,7 +194,7 @@ const generateEmployeePayrolls = async ({ strapi }: TaskContext) => {
     createdCount++;
   }
 
-  strapi.log.info(`[Cron] Nóminas de empleados creadas: ${createdCount}`);
+  strapi.log.info(`📊 [Cron] Nóminas de empleados - Creadas: ${createdCount}, Omitidas (duplicadas): ${skippedCount}`);
 };
 
 export default {
@@ -165,9 +204,31 @@ export default {
       tz: 'Europe/Madrid',
     },
     task: async (ctx: TaskContext) => {
-      ctx.strapi.log.info('[Cron] Ejecutando facturación mensual (alumnos y nóminas)');
-      await generateEnrollmentInvoices(ctx);
-      await generateEmployeePayrolls(ctx);
+      const timestamp = new Date().toLocaleString('es-ES', { 
+        timeZone: 'Europe/Madrid',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      
+      ctx.strapi.log.info(`🕐 [Cron] INICIO - Ejecutando facturación mensual (${timestamp})`);
+      ctx.strapi.log.info(`⚙️  [Cron] Configuración: cada 6 horas (MODO PRUEBA)`);
+      
+      try {
+        ctx.strapi.log.info(`📋 [Cron] Generando facturas de enrollment...`);
+        await generateEnrollmentInvoices(ctx);
+        
+        ctx.strapi.log.info(`💰 [Cron] Generando nóminas de empleados...`);
+        await generateEmployeePayrolls(ctx);
+        
+        ctx.strapi.log.info(`✅ [Cron] COMPLETADO - Facturación mensual finalizada (${timestamp})`);
+      } catch (error) {
+        ctx.strapi.log.error(`❌ [Cron] ERROR - Falló la facturación mensual: ${error.message}`);
+        throw error;
+      }
     },
   },
 };
