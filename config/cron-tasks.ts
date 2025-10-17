@@ -98,6 +98,13 @@ const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
       continue;
     }
 
+    // Generar título y nota para la factura
+    const monthName = now.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+    const currentDate = now.toLocaleDateString('es-ES');
+    const studentName = (enr as any).student?.name || 'Estudiante';
+    const invoiceTitle = `Factura mensual - ${monthName} - ${studentName} - ${currentDate}`;
+    const invoiceNote = `Factura generada automáticamente por el sistema el ${currentDate} para los servicios del mes de ${monthName}.`;
+
     await strapi.entityService.create('api::invoice.invoice', {
       data: {
         invoiceCategory: 'invoice_enrollment',
@@ -111,6 +118,8 @@ const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
         IVA: iva,
         issuedby: 'Sistema',
         registeredBy: 'system',
+        title: invoiceTitle,
+        note: invoiceNote,
       },
     });
     createdCount++;
@@ -176,6 +185,13 @@ const generateEmployeePayrolls = async ({ strapi }: TaskContext) => {
       continue;
     }
 
+    // Generar título y nota para la nómina
+    const monthName = now.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+    const currentDate = now.toLocaleDateString('es-ES');
+    const employeeName = (emp as any).name || 'Empleado';
+    const payrollTitle = `Nómina - ${monthName} - ${employeeName} - ${currentDate}`;
+    const payrollNote = `Nómina generada automáticamente por el sistema el ${currentDate} correspondiente al mes de ${monthName}.`;
+
     await strapi.entityService.create('api::invoice.invoice', {
       data: {
         invoiceCategory: 'invoice_employ',
@@ -189,6 +205,8 @@ const generateEmployeePayrolls = async ({ strapi }: TaskContext) => {
         IVA: iva,
         issuedby: 'Sistema',
         registeredBy: 'system',
+        title: payrollTitle,
+        note: payrollNote,
       },
     });
     createdCount++;
