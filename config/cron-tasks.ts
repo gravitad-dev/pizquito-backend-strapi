@@ -11,8 +11,8 @@ const IVA_RATE = 0.21;
 // Ejecutar a las 00:00 (medianoche) del día configurado, en horario de Madrid.
 // const DEFAULT_MONTHLY_RULE = `0 0 0 ${BILLING_DAY} * *`;
 
-// CONFIGURACIÓN DE PRUEBA: Ejecutar cada 6 horas
-const DEFAULT_MONTHLY_RULE = `0 0 */6 * * *`;
+// CONFIGURACIÓN DE PRUEBA: Ejecutar cada 5 minutos
+const DEFAULT_MONTHLY_RULE = `0 */5 * * * *`;
 
 type TaskContext = { strapi: Core.Strapi };
 
