@@ -119,7 +119,7 @@ const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
         issuedby: 'Sistema',
         registeredBy: 'system',
         title: invoiceTitle,
-        note: invoiceNote,
+        notes: invoiceNote,
       },
     });
     createdCount++;
@@ -206,7 +206,7 @@ const generateEmployeePayrolls = async ({ strapi }: TaskContext) => {
         issuedby: 'Sistema',
         registeredBy: 'system',
         title: payrollTitle,
-        note: payrollNote,
+        notes: payrollNote,
       },
     });
     createdCount++;
