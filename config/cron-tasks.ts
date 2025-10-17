@@ -84,12 +84,14 @@ const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
     // Calcular IVA y total con IVA incluido
     const { iva, total } = calculateIVA(subtotal);
 
-    // Check duplicate invoice for this enrollment in current month
+    // Check duplicate automatic invoice for this enrollment in current month
+    // Only check for system-generated invoices, not manual ones
     const existing = await strapi.entityService.findMany('api::invoice.invoice', {
       filters: {
         invoiceCategory: 'invoice_enrollment',
         enrollment: (enr as any).id,
         emissionDate: { $gte: start, $lt: end },
+        registeredBy: 'system', // Only check system-generated invoices
       },
       limit: 1,
     });
