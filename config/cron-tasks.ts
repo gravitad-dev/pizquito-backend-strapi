@@ -70,8 +70,8 @@ const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
     const services = Array.isArray((enr as any).services) ? (enr as any).services : [];
     const amounts: Record<string, number> = {};
     for (const srv of services) {
-      // Only student services that are active contribute
-      if (srv?.serviceStatus === 'active' && srv?.serviceType === 'student_service') {
+      // Any active service contributes to the invoice
+      if (srv?.serviceStatus === 'active') {
         const title = srv?.title ?? 'Servicio';
         const amount = num(srv?.amount, 0);
         if (amount > 0) amounts[title] = (amounts[title] ?? 0) + amount;
