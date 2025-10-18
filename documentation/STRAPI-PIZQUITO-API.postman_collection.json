@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "918282b5-37e0-48a2-bcb0-971f1fb853b6",
+		"_postman_id": "29bc3977-e208-49ff-bb20-79669fa6ce28",
 		"name": "STRAPI-PIZQUITO-API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "43592215"
@@ -1179,6 +1179,405 @@
 								}
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Export Invoice History [REMOVIDO]",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+								"description": "Tipo de contenido esperado (Excel)"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"description": "Token JWT para autenticación (si es requerido)",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/employees/:id/export-invoice-history?category=invoice_employ",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"employees",
+								":id",
+								"export-invoice-history"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": "invoice_employ",
+									"description": "Categoría de factura (invoice_employ para facturas de empleados)"
+								},
+								{
+									"key": "startDate",
+									"value": "2024-01-01",
+									"description": "Fecha de inicio en formato YYYY-MM-DD (opcional)",
+									"disabled": true
+								},
+								{
+									"key": "endDate",
+									"value": "2024-12-31",
+									"description": "Fecha de fin en formato YYYY-MM-DD (opcional)",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "paid",
+									"description": "Estado de la factura: unpaid, inprocess, paid, canceled (opcional)",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID del empleado"
+								}
+							]
+						},
+						"description": "Exporta el historial de facturas de un empleado específico en formato Excel (.xlsx).\n\n**Funcionalidad:**\n- Genera un archivo Excel con todas las facturas del empleado\n- Incluye filtros opcionales por fecha y estado\n- Formato profesional con encabezados, totales y estilos\n\n**Parámetros de ruta:**\n- `documentId`: Identificador del documento del empleado (requerido)\n\n**Parámetros de consulta opcionales:**\n- `startDate`: Fecha de inicio en formato YYYY-MM-DD\n- `endDate`: Fecha de fin en formato YYYY-MM-DD\n- `status`: Estado de la factura (unpaid, inprocess, paid, canceled)\n\n**Respuesta exitosa (200):**\n- Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n- Content-Disposition: attachment; filename=\"historial_facturas_[Nombre]_[Apellido]_[Fecha].xlsx\"\n- Body: Archivo Excel binario\n\n**Estructura del Excel:**\n- ID, Título, Fecha Emisión, Fecha Vencimiento\n- Estado, Categoría, Tipo, Subtotal, IVA, Total\n- Origen, Notas\n- Fila de totales al final\n- Formato profesional con colores y filtros\n\n**Notas:**\n- Endpoint antiguo mantenido por compatibilidad. Se recomienda usar los nuevos endpoints en Reports XLSX:\n  - /api/reports/xlsx/invoices/employees/:documentId\n  - /api/reports/xlsx/invoices/enrollments/:documentId\n  - /api/reports/xlsx/invoices/general/:documentId\n  - /api/reports/xlsx/invoices/services/:documentId\n\n**Errores posibles:**\n- 404: Empleado no encontrado\n- 500: Error interno del servidor\n\n**Ejemplo de uso:**\n```\nGET /api/employees/:documentId/export-invoice-history?startDate=2024-01-01&endDate=2024-12-31\n```"
+					},
+					"response": [
+						{
+							"name": "Successful Export",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+									}
+								],
+								"url": {
+									"raw": "{{STRAPI_URL_LOCAL}}/api/employees/1/export-invoice-history?category=invoice_employ",
+									"host": [
+										"{{STRAPI_URL_LOCAL}}"
+									],
+									"path": [
+										"api",
+										"employees",
+										"1",
+										"export-invoice-history"
+									],
+									"query": [
+										{
+											"key": "category",
+											"value": "invoice_employ"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+								},
+								{
+									"key": "Content-Disposition",
+									"value": "attachment; filename=\"historial_facturas_Laura_Fernández Ruiz_2024-10-18.xlsx\""
+								},
+								{
+									"key": "Access-Control-Expose-Headers",
+									"value": "Content-Disposition"
+								}
+							],
+							"cookie": [],
+							"body": "[Binary Excel file content - 7.01 KB]"
+						},
+						{
+							"name": "Employee Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+									}
+								],
+								"url": {
+									"raw": "{{STRAPI_URL_LOCAL}}/api/employees/999/export-invoice-history",
+									"host": [
+										"{{STRAPI_URL_LOCAL}}"
+									],
+									"path": [
+										"api",
+										"employees",
+										"999",
+										"export-invoice-history"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"error\": {\n    \"status\": 404,\n    \"name\": \"NotFoundError\",\n    \"message\": \"Empleado no encontrado\"\n  }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "REPORTS XLSX",
+			"item": [
+				{
+					"name": "Invoice List XLSX - Employees",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/xlsx/invoices/employees/:id",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"xlsx",
+								"invoices",
+								"employees",
+								":id"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2024-01-01",
+									"disabled": true
+								},
+								{
+									"key": "endDate",
+									"value": "2024-12-31",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "paid",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "13"
+								}
+							]
+						},
+						"description": "Exportar XLSX con historial de facturas de empleado por id."
+					},
+					"response": []
+				},
+				{
+					"name": "Invoice List XLSX - Enrollments",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/xlsx/invoices/enrollments/:id",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"xlsx",
+								"invoices",
+								"enrollments",
+								":id"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2024-01-01",
+									"disabled": true
+								},
+								{
+									"key": "endDate",
+									"value": "2024-12-31",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "paid",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "12"
+								}
+							]
+						},
+						"description": "Exportar XLSX con historial de matrículas por id."
+					},
+					"response": []
+				},
+				{
+					"name": "Invoice List XLSX - General",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/xlsx/invoices/general",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"xlsx",
+								"invoices",
+								"general"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2024-01-01",
+									"description": "Fecha de inicio (YYYY-MM-DD) para filtrar por fecha de emisión (inclusive)",
+									"disabled": true
+								},
+								{
+									"key": "endDate",
+									"value": "2024-12-31",
+									"description": "Fecha fin (YYYY-MM-DD) para filtrar por fecha de emisión (inclusive)",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "paid",
+									"description": "Estado de factura: unpaid|inprocess|paid|canceled",
+									"disabled": true
+								},
+								{
+									"key": "sortBy",
+									"value": "emissionDate",
+									"description": "Campo de orden (por defecto emissionDate)",
+									"disabled": true
+								},
+								{
+									"key": "sortOrder",
+									"value": "desc",
+									"description": "Dirección de orden: asc|desc (por defecto desc)",
+									"disabled": true
+								},
+								{
+									"key": "invoiceType",
+									"value": "expense",
+									"description": "Tipo de factura: charge|payment|income|expense",
+									"disabled": true
+								},
+								{
+									"key": "registeredBy",
+									"value": "system",
+									"description": "Origen de registro: administration|bank|system",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Exportar XLSX con historial general; soporta filtros por fechas/estado y ordenamiento/otros filtros por query (sortBy, sortOrder, invoiceType, registeredBy)."
+					},
+					"response": []
+				},
+				{
+					"name": "Invoice List XLSX - Services",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/xlsx/invoices/services",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"xlsx",
+								"invoices",
+								"services"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2024-01-01",
+									"description": "Fecha de inicio (YYYY-MM-DD) para filtrar por fecha de emisión (inclusive)",
+									"disabled": true
+								},
+								{
+									"key": "endDate",
+									"value": "2024-12-31",
+									"description": "Fecha fin (YYYY-MM-DD) para filtrar por fecha de emisión (inclusive)",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "paid",
+									"description": "Estado de factura: unpaid|inprocess|paid|canceled",
+									"disabled": true
+								},
+								{
+									"key": "sortBy",
+									"value": "emissionDate",
+									"description": "Campo de orden (por defecto emissionDate)",
+									"disabled": true
+								},
+								{
+									"key": "sortOrder",
+									"value": "desc",
+									"description": "Dirección de orden: asc|desc (por defecto desc)",
+									"disabled": true
+								},
+								{
+									"key": "invoiceType",
+									"value": "expense",
+									"description": "Tipo de factura: charge|payment|income|expense",
+									"disabled": true
+								},
+								{
+									"key": "registeredBy",
+									"value": "system",
+									"description": "Origen de registro: administration|bank|system",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Exportar XLSX con historial de servicios; soporta filtros por fechas/estado y ordenamiento/otros filtros por query (sortBy, sortOrder, invoiceType, registeredBy)."
 					},
 					"response": []
 				}
