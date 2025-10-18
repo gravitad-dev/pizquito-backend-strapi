@@ -1,0 +1,21 @@
+{
+  "kind": "singleType",
+  "collectionName": "cron_days",
+  "info": {
+    "singularName": "cron-day",
+    "pluralName": "cron-days",
+    "displayName": "Cron Day"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "cron_day": {
+      "type": "integer",
+      "default": 25,
+      "min": 1,
+      "max": 31
+    }
+  }
+}

@@ -1,17 +1,38 @@
 import type { Core } from '@strapi/types';
 
-// Cron rule can be configured via .env using BILLING_CRON_RULE.
-// The day of month is configurable via CRON_BILLING_DAY (default 25).
-const BILLING_DAY = String(process.env.CRON_BILLING_DAY || 25);
-
 // Tasa de IVA (21% en España)
 const IVA_RATE = 0.21;
 
-// CONFIGURACIÓN ORIGINAL (COMENTADA PARA MODO TEST)
-// Ejecutar a las 00:00 (medianoche) del día configurado, en horario de Madrid.
-// const DEFAULT_MONTHLY_RULE = `0 0 0 ${BILLING_DAY} * *`;
+/**
+ * Helper: get billing day from cron-day content type
+ */
+const getBillingDay = async (strapi: Core.Strapi): Promise<number> => {
+  try {
+    const cronDayConfig = await strapi.entityService.findMany('api::cron-day.cron-day', {
+      limit: 1,
+    }) as any;
+    
+    if (cronDayConfig && typeof cronDayConfig.cron_day === 'number') {
+      return cronDayConfig.cron_day;
+    }
+  } catch (error) {
+    console.warn('⚠️  No se pudo obtener la configuración de cron-day, usando valor por defecto');
+  }
+  
+  return 25; // Valor por defecto
+};
+
+/**
+ * Helper: generate cron rule based on billing day
+ */
+const generateCronRule = async (strapi: Core.Strapi): Promise<string> => {
+  const billingDay = await getBillingDay(strapi);
+  // Ejecutar a las 00:00 (medianoche) del día configurado, en horario de Madrid
+  return `0 0 0 ${billingDay} * *`;
+};
 
 // CONFIGURACIÓN DE PRUEBA: Ejecutar cada 5 minutos
+// Para producción, usar: await generateCronRule(strapi)
 const DEFAULT_MONTHLY_RULE = `0 */5 * * * *`;
 
 type TaskContext = { strapi: Core.Strapi };
@@ -234,8 +255,11 @@ export default {
         second: '2-digit'
       });
       
+      // Obtener el día de facturación configurado
+      const billingDay = await getBillingDay(ctx.strapi);
+      
       ctx.strapi.log.info(`🕐 [Cron] INICIO - Ejecutando facturación mensual (${timestamp})`);
-      ctx.strapi.log.info(`⚙️  [Cron] Configuración: cada 6 horas (MODO PRUEBA)`);
+      ctx.strapi.log.info(`⚙️  [Cron] Configuración: cada 5 minutos (MODO PRUEBA) - Día de facturación: ${billingDay}`);
       
       try {
         ctx.strapi.log.info(`📋 [Cron] Generando facturas de enrollment...`);

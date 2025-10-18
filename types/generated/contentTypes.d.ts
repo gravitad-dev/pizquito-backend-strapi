@@ -449,6 +449,42 @@ export interface ApiCompanyCompany extends Struct.SingleTypeSchema {
   };
 }
 
+export interface ApiCronDayCronDay extends Struct.SingleTypeSchema {
+  collectionName: 'cron_days';
+  info: {
+    displayName: 'Cron Day';
+    pluralName: 'cron-days';
+    singularName: 'cron-day';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    cron_day: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 31;
+          min: 1;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<25>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::cron-day.cron-day'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiEmployeeEmployee extends Struct.CollectionTypeSchema {
   collectionName: 'employees';
   info: {
@@ -1511,6 +1547,7 @@ declare module '@strapi/strapi' {
       'admin::user': AdminUser;
       'api::classroom.classroom': ApiClassroomClassroom;
       'api::company.company': ApiCompanyCompany;
+      'api::cron-day.cron-day': ApiCronDayCronDay;
       'api::employee.employee': ApiEmployeeEmployee;
       'api::enrollment.enrollment': ApiEnrollmentEnrollment;
       'api::global.global': ApiGlobalGlobal;
