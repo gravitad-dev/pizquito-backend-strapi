@@ -88,17 +88,6 @@ Soportan query params: populate, filters, sort, pagination.
 - Ejemplos:
   - GET /api/employees
   - POST /api/employees
-  - Exportar historial de facturas (REMOVIDO): GET /api/employees/:documentId/export-invoice-history
-    - Endpoint removido. Usar los endpoints del módulo Reports (XLSX).
-    - Endpoints:
-      - GET /api/reports/xlsx/invoices/employees/:id (todas las facturas de un empleado específico por ID)
-      - GET /api/reports/xlsx/invoices/enrollments/:id (todas las facturas de una matrícula específica por ID)
-      - GET /api/reports/xlsx/invoices/general (todas las facturas generales)
-        - Parámetros opcionales: ?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&status=unpaid|inprocess|paid|canceled&sortBy=campo&sortOrder=asc|desc&invoiceType=charge|payment|income|expense&registeredBy=administration|bank|system
-      - GET /api/reports/xlsx/invoices/services (todas las facturas de servicios)
-        - Parámetros opcionales: ?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&status=unpaid|inprocess|paid|canceled&sortBy=campo&sortOrder=asc|desc&invoiceType=charge|payment|income|expense&registeredBy=administration|bank|system
-    - Nota: El Excel incluye una sola columna de Origen (en lugar de Emitido por y Registrado por).
-    - Headers: Accept: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
 
 ### Guardians
 - Plural: guardians
