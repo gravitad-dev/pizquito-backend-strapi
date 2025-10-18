@@ -133,3 +133,9 @@ build
 .strapi-cloud.json
 package-lock.json
 postgresql_data
+
+############################
+# Development Scripts
+############################
+
+scripts/

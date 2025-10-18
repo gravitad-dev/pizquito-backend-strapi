@@ -148,32 +148,47 @@ export default {
           if (!emission || !inRange(emission, year, quarter)) return;
           monthsWith.add(monthIndex(emission));
 
+          // Usar el total de la factura (que incluye IVA) en lugar de amounts
+          const invoiceTotal = ensureNumber(inv.total);
           const amounts = inv.amounts || {};
           const keys = Object.keys(amounts);
+          
           if (keys.length === 0) {
-            sums.totalOnly += ensureNumber(inv.total);
+            // Si no hay amounts, todo va a totalOnly
+            sums.totalOnly += invoiceTotal;
           } else {
-            keys.forEach((k) => {
-              const val = ensureNumber((amounts as any)[k]);
-              const keyNorm = k.toLowerCase();
-              if (keyNorm.includes("matri")) {
-                sums.matricula += val;
-              } else if (
-                keyNorm.includes("comedor") ||
-                keyNorm.includes("menu") ||
-                keyNorm.includes("catering")
-              ) {
-                sums.comedor += val;
-              } else if (
-                keyNorm.includes("subv") ||
-                keyNorm.includes("beca") ||
-                keyNorm.includes("ayuda")
-              ) {
-                sums.subsidized += val;
-              } else {
-                sums.totalOnly += val;
-              }
-            });
+            // Calcular la proporción de cada concepto y aplicarla al total con IVA
+            const subtotal = keys.reduce((acc, k) => acc + ensureNumber((amounts as any)[k]), 0);
+            
+            if (subtotal > 0) {
+              keys.forEach((k) => {
+                const amountValue = ensureNumber((amounts as any)[k]);
+                const proportion = amountValue / subtotal;
+                const totalWithIVA = invoiceTotal * proportion;
+                const keyNorm = k.toLowerCase();
+                
+                if (keyNorm.includes("matri")) {
+                  sums.matricula += totalWithIVA;
+                } else if (
+                  keyNorm.includes("comedor") ||
+                  keyNorm.includes("menu") ||
+                  keyNorm.includes("catering")
+                ) {
+                  sums.comedor += totalWithIVA;
+                } else if (
+                  keyNorm.includes("subv") ||
+                  keyNorm.includes("beca") ||
+                  keyNorm.includes("ayuda")
+                ) {
+                  sums.subsidized += totalWithIVA;
+                } else {
+                  sums.totalOnly += totalWithIVA;
+                }
+              });
+            } else {
+              // Si subtotal es 0, todo va a totalOnly
+              sums.totalOnly += invoiceTotal;
+            }
           }
         });
 
