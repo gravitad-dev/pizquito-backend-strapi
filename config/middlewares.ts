@@ -1,4 +1,4 @@
-const allowedOrigins = (process.env.CORS_ORIGINS || 'https://patent.gravitad.xyz').split(',');
+const allowedOrigins = (process.env.CORS_ORIGINS || 'https://pizquito.gravitad.xyz').split(',');
 
 export default [
   'strapi::logger',
@@ -20,7 +20,7 @@ export default [
   {
     name: 'strapi::cors',
     config: {
-  //    origin: ['https://patent.gravitad.xyz','http://localhost:3000'], // dominios permitidos
+  //    origin: ['https://pizquito.gravitad.xyz','http://localhost:3000'], // dominios permitidos
       origin: allowedOrigins,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       headers: ['Content-Type', 'Authorization', 'Origin', 'Accept'],

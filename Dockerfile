@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 node:18-alpine
+FROM --platform=linux/amd64 node:20-alpine
 
 # Installing libvips-dev for sharp Compatibility + build tools for native modules
 RUN apk update && apk add --no-cache build-base gcc autoconf automake zlib-dev libpng-dev nasm bash vips-dev python3 make g++
@@ -6,7 +6,7 @@ RUN apk update && apk add --no-cache build-base gcc autoconf automake zlib-dev l
 ENV NODE_ENV=${NODE_ENV}
 
 WORKDIR /opt/
-COPY package.json package-lock.json ./
+COPY package.json ./
 
 # Install dependencies with longer timeout and rebuild native modules
 RUN npm config set fetch-retry-maxtimeout 600000 -g && \
