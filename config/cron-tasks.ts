@@ -328,6 +328,17 @@ const generateEnrollmentInvoices = async ({
       }
     }
 
+    // Agregar additionalAmount del enrollment si existe
+    const additionalAmount = (enr as any).additionalAmount;
+    if (additionalAmount && typeof additionalAmount === "object") {
+      for (const [key, value] of Object.entries(additionalAmount)) {
+        const amount = num(value, 0);
+        if (amount > 0) {
+          amounts[key] = (amounts[key] ?? 0) + amount;
+        }
+      }
+    }
+
     const subtotal = Object.values(amounts).reduce((a, b) => a + b, 0);
     if (subtotal <= 0) continue; // Nothing to bill
 
@@ -432,12 +443,23 @@ const generateEmployeePayrolls = async ({
     }
 
     // Calculate salary based on payment period
-    const salary = calculateSalaryAmount(
+    const baseSalary = calculateSalaryAmount(
       period,
       latest?.hourlyRate,
       latest?.workedHours,
       now,
     );
+
+    // Agregar additionalAmount del empleado si existe
+    let additionalTotal = 0;
+    const additionalAmount = (emp as any).additionalAmount;
+    if (additionalAmount && typeof additionalAmount === "object") {
+      for (const value of Object.values(additionalAmount)) {
+        additionalTotal += num(value, 0);
+      }
+    }
+
+    const salary = baseSalary + additionalTotal;
 
     if (!Number.isFinite(salary) || salary <= 0) {
       strapi.log.debug(
@@ -473,12 +495,22 @@ const generateEmployeePayrolls = async ({
     const payrollNote = `Nómina ${periodLabel.toLowerCase()} generada automáticamente por el sistema el ${currentDate}. Tipo de contrato: ${period}. Salario calculado: €${salary.toFixed(2)}.`;
 
     // Debug: Log amounts before saving
-    const payrollAmounts = {
-      salario: salary,
+    const payrollAmounts: Record<string, number> = {
+      salario_base: baseSalary,
       tipo_contrato: period,
       tarifa_hora: latest?.hourlyRate || 0,
       horas_trabajadas: latest?.workedHours || 0,
     };
+
+    // Agregar additionalAmount detallados al objeto amounts
+    if (additionalAmount && typeof additionalAmount === "object") {
+      for (const [key, value] of Object.entries(additionalAmount)) {
+        const amount = num(value, 0);
+        if (amount > 0) {
+          payrollAmounts[key] = amount;
+        }
+      }
+    }
     strapi.log.debug(
       `💰 [Cron] Guardando amounts para employee ${employeeName} (${period}):`,
       JSON.stringify(payrollAmounts),
