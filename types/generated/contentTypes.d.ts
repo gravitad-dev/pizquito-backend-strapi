@@ -452,7 +452,7 @@ export interface ApiCompanyCompany extends Struct.SingleTypeSchema {
 export interface ApiCronDayCronDay extends Struct.SingleTypeSchema {
   collectionName: 'cron_days';
   info: {
-    displayName: 'Cron Day';
+    displayName: 'Billing Configuration';
     pluralName: 'cron-days';
     singularName: 'cron-day';
   };
@@ -472,13 +472,47 @@ export interface ApiCronDayCronDay extends Struct.SingleTypeSchema {
         number
       > &
       Schema.Attribute.DefaultTo<25>;
+    cron_hour: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 23;
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<5>;
+    cron_minute: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 59;
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    execution_notes: Schema.Attribute.Text;
+    is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    last_execution: Schema.Attribute.DateTime;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::cron-day.cron-day'
     > &
       Schema.Attribute.Private;
+    next_execution: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
+    test_interval_minutes: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 60;
+          min: 1;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<5>;
+    test_mode: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    timezone: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Europe/Madrid'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

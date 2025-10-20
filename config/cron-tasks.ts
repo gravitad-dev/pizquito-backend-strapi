@@ -1,34 +1,123 @@
-import type { Core } from '@strapi/types';
+import type { Core } from "@strapi/types";
 
 // Tasa de IVA (21% en España)
 const IVA_RATE = 0.21;
 
 /**
- * Helper: get billing day from cron-day content type
+ * Helper: get billing configuration from cron-day content type
  */
-const getBillingDay = async (strapi: Core.Strapi): Promise<number> => {
+const getBillingConfig = async (
+  strapi: Core.Strapi,
+): Promise<{
+  day: number;
+  hour: number;
+  minute: number;
+  testMode: boolean;
+  testIntervalMinutes: number;
+  timezone: string;
+  isActive: boolean;
+}> => {
   try {
-    const cronDayConfig = await strapi.entityService.findMany('api::cron-day.cron-day', {
-      limit: 1,
-    }) as any;
-    
-    if (cronDayConfig && typeof cronDayConfig.cron_day === 'number') {
-      return cronDayConfig.cron_day;
+    const cronDayConfig = (await strapi.entityService.findMany(
+      "api::cron-day.cron-day",
+      {
+        limit: 1,
+      },
+    )) as any;
+
+    if (cronDayConfig) {
+      return {
+        day: cronDayConfig.cron_day || 25,
+        hour: cronDayConfig.cron_hour || 5,
+        minute: cronDayConfig.cron_minute || 0,
+        testMode: cronDayConfig.test_mode || false,
+        testIntervalMinutes: cronDayConfig.test_interval_minutes || 5,
+        timezone: cronDayConfig.timezone || "Europe/Madrid",
+        isActive: cronDayConfig.is_active !== false, // Default true
+      };
     }
   } catch (error) {
-    console.warn('⚠️  No se pudo obtener la configuración de cron-day, usando valor por defecto');
+    console.warn(
+      "⚠️  No se pudo obtener la configuración de billing, usando valores por defecto",
+    );
   }
-  
-  return 25; // Valor por defecto
+
+  // Valores por defecto
+  return {
+    day: 25,
+    hour: 5,
+    minute: 0,
+    testMode: false,
+    testIntervalMinutes: 5,
+    timezone: "Europe/Madrid",
+    isActive: true,
+  };
 };
 
 /**
- * Helper: generate cron rule based on billing day
+ * Helper: get billing day from cron-day content type (backward compatibility)
+ */
+const getBillingDay = async (strapi: Core.Strapi): Promise<number> => {
+  const config = await getBillingConfig(strapi);
+  return config.day;
+};
+
+/**
+ * Helper: generate cron rule based on billing configuration
  */
 const generateCronRule = async (strapi: Core.Strapi): Promise<string> => {
-  const billingDay = await getBillingDay(strapi);
-  // Ejecutar a las 00:00 (medianoche) del día configurado, en horario de Madrid
-  return `0 0 0 ${billingDay} * *`;
+  const config = await getBillingConfig(strapi);
+
+  // Si está en modo de testeo, usar intervalo de minutos
+  if (config.testMode) {
+    return `*/${config.testIntervalMinutes} * * * *`; // Cada X minutos
+  }
+
+  // Modo normal: ejecutar en el día, hora y minuto configurados
+  return `${config.minute} ${config.hour} ${config.day} * *`;
+};
+
+/**
+ * Helper: update execution timestamps in billing configuration
+ */
+const updateExecutionTimestamps = async (
+  strapi: Core.Strapi,
+  lastExecution: Date,
+  notes?: string,
+): Promise<void> => {
+  try {
+    const config = await getBillingConfig(strapi);
+
+    // Calcular próxima ejecución
+    let nextExecution: Date;
+    if (config.testMode) {
+      // En modo test, próxima ejecución es en X minutos
+      nextExecution = new Date(
+        lastExecution.getTime() + config.testIntervalMinutes * 60 * 1000,
+      );
+    } else {
+      // En modo producción, próxima ejecución es el próximo mes en el día configurado
+      nextExecution = new Date(lastExecution);
+      nextExecution.setMonth(nextExecution.getMonth() + 1);
+      nextExecution.setDate(config.day);
+      nextExecution.setHours(config.hour, config.minute, 0, 0);
+    }
+
+    await strapi.entityService.update("api::cron-day.cron-day", 1, {
+      data: {
+        last_execution: lastExecution.toISOString(),
+        next_execution: nextExecution.toISOString(),
+        execution_notes:
+          notes ||
+          `Última ejecución: ${lastExecution.toLocaleString("es-ES", { timeZone: config.timezone })}`,
+      } as any, // TODO: Remove when Strapi types are fully regenerated
+    });
+  } catch (error) {
+    strapi.log.warn(
+      "⚠️  No se pudieron actualizar las fechas de ejecución:",
+      error.message,
+    );
+  }
 };
 
 /**
@@ -39,42 +128,42 @@ const logCronExecution = async (
   {
     title,
     message,
-    level = 'INFO',
-    event_type = 'cron_execution',
+    level = "INFO",
+    event_type = "cron_execution",
     payload = {},
     duration_ms,
-    status_code = '200'
+    status_code = "200",
   }: {
     title: string;
     message: string;
-    level?: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG';
+    level?: "INFO" | "WARN" | "ERROR" | "DEBUG";
     event_type?: string;
     payload?: Record<string, any>;
     duration_ms?: string;
     status_code?: string;
-  }
+  },
 ) => {
   try {
     const trace_id = `cron-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    await strapi.entityService.create('api::history.history', {
+
+    await strapi.entityService.create("api::history.history", {
       data: {
         title,
         message,
         trace_id,
         timestamp: new Date().toISOString(),
-        module: 'cron',
+        module: "cron",
         event_type,
         level,
         status_code,
-        duration_ms: duration_ms || '0',
-        user_id: 'system',
+        duration_ms: duration_ms || "0",
+        user_id: "system",
         payload,
         publishedAt: new Date().toISOString(),
       },
     });
   } catch (error) {
-    console.error('❌ Error al registrar en history:', error);
+    console.error("❌ Error al registrar en history:", error);
   }
 };
 
@@ -83,6 +172,11 @@ const logCronExecution = async (
 const DEFAULT_MONTHLY_RULE = `0 */5 * * * *`;
 
 type TaskContext = { strapi: Core.Strapi };
+
+type BillingResults = {
+  created: number;
+  skipped?: number;
+};
 
 /**
  * Helper: get start and end ISO for current month
@@ -97,7 +191,8 @@ const getMonthBounds = (date = new Date()) => {
  * Helper: safely to number
  */
 const num = (v: unknown, fallback = 0): number => {
-  const n = typeof v === 'string' ? Number(v) : typeof v === 'number' ? v : fallback;
+  const n =
+    typeof v === "string" ? Number(v) : typeof v === "number" ? v : fallback;
   return Number.isFinite(n) ? n : fallback;
 };
 
@@ -113,34 +208,121 @@ const calculateIVA = (subtotal: number) => {
 };
 
 /**
+ * Determine if an employee should be billed based on their contract payment period
+ * and the current execution date
+ */
+const shouldBillEmployee = (
+  paymentPeriod: string,
+  currentDate: Date,
+): boolean => {
+  const day = currentDate.getDate();
+
+  switch (paymentPeriod) {
+    case "monthly":
+      // Monthly employees are billed once per month (on the configured billing day)
+      return true;
+
+    case "biweekly":
+      // Biweekly employees are billed twice per month: on days 1-2 and 15-16
+      return (day >= 1 && day <= 2) || (day >= 15 && day <= 16);
+
+    case "weekly":
+      // Weekly employees are billed every Monday (day 1 of the week)
+      return currentDate.getDay() === 1; // Monday
+
+    case "daily":
+      // Daily employees are billed every day
+      return true;
+
+    case "annual":
+      // Annual employees are billed once per year (only in January)
+      return currentDate.getMonth() === 0 && day >= 1 && day <= 2;
+
+    default:
+      // Unknown payment period, default to monthly
+      return true;
+  }
+};
+
+/**
+ * Calculate salary amount based on payment period and contract terms
+ */
+const calculateSalaryAmount = (
+  paymentPeriod: string,
+  hourlyRate: number,
+  workedHours: number,
+  currentDate: Date,
+): number => {
+  const hourly = num(hourlyRate, 0);
+  const hours = num(workedHours, 0);
+
+  switch (paymentPeriod) {
+    case "monthly":
+      // Monthly: full monthly amount
+      return hourly > 0 && hours > 0 ? hourly * hours : hourly;
+
+    case "biweekly":
+      // Biweekly: half of monthly amount
+      const monthlyAmount = hourly > 0 && hours > 0 ? hourly * hours : hourly;
+      return monthlyAmount / 2;
+
+    case "weekly":
+      // Weekly: quarter of monthly amount
+      const weeklyBase = hourly > 0 && hours > 0 ? hourly * hours : hourly;
+      return weeklyBase / 4;
+
+    case "daily":
+      // Daily: hourly rate * daily hours (assuming 8 hours per day)
+      return hourly * (hours > 0 ? hours / 22 : 8); // 22 working days per month average
+
+    case "annual":
+      // Annual: full yearly amount (only billed once per year)
+      const annualAmount = hourly > 0 && hours > 0 ? hourly * hours : hourly;
+      return annualAmount * 12; // 12 months
+
+    default:
+      // Default to monthly calculation
+      return hourly > 0 && hours > 0 ? hourly * hours : hourly;
+  }
+};
+
+/**
  * Create monthly invoices for active enrollments that are unpaid.
  * - Aggregates active student services amounts per enrollment.
  * - Avoids duplicates within the month.
  */
-const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
+const generateEnrollmentInvoices = async ({
+  strapi,
+}: TaskContext): Promise<BillingResults> => {
   const now = new Date();
   const { start, end } = getMonthBounds(now);
 
   strapi.log.info(`📅 [Cron] Período de facturación: ${start} a ${end}`);
 
-  const enrollments = await strapi.entityService.findMany('api::enrollment.enrollment', {
-    filters: { isActive: true },
-    populate: { services: true, student: true },
-    limit: 10000,
-  });
+  const enrollments = await strapi.entityService.findMany(
+    "api::enrollment.enrollment",
+    {
+      filters: { isActive: true },
+      populate: { services: true, student: true },
+      limit: 10000,
+    },
+  );
   const enrollmentList = Array.isArray(enrollments) ? enrollments : [];
-  
-  strapi.log.info(`👥 [Cron] Enrollments activos encontrados: ${enrollmentList.length}`);
+
+  strapi.log.info(
+    `👥 [Cron] Enrollments activos encontrados: ${enrollmentList.length}`,
+  );
   let createdCount = 0;
-  let skippedCount = 0;
 
   for (const enr of enrollmentList) {
-    const services = Array.isArray((enr as any).services) ? (enr as any).services : [];
+    const services = Array.isArray((enr as any).services)
+      ? (enr as any).services
+      : [];
     const amounts: Record<string, number> = {};
     for (const srv of services) {
       // Any active service contributes to the invoice
-      if (srv?.serviceStatus === 'active') {
-        const title = srv?.title ?? 'Servicio';
+      if (srv?.serviceStatus === "active") {
+        const title = srv?.title ?? "Servicio";
         const amount = num(srv?.amount, 0);
         if (amount > 0) amounts[title] = (amounts[title] ?? 0) + amount;
       }
@@ -152,138 +334,188 @@ const generateEnrollmentInvoices = async ({ strapi }: TaskContext) => {
     // Calcular IVA y total con IVA incluido
     const { iva, total } = calculateIVA(subtotal);
 
-    // Check duplicate automatic invoice for this enrollment in current month
-    // Only check for system-generated invoices, not manual ones
-    const existing = await strapi.entityService.findMany('api::invoice.invoice', {
-      filters: {
-        invoiceCategory: 'invoice_enrollment',
-        enrollment: (enr as any).id,
-        emissionDate: { $gte: start, $lt: end },
-        registeredBy: 'system', // Only check system-generated invoices
-      },
-      limit: 1,
-    });
-    if (existing && existing.length > 0) {
-      skippedCount++;
-      continue;
-    }
+    // CAMBIO: Eliminar verificación de duplicados - generar facturas nuevas en cada ejecución
+    // Según requerimiento del jefe: "El cron de facturas en cada ejecución debe generar facturas nuevas"
 
     // Generar título y nota para la factura
-    const monthName = now.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-    const currentDate = now.toLocaleDateString('es-ES');
-    const studentName = (enr as any).student?.name || 'Estudiante';
+    const monthName = now.toLocaleDateString("es-ES", {
+      month: "long",
+      year: "numeric",
+    });
+    const currentDate = now.toLocaleDateString("es-ES");
+    const studentName = (enr as any).student?.name || "Estudiante";
     const invoiceTitle = `Factura mensual - ${monthName} - ${studentName} - ${currentDate}`;
     const invoiceNote = `Factura generada automáticamente por el sistema el ${currentDate} para los servicios del mes de ${monthName}.`;
 
-    await strapi.entityService.create('api::invoice.invoice', {
+    // Debug: Log amounts before saving
+    strapi.log.debug(
+      `💰 [Cron] Guardando amounts para enrollment ${(enr as any).id}:`,
+      JSON.stringify(amounts),
+    );
+
+    await strapi.entityService.create("api::invoice.invoice", {
       data: {
-        invoiceCategory: 'invoice_enrollment',
-        invoiceType: 'charge',
-        invoiceStatus: 'unpaid',
+        invoiceCategory: "invoice_enrollment",
+        invoiceType: "charge",
+        invoiceStatus: "unpaid",
         enrollment: (enr as any).id,
         emissionDate: now.toISOString(),
-        expirationDate: new Date(now.getFullYear(), now.getMonth(), 30).toISOString(),
-        amounts,
+        expirationDate: new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          30,
+        ).toISOString(),
+        amounts: amounts, // Asegurar que se guarde como JSON
         total,
         IVA: iva,
-        issuedby: 'Sistema',
-        registeredBy: 'system',
+        issuedby: "Sistema",
+        registeredBy: "system",
         title: invoiceTitle,
         notes: invoiceNote,
+        publishedAt: now.toISOString(), // Asegurar que se publique
       },
     });
     createdCount++;
   }
 
-  strapi.log.info(`📊 [Cron] Facturas de alumnos - Creadas: ${createdCount}, Omitidas (duplicadas): ${skippedCount}`);
-  return { created: createdCount, skipped: skippedCount };
+  strapi.log.info(`📊 [Cron] Facturas de alumnos creadas: ${createdCount}`);
+  return { created: createdCount };
 };
 
 /**
- * Create monthly payroll invoices for active employees.
- * - Uses the latest contract term; if paymentPeriod is monthly, uses hourlyRate or workedHours.
- * - Avoids duplicates within the month.
+ * Create payroll invoices for active employees based on their contract terms.
+ * - Uses the latest contract term and respects payment period (monthly, biweekly, weekly, daily, annual).
+ * - Only bills employees when appropriate based on their payment frequency.
  */
-const generateEmployeePayrolls = async ({ strapi }: TaskContext) => {
+const generateEmployeePayrolls = async ({
+  strapi,
+}: TaskContext): Promise<BillingResults> => {
   const now = new Date();
   const { start, end } = getMonthBounds(now);
 
-  const employees = await strapi.entityService.findMany('api::employee.employee', {
-    filters: { isActive: true },
-    populate: { terms: true },
-    limit: 10000,
-  });
+  const employees = await strapi.entityService.findMany(
+    "api::employee.employee",
+    {
+      filters: { isActive: true },
+      populate: { terms: true },
+      limit: 10000,
+    },
+  );
   const employeeList = Array.isArray(employees) ? employees : [];
-  
-  strapi.log.info(`👷 [Cron] Empleados activos encontrados: ${employeeList.length}`);
+
+  strapi.log.info(
+    `👷 [Cron] Empleados activos encontrados: ${employeeList.length}`,
+  );
   let createdCount = 0;
   let skippedCount = 0;
 
   for (const emp of employeeList) {
     const terms = Array.isArray((emp as any).terms) ? (emp as any).terms : [];
     const latest = terms[terms.length - 1];
-    if (!latest) continue;
-
-    const period = latest?.paymentPeriod;
-    let salary = 0;
-    if (period === 'monthly') {
-      const hourly = num(latest?.hourlyRate, 0);
-      const hours = num(latest?.workedHours, 0);
-      salary = hourly > 0 && hours > 0 ? hourly * hours : hourly; // fallback to fixed monthly rate if hours missing
-    } else if (period === 'weekly' || period === 'biweekly' || period === 'daily') {
-      // Basic estimate by hourlyRate * workedHours for the month
-      const hourly = num(latest?.hourlyRate, 0);
-      const hours = num(latest?.workedHours, 0);
-      salary = hourly * hours;
+    if (!latest) {
+      strapi.log.debug(
+        `⚠️ [Cron] Empleado ${(emp as any).name} sin términos de contrato, omitiendo`,
+      );
+      continue;
     }
 
-    if (!Number.isFinite(salary) || salary <= 0) continue; // Nothing to bill
+    const period = latest?.paymentPeriod || "monthly";
+    const employeeName = (emp as any).name || "Empleado";
 
-    // Calcular IVA y total con IVA incluido
-    const { iva, total } = calculateIVA(salary);
-
-    // Check duplicate payroll for this employee in current month
-    const existing = await strapi.entityService.findMany('api::invoice.invoice', {
-      filters: {
-        invoiceCategory: 'invoice_employ',
-        employee: (emp as any).id,
-        emissionDate: { $gte: start, $lt: end },
-      },
-      limit: 1,
-    });
-    if (existing && existing.length > 0) {
+    // Check if this employee should be billed based on their payment period
+    if (!shouldBillEmployee(period, now)) {
+      strapi.log.debug(
+        `⏭️ [Cron] Empleado ${employeeName} (${period}) no debe ser facturado hoy, omitiendo`,
+      );
       skippedCount++;
       continue;
     }
 
-    // Generar título y nota para la nómina
-    const monthName = now.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-    const currentDate = now.toLocaleDateString('es-ES');
-    const employeeName = (emp as any).name || 'Empleado';
-    const payrollTitle = `Nómina - ${monthName} - ${employeeName} - ${currentDate}`;
-    const payrollNote = `Nómina generada automáticamente por el sistema el ${currentDate} correspondiente al mes de ${monthName}.`;
+    // Calculate salary based on payment period
+    const salary = calculateSalaryAmount(
+      period,
+      latest?.hourlyRate,
+      latest?.workedHours,
+      now,
+    );
 
-    await strapi.entityService.create('api::invoice.invoice', {
+    if (!Number.isFinite(salary) || salary <= 0) {
+      strapi.log.debug(
+        `⚠️ [Cron] Empleado ${employeeName} con salario inválido (${salary}), omitiendo`,
+      );
+      continue;
+    }
+
+    // Calcular IVA y total con IVA incluido
+    const { iva, total } = calculateIVA(salary);
+
+    // CAMBIO: Eliminar verificación de duplicados - generar nóminas nuevas en cada ejecución
+    // Según requerimiento del jefe: "El cron de facturas en cada ejecución debe generar facturas nuevas"
+
+    // Generar título y nota para la nómina según el tipo de contrato
+    const monthName = now.toLocaleDateString("es-ES", {
+      month: "long",
+      year: "numeric",
+    });
+    const currentDate = now.toLocaleDateString("es-ES");
+
+    // Personalizar título según frecuencia de pago
+    const periodLabels: Record<string, string> = {
+      monthly: "Mensual",
+      biweekly: "Quincenal",
+      weekly: "Semanal",
+      daily: "Diaria",
+      annual: "Anual",
+    };
+
+    const periodLabel = periodLabels[period] || "Mensual";
+    const payrollTitle = `Nómina ${periodLabel} - ${employeeName} - ${currentDate}`;
+    const payrollNote = `Nómina ${periodLabel.toLowerCase()} generada automáticamente por el sistema el ${currentDate}. Tipo de contrato: ${period}. Salario calculado: €${salary.toFixed(2)}.`;
+
+    // Debug: Log amounts before saving
+    const payrollAmounts = {
+      salario: salary,
+      tipo_contrato: period,
+      tarifa_hora: latest?.hourlyRate || 0,
+      horas_trabajadas: latest?.workedHours || 0,
+    };
+    strapi.log.debug(
+      `💰 [Cron] Guardando amounts para employee ${employeeName} (${period}):`,
+      JSON.stringify(payrollAmounts),
+    );
+
+    await strapi.entityService.create("api::invoice.invoice", {
       data: {
-        invoiceCategory: 'invoice_employ',
-        invoiceType: 'expense',
-        invoiceStatus: 'unpaid',
+        invoiceCategory: "invoice_employ",
+        invoiceType: "expense",
+        invoiceStatus: "unpaid",
         employee: (emp as any).id,
         emissionDate: now.toISOString(),
-        expirationDate: new Date(now.getFullYear(), now.getMonth(), 30).toISOString(),
-        amounts: { salario: salary },
+        expirationDate: new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          30,
+        ).toISOString(),
+        amounts: payrollAmounts, // Asegurar que se guarde como JSON
         total,
         IVA: iva,
-        issuedby: 'Sistema',
-        registeredBy: 'system',
+        issuedby: "Sistema",
+        registeredBy: "system",
         title: payrollTitle,
         notes: payrollNote,
+        publishedAt: now.toISOString(), // Asegurar que se publique
       },
     });
+
+    strapi.log.info(
+      `✅ [Cron] Nómina creada para ${employeeName} (${periodLabel}): €${salary.toFixed(2)}`,
+    );
     createdCount++;
   }
 
-  strapi.log.info(`📊 [Cron] Nóminas de empleados - Creadas: ${createdCount}, Omitidas (duplicadas): ${skippedCount}`);
+  strapi.log.info(
+    `📊 [Cron] Resumen de nóminas: ${createdCount} creadas, ${skippedCount} omitidas por frecuencia de pago`,
+  );
   return { created: createdCount, skipped: skippedCount };
 };
 
@@ -291,93 +523,129 @@ export default {
   monthly_billing: {
     options: {
       rule: process.env.BILLING_CRON_RULE || DEFAULT_MONTHLY_RULE,
-      tz: 'Europe/Madrid',
+      tz: "Europe/Madrid",
     },
     task: async (ctx: TaskContext) => {
       const startTime = Date.now();
-      const timestamp = new Date().toLocaleString('es-ES', { 
-        timeZone: 'Europe/Madrid',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
+
+      // Obtener configuración de facturación
+      const billingConfig = await getBillingConfig(ctx.strapi);
+
+      // Verificar si el CRON está activo
+      if (!billingConfig.isActive) {
+        ctx.strapi.log.warn(
+          `⏸️  [Cron] Facturación desactivada en configuración - saltando ejecución`,
+        );
+        return;
+      }
+
+      const timestamp = new Date().toLocaleString("es-ES", {
+        timeZone: billingConfig.timezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
       });
-      
-      // Obtener el día de facturación configurado
-      const billingDay = await getBillingDay(ctx.strapi);
-      
-      ctx.strapi.log.info(`🕐 [Cron] INICIO - Ejecutando facturación mensual (${timestamp})`);
-      ctx.strapi.log.info(`⚙️  [Cron] Configuración: cada 5 minutos (MODO PRUEBA) - Día de facturación: ${billingDay}`);
-      
+
+      const modeText = billingConfig.testMode
+        ? `MODO TESTEO (cada ${billingConfig.testIntervalMinutes} min)`
+        : `MODO PRODUCCIÓN (día ${billingConfig.day} a las ${billingConfig.hour}:${billingConfig.minute.toString().padStart(2, "0")})`;
+
+      ctx.strapi.log.info(
+        `🕐 [Cron] INICIO - Ejecutando facturación mensual (${timestamp})`,
+      );
+      ctx.strapi.log.info(
+        `⚙️  [Cron] Configuración: ${modeText} - Zona horaria: ${billingConfig.timezone}`,
+      );
+
       // Registrar inicio en history
       await logCronExecution(ctx.strapi, {
-        title: 'Cron Facturación - Inicio',
-        message: `Iniciando proceso de facturación mensual automática. Día configurado: ${billingDay}`,
-        level: 'INFO',
-        event_type: 'cron_billing_start',
+        title: "Cron Facturación - Inicio",
+        message: `Iniciando proceso de facturación automática. ${modeText}`,
+        level: "INFO",
+        event_type: "cron_billing_start",
         payload: {
-          billing_day: billingDay,
-          execution_mode: 'test_5min',
-          timestamp: timestamp
-        }
+          billing_config: billingConfig,
+          execution_mode: billingConfig.testMode ? "test" : "production",
+          timestamp: timestamp,
+        },
       });
-      
-      let enrollmentResults = { created: 0, skipped: 0 };
-      let payrollResults = { created: 0, skipped: 0 };
-      
+
+      let enrollmentResults: BillingResults = { created: 0 };
+      let payrollResults: BillingResults = { created: 0, skipped: 0 };
+
       try {
         ctx.strapi.log.info(`📋 [Cron] Generando facturas de enrollment...`);
         enrollmentResults = await generateEnrollmentInvoices(ctx);
-        
+
         ctx.strapi.log.info(`💰 [Cron] Generando nóminas de empleados...`);
         payrollResults = await generateEmployeePayrolls(ctx);
-        
+
         const duration = Date.now() - startTime;
-        const successMessage = `Facturación completada exitosamente. Facturas: ${enrollmentResults.created} creadas, ${enrollmentResults.skipped} omitidas. Nóminas: ${payrollResults.created} creadas, ${payrollResults.skipped} omitidas.`;
-        
-        ctx.strapi.log.info(`✅ [Cron] COMPLETADO - ${successMessage} (${timestamp})`);
-        
+        const skippedText =
+          payrollResults.skipped > 0
+            ? ` (${payrollResults.skipped} empleados omitidos por frecuencia de pago)`
+            : "";
+        const successMessage = `Facturación completada exitosamente. Facturas: ${enrollmentResults.created} creadas. Nóminas: ${payrollResults.created} creadas${skippedText}.`;
+
+        ctx.strapi.log.info(
+          `✅ [Cron] COMPLETADO - ${successMessage} (${timestamp})`,
+        );
+
+        // Actualizar fechas de ejecución
+        await updateExecutionTimestamps(
+          ctx.strapi,
+          new Date(),
+          `Ejecución exitosa: ${enrollmentResults.created} facturas, ${payrollResults.created} nóminas${skippedText}`,
+        );
+
         // Registrar éxito en history
         await logCronExecution(ctx.strapi, {
-          title: 'Cron Facturación - Completado',
+          title: "Cron Facturación - Completado",
           message: successMessage,
-          level: 'INFO',
-          event_type: 'cron_billing_success',
+          level: "INFO",
+          event_type: "cron_billing_success",
           duration_ms: duration.toString(),
           payload: {
-            billing_day: billingDay,
+            billing_config: billingConfig,
             execution_duration_ms: duration,
             enrollment_invoices: enrollmentResults,
             employee_payrolls: payrollResults,
-            timestamp: timestamp
-          }
+            timestamp: timestamp,
+          },
         });
-        
       } catch (error) {
         const duration = Date.now() - startTime;
         const errorMessage = `Falló la facturación mensual: ${error.message}`;
-        
+
         ctx.strapi.log.error(`❌ [Cron] ERROR - ${errorMessage}`);
-        
+
+        // Actualizar fechas de ejecución incluso en error
+        await updateExecutionTimestamps(
+          ctx.strapi,
+          new Date(),
+          `Error en ejecución: ${error.message}`,
+        );
+
         // Registrar error en history
         await logCronExecution(ctx.strapi, {
-          title: 'Cron Facturación - Error',
+          title: "Cron Facturación - Error",
           message: errorMessage,
-          level: 'ERROR',
-          event_type: 'cron_billing_error',
+          level: "ERROR",
+          event_type: "cron_billing_error",
           duration_ms: duration.toString(),
-          status_code: '500',
+          status_code: "500",
           payload: {
-            billing_day: billingDay,
+            billing_config: billingConfig,
             execution_duration_ms: duration,
             error_message: error.message,
             error_stack: error.stack,
-            timestamp: timestamp
-          }
+            timestamp: timestamp,
+          },
         });
-        
+
         throw error;
       }
     },

@@ -70,45 +70,85 @@ Feel free to check out the [Strapi GitHub repository](https://github.com/strapi/
 
 This project includes an automated monthly billing cron that generates:
 - Student invoices based on active enrollment services
-- Employee payroll invoices based on active contract terms
+- Employee payroll invoices based on active contract terms with improved frequency logic
 
 Location: `config/cron-tasks.ts` (task key: `monthly_billing`)
 
-### Default schedule
-- Runs at 00:00 (midnight) on the configured day of the month
-- Timezone: `Europe/Madrid`
-- Default day: `25` (configurable via environment)
+### Configuration Management
+The CRON is now fully configurable via the **Billing Configuration** Single Type in Strapi Admin:
+- **Day of Month**: When to run billing (1-31)
+- **Hour**: Hour to execute (0-23, default: 5)
+- **Minute**: Minute to execute (0-59, default: 0)
+- **Timezone**: Execution timezone (default: Europe/Madrid)
+- **Test Mode**: Enable frequent execution for testing
+- **Test Interval**: Minutes between executions in test mode
+- **Active Status**: Enable/disable automatic billing
+- **Execution Tracking**: Automatic timestamps and notes
 
-Default rule: `0 0 0 ${CRON_BILLING_DAY || 25} * *`
+### Execution Tracking & Monitoring
+The system now includes comprehensive execution tracking:
+- **Last Execution**: Automatically updated timestamp of last successful run
+- **Next Execution**: Calculated timestamp of next scheduled run
+- **Execution Notes**: Detailed results from last execution
+- **System Logs**: Complete audit trail with structured logging
 
-### Configuration (environment variables)
-- `CRON_BILLING_DAY` (optional): Day of month to run (defaults to `25`)
-- `BILLING_CRON_RULE` (optional): Full cron rule to override the default
-  - Examples:
-    - `0 0 5 25 * *` → run on the 25th at 05:00 (Europe/Madrid)
-    - `0 0 0 1 * *` → run on the 1st at 00:00 (Europe/Madrid)
-    - `* * * * *` → every minute (development testing only)
-
-See examples in `.env.example`, `.env.example.development`, and `.env.example.production`.
+### Enhanced Employee Contract Logic
+Improved payroll generation based on contract terms:
+- **Monthly Contracts**: Billed once per month on the configured billing day
+- **Biweekly Contracts**: Billed twice per month (1st and 15th)
+- **Weekly Contracts**: Billed every Monday
+- **Contract Validation**: Employees without valid contract terms are skipped
+- **Frequency Respect**: System respects payment frequencies to avoid duplicate billing
 
 ### What gets created
-- Enrollment invoices
+- **Enrollment Invoices**
   - Only for active enrollments
   - Aggregates amounts from active `student_service` services with `amount > 0`
   - Avoids duplicates by checking invoices within the current month window
-- Employee payroll invoices
-  - Only for active employees
-  - Uses the latest contract term:
-    - Monthly: `hourlyRate * workedHours` (or falls back to fixed `hourlyRate`)
-    - Weekly/Biweekly/Daily: `hourlyRate * workedHours` (basic estimate)
-  - Avoids duplicates by checking invoices within the current month window
+  - Detailed logging of creation process
 
-### Logs
-- On each run, Strapi logs entries like:
-  - `[Cron] Ejecutando facturación mensual (alumnos y nóminas)`
-  - `[Cron] Facturas de alumnos creadas: <n>`
-  - `[Cron] Nóminas de empleados creadas: <n>`
+- **Employee Payroll Invoices**
+  - Only for active employees with valid contract terms
+  - Respects payment frequency (monthly/biweekly/weekly)
+  - Uses salary from contract terms
+  - Skips employees not due for payment based on frequency
+  - Comprehensive validation and error handling
 
-### Testing tips
-- Temporarily set `BILLING_CRON_RULE="* * * * *"` in development to verify creation
-- Revert to the default monthly schedule once tested
+### Advanced Logging System
+The system now includes structured logging with:
+- **Execution Events**: Start, success, error events with full context
+- **Trace IDs**: Unique identifiers for tracking execution flows
+- **Metadata**: Detailed execution results, configuration, and statistics
+- **Error Tracking**: Complete error context and stack traces
+- **Performance Metrics**: Execution timing and resource usage
+
+### Log Examples
+```
+🕐 [Cron] INICIO - Ejecutando facturación mensual (2025-01-20 05:00:00)
+⚙️  [Cron] Configuración: MODO PRODUCCIÓN (día 25 a las 05:00) - Zona horaria: Europe/Madrid
+📋 [Cron] Generando facturas de enrollment...
+👥 [Cron] Enrollments activos encontrados: 15
+📊 [Cron] Facturas de alumnos creadas: 15
+💰 [Cron] Generando nóminas de empleados...
+👷 [Cron] Empleados activos encontrados: 10
+📊 [Cron] Resumen de nóminas: 8 creadas, 2 omitidas por frecuencia de pago
+✅ [Cron] COMPLETADO - Facturación completada exitosamente (2025-01-20 05:30:00)
+```
+
+### Environment Variables (Legacy Support)
+While configuration is now managed via Strapi Admin, these environment variables are still supported:
+- `BILLING_CRON_RULE` (optional): Full cron rule to override admin configuration
+- Legacy variables are maintained for backward compatibility
+
+### Testing & Development
+- **Test Mode**: Enable in admin panel for frequent execution (every N minutes)
+- **Manual Execution**: Trigger via admin panel or API
+- **Detailed Logging**: All executions logged to System Logs collection
+- **Configuration Validation**: Real-time validation of cron settings
+- **Execution History**: Complete audit trail of all billing runs
+
+### Monitoring & Troubleshooting
+- Check **System Logs** collection for execution history
+- Review **Billing Configuration** for last execution details
+- Monitor execution notes for success/error information
+- Use trace IDs to correlate logs across system components

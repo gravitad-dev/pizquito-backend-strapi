@@ -178,6 +178,40 @@ Estos content types usan endpoints de singleType:
 - Content-Type: application/json (para JSON)
 - Authorization: Bearer <JWT> (para endpoints protegidos)
 
+## Billing Configuration (CRON Day) - Single Type
+
+### Obtener configuración del CRON
+- Método: GET
+- URL: /api/cron-day
+- Headers: Authorization: Bearer <JWT>
+- Respuesta: configuración actual del CRON de facturación
+
+### Actualizar configuración del CRON
+- Método: PUT
+- URL: /api/cron-day
+- Headers: Authorization: Bearer <JWT>, Content-Type: application/json
+- Body (JSON):
+  {
+    "data": {
+      "cron_day": 25,                    // Día del mes (1-31)
+      "cron_hour": 5,                    // Hora (0-23)
+      "cron_minute": 0,                  // Minuto (0-59)
+      "test_mode": false,                // Modo test (true/false)
+      "test_interval_minutes": 5,        // Intervalo en modo test
+      "timezone": "Europe/Madrid",       // Zona horaria
+      "is_active": true,                 // CRON activo (true/false)
+      "execution_notes": "Configuración actualizada",  // Notas
+      "last_execution": "2025-10-20T10:30:00.000Z",   // Última ejecución
+      "next_execution": "2025-11-25T10:30:00.000Z"    // Próxima ejecución
+    }
+  }
+
+### System Logs (Logs del sistema)
+- Listar todos los logs: GET /api/histories
+- Logs de ejecución del CRON: GET /api/histories?filters[event_type][$eq]=cron_execution
+- Logs de facturación del CRON: GET /api/histories?filters[event_type][$contains]=cron_billing
+- Headers: Authorization: Bearer <JWT>
+
 ## Parámetros de consulta (Query params)
 - pagination[page]=1&pagination[pageSize]=25
 - sort=createdAt:desc
