@@ -278,12 +278,38 @@ const addKeyValue = (
 
 const addAmountsTable = (
   doc: PDFDocument,
-  amounts: Record<string, number> | null | undefined,
+  rawAmounts: any,
   startY: number,
 ) => {
-  const entries = Object.entries(amounts || {}).filter(
-    ([_, v]) => typeof v === "number",
-  );
+  // Unificar amounts: aceptar array de {concept, amount} o mapa {concept: amount}
+  type Pair = { concept: string; amount: number; description?: string };
+  let pairs: Pair[] = [];
+
+  if (Array.isArray(rawAmounts)) {
+    const acc = new Map<string, { concept: string; amount: number; description?: string }>();
+    for (const item of rawAmounts) {
+      if (!item || typeof item !== 'object') continue;
+      const concept = String(item.concept || '').trim();
+      const amount = typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount || '0'));
+      const description = item.description ? String(item.description) : undefined;
+      if (!concept || !Number.isFinite(amount)) continue;
+      const key = concept.toLowerCase();
+      const prev = acc.get(key);
+      acc.set(key, {
+        concept: prev?.concept || concept,
+        amount: (prev?.amount || 0) + amount,
+        description: prev?.description || description,
+      });
+    }
+    pairs = Array.from(acc.values());
+  } else if (rawAmounts && typeof rawAmounts === 'object') {
+    // Legacy: objeto plano { concepto: valor }
+    const keys = Object.keys(rawAmounts);
+    pairs = keys
+      .map((k) => ({ concept: k, amount: typeof (rawAmounts as any)[k] === 'number' ? (rawAmounts as any)[k] : parseFloat(String((rawAmounts as any)[k] || '0')) }))
+      .filter((p) => p.concept && Number.isFinite(p.amount));
+  }
+
   const left = (doc.page as any).margins?.left ?? 40;
   const right = doc.page.width - ((doc.page as any).margins?.right ?? 40);
   const tableWidth = right - left; // full usable width inside margins
@@ -327,29 +353,33 @@ const addAmountsTable = (
       .join(" ");
   };
 
-  // Helper function to check if a concept should be subtracted
+  // Helper function to check if a concept should be subtracted (solo coincidencias exactas o raíz clara)
   const isSubtractionConcept = (key: string): boolean => {
-    const subtractionKeywords = [
-      "subvencion",
-      "beca",
-      "descuento",
-      "ayuda",
-      "rebaja",
-      "bonificacion",
+    const normalized = key.toLowerCase().replace(/\s+/g, '_');
+    const exact = [
+      'subvencion',
+      'subvencion_comedor',
+      'beca',
+      'descuento',
+      'ayuda',
+      'rebaja',
+      'bonificacion',
+      'subsidio',
     ];
-    const normalized = key.toLowerCase();
-    return subtractionKeywords.some((keyword) => normalized.includes(keyword));
+    if (exact.includes(normalized)) return true;
+    // raíces claras: subv, desc
+    return normalized.startsWith('subv') || normalized.startsWith('desc');
   };
 
   // Rows
-  entries.forEach(([k, v], i) => {
+  pairs.forEach(({ concept, amount }, i) => {
     if (i % 2 === 0) {
       doc.rect(x, y, tableWidth, 24).fill("#f8f8f8");
       doc.fillColor("#000");
     }
-    const label = formatConceptName(k);
+    const label = formatConceptName(concept);
     // Si es un concepto de descuento/subvención, convertir a negativo para restar
-    const displayValue = isSubtractionConcept(k) ? -Math.abs(v) : v;
+    const displayValue = isSubtractionConcept(concept) ? -Math.abs(amount) : amount;
 
     doc.fontSize(11).text(label, x + 10, y + 6);
     doc.text(currency(displayValue), col2 + 10, y + 6, {
@@ -469,6 +499,8 @@ export default {
       y,
     );
     y += 25;
+    addKeyValue(doc, "Título", inv.title || "-", 40, y);
+    y += 15;
 
     // Espacio adicional antes de los datos del alumno
     y += 15;
@@ -569,6 +601,12 @@ export default {
       .fillColor("#000")
       .text(`Total: ${currency(inv.total)}`, 300, y + 6, { align: "right" });
 
+    // Notas
+    if (inv.notes) {
+      y = sectionTitle(doc, "Notas", 40, y + 40);
+      doc.fillColor("#000").fontSize(11).text(inv.notes, 40, y, { width: pageMetrics(doc).width });
+    }
+
     addFooter(doc, inv.documentId || `ID: ${inv.id}`);
 
     const buf = await bufferFromDoc(doc);
@@ -638,6 +676,8 @@ export default {
       y,
     );
     y += 25;
+    addKeyValue(doc, "Título", inv.title || "-", 40, y);
+    y += 15;
 
     // Espacio adicional antes de los datos del alumno
     y += 15;
@@ -723,6 +763,12 @@ export default {
       .fontSize(16)
       .fillColor("#000")
       .text(`Total: ${currency(inv.total)}`, 300, y + 6, { align: "right" });
+
+    // Notas
+    if (inv.notes) {
+      y = sectionTitle(doc, "Notas", 40, y + 40);
+      doc.fillColor("#000").fontSize(11).text(inv.notes, 40, y, { width: pageMetrics(doc).width });
+    }
 
     addFooter(doc, inv.documentId || `ID: ${inv.id}`);
 

@@ -294,7 +294,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"data\": { \n        \"cron_day\": 25, // Día del mes en que se ejecutará el CRON (1-31)\n        \"cron_hour\": 5, // Hora del día para la ejecución (0-23, formato 24h)\n        \"cron_minute\": 0, // Minuto de la hora para la ejecución (0-59)\n        \"test_mode\": false, // Modo de prueba desactivado (false = producción)\n        \"test_interval_minutes\": 5, // Intervalo en minutos para modo test (solo aplica si test_mode = true)\n        \"timezone\": \"Europe/Madrid\", // Zona horaria para calcular las fechas de ejecución\n        \"is_active\": true, // CRON activado (true = se ejecutará automáticamente)\n        \"execution_notes\": \"Configuración actualizada manualmente\" // Notas sobre la última configuración o ejecución\n    }\n}"
+							"raw": "{\n    \"data\": { \n        \"cron_day\": 25, // Día del mes en que se ejecutará el CRON (1-31)\n        \"cron_hour\": 5, // Hora del día para la ejecución (0-23, formato 24h)\n        \"cron_minute\": 0, // Minuto de la hora para la ejecución (0-59)\n        \"test_mode\": true, // Modo de prueba desactivado (false = producción)\n        \"test_interval_minutes\": 1, // Intervalo en minutos para modo test (solo aplica si test_mode = true)\n        \"timezone\": \"Europe/Madrid\", // Zona horaria para calcular las fechas de ejecución\n        \"is_active\": false, // CRON activado (true = se ejecutará automáticamente)\n        \"execution_notes\": \"Configuración actualizada manualmente\" // Notas sobre la última configuración o ejecución\n    }\n}"
 						},
 						"url": {
 							"raw": "{{STRAPI_URL_LOCAL}}/api/cron-day",
@@ -1523,7 +1523,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "13"
+									"value": "12"
 								}
 							]
 						},
@@ -1574,7 +1574,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "12"
+									"value": "14"
 								}
 							]
 						},
@@ -2119,7 +2119,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices?filters[invoiceCategory][$eq]=invoice_employ&sort[0]=title:asc&pagination[page]=1&pagination[pageSize]=10&populate=*",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices?filters[invoiceCategory][$eq]=invoice_service&sort[0]=title:asc&pagination[page]=1&pagination[pageSize]=10&populate=*",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
@@ -2130,7 +2130,7 @@
 							"query": [
 								{
 									"key": "filters[invoiceCategory][$eq]",
-									"value": "invoice_employ",
+									"value": "invoice_service",
 									"description": "Filtrar por categoría (invoice_enrollment, invoice_service, invoice_employ, invoice_general)"
 								},
 								{
@@ -3192,7 +3192,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"year\": 2024,\n  \"quarter\": \"Q1\",\n  \"concept\": \"all\",\n  \"format\": \"xlsx\"\n}"
+							"raw": "{\n  \"year\": 2025,\n//   \"quarter\": \"Q1\",\n  \"concept\": \"all\",\n  \"format\": \"xlsx\"\n}"
 						},
 						"url": {
 							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/233/generate",
@@ -3246,7 +3246,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "79"
+									"value": "1158"
 								}
 							]
 						}
@@ -3285,7 +3285,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "81"
+									"value": "1160"
 								}
 							]
 						}
@@ -3324,7 +3324,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "75"
+									"value": "1199"
 								}
 							]
 						}
@@ -3363,7 +3363,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "77"
+									"value": "1197"
 								}
 							]
 						}
