@@ -150,22 +150,45 @@ export default {
 
           // Usar el total de la factura (que incluye IVA) en lugar de amounts
           const invoiceTotal = ensureNumber(inv.total);
-          const amounts = inv.amounts || {};
-          const keys = Object.keys(amounts);
+          const rawAmounts = inv.amounts;
+
+          // Unificar amounts: aceptar array de {concept, amount} o mapa {concept: amount}
+          type Pair = { concept: string; amount: number };
+          let pairs: Pair[] = [];
+
+          if (Array.isArray(rawAmounts)) {
+            // Normalizar array
+            const acc = new Map<string, { concept: string; amount: number }>();
+            for (const item of rawAmounts) {
+              if (!item || typeof item !== 'object') continue;
+              const concept = String(item.concept || '').trim();
+              const amount = ensureNumber(item.amount);
+              if (!concept || !Number.isFinite(amount) || amount < 0) continue;
+              const key = concept.toLowerCase();
+              const prev = acc.get(key);
+              acc.set(key, { concept: prev?.concept || concept, amount: (prev?.amount || 0) + amount });
+            }
+            pairs = Array.from(acc.values());
+          } else if (rawAmounts && typeof rawAmounts === 'object') {
+            // Legacy: objeto plano { concepto: valor }
+            const keys = Object.keys(rawAmounts);
+            pairs = keys
+              .map((k) => ({ concept: k, amount: ensureNumber((rawAmounts as any)[k]) }))
+              .filter((p) => p.concept && Number.isFinite(p.amount) && p.amount >= 0);
+          }
           
-          if (keys.length === 0) {
+          if (pairs.length === 0) {
             // Si no hay amounts, todo va a totalOnly
             sums.totalOnly += invoiceTotal;
           } else {
             // Calcular la proporción de cada concepto y aplicarla al total con IVA
-            const subtotal = keys.reduce((acc, k) => acc + ensureNumber((amounts as any)[k]), 0);
+            const subtotal = pairs.reduce((acc, p) => acc + p.amount, 0);
             
             if (subtotal > 0) {
-              keys.forEach((k) => {
-                const amountValue = ensureNumber((amounts as any)[k]);
-                const proportion = amountValue / subtotal;
+              pairs.forEach(({ concept, amount }) => {
+                const proportion = amount / subtotal;
                 const totalWithIVA = invoiceTotal * proportion;
-                const keyNorm = k.toLowerCase();
+                const keyNorm = concept.toLowerCase();
                 
                 if (keyNorm.includes("matri")) {
                   sums.matricula += totalWithIVA;
@@ -242,6 +265,7 @@ export default {
           },
           months: rowMonths,
           amounts: rowAmounts,
+          additionalAmount: enr?.additionalAmount || null,
           declarantNIF,
         };
       },
