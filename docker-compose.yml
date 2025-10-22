@@ -20,7 +20,7 @@ services:
       - ./config:/opt/app/config
       - ./src:/opt/app/src
       - ./package.json:/opt/app/package.json
-      - ./package-lock.json:/opt/app/package-lock.json
+#      - ./package-lock.json:/opt/app/package-lock.json
       - ./public/uploads:/opt/app/public/uploads
     ports:
       - '${PORTX}:1337'
