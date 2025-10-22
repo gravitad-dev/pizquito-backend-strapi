@@ -41,8 +41,8 @@ services:
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
       POSTGRES_DB: ${DATABASE_NAME}
     volumes:
-#      - pizquito-strapi:/var/lib/postgresql/data/ #using a volume
-      - ./postgresql_data:/var/lib/postgresql/data/ # if you want to use a bind folder
+      - pizquito-strapi:/var/lib/postgresql/data/ #using a volume
+#      - ./postgresql_data:/var/lib/postgresql/data/ # if you want to use a bind folder
 
 #    ports:
 #      - '5432:5432'
