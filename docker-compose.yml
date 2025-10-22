@@ -23,7 +23,7 @@ services:
       - ./package-lock.json:/opt/app/package-lock.json
       - ./public/uploads:/opt/app/public/uploads
     ports:
-      - '1345:1337'
+      - '${PORT_PROD}:1337'
     networks:
       - pizquito-strapi
     depends_on:
