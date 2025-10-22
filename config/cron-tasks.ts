@@ -217,10 +217,16 @@ const num = (v: unknown, fallback = 0): number => {
 
 /**
  * Calculate VAT and total
+ * TEMPORAL: IVA desactivado - solo devuelve el subtotal como total
  */
 const calculateIVA = (subtotal: number) => {
-  const iva = Math.round(subtotal * IVA_RATE * 100) / 100; // 2 decimals
-  const total = Math.round((subtotal + iva) * 100) / 100;
+  // TEMPORAL: Comentado el cálculo del IVA
+  // const iva = Math.round(subtotal * IVA_RATE * 100) / 100; // 2 decimals
+  // const total = Math.round((subtotal + iva) * 100) / 100;
+  
+  // TEMPORAL: Sin IVA - el total es igual al subtotal
+  const iva = 0;
+  const total = Math.round(subtotal * 100) / 100;
   return { iva, total };
 };
 
