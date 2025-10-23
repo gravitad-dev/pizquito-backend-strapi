@@ -747,7 +747,7 @@ export interface ApiGuardianGuardian extends Struct.CollectionTypeSchema {
     >;
     publishedAt: Schema.Attribute.DateTime;
     registeredby: Schema.Attribute.String;
-    students: Schema.Attribute.Relation<'oneToMany', 'api::student.student'>;
+    students: Schema.Attribute.Relation<'manyToMany', 'api::student.student'>;
     uid: Schema.Attribute.UID;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -1037,7 +1037,10 @@ export interface ApiStudentStudent extends Struct.CollectionTypeSchema {
       'images' | 'files' | 'videos' | 'audios',
       true
     >;
-    guardian: Schema.Attribute.Relation<'manyToOne', 'api::guardian.guardian'>;
+    guardians: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::guardian.guardian'
+    >;
     lastname: Schema.Attribute.String & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<

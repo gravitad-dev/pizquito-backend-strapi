@@ -80,9 +80,9 @@
       "target": "api::enrollment.enrollment",
       "mappedBy": "student"
     },
-    "guardian": {
+    "guardians": {
       "type": "relation",
-      "relation": "manyToOne",
+      "relation": "manyToMany",
       "target": "api::guardian.guardian",
       "inversedBy": "students"
     }

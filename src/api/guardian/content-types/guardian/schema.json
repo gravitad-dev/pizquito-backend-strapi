@@ -109,9 +109,9 @@
     },
     "students": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::student.student",
-      "mappedBy": "guardian"
+      "mappedBy": "guardians"
     },
     "invoices": {
       "type": "relation",
