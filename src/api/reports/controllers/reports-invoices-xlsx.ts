@@ -171,10 +171,10 @@ async function generateEnrollment(ctx: Context) {
   addTotalsRow(worksheet, invoicesList);
 
   // Cabecera enriquecida: alumno, tutores, aula, período
-  const student: any = enrollment?.student || {};
-  const classroom: any = enrollment?.classroom || {};
-  const schoolPeriod: any = enrollment?.school_period || {};
-  const guardians: any[] = Array.isArray(enrollment?.guardians) ? enrollment.guardians : [];
+  const student: any = (enrollment as any)?.student || {};
+  const classroom: any = (enrollment as any)?.classroom || {};
+  const schoolPeriod: any = (enrollment as any)?.school_period || {};
+  const guardians: any[] = Array.isArray((enrollment as any)?.guardians) ? (enrollment as any).guardians : [];
 
   const studentFullName = [student?.name, student?.lastname].filter(Boolean).join(' ');
   const studentDNI = student?.DNI || 'N/A';

@@ -16,11 +16,11 @@
     "upgrade:dry": "npx @strapi/upgrade latest --dry"
   },
   "dependencies": {
-    "@strapi/plugin-cloud": "5.29.0",
+    "@strapi/plugin-cloud": "5.23.6",
     "@strapi/plugin-graphql": "^5.23.6",
-    "@strapi/plugin-users-permissions": "5.29.0",
+    "@strapi/plugin-users-permissions": "5.23.6",
     "@strapi/provider-upload-cloudinary": "^5.26.0",
-    "@strapi/strapi": "5.29.0",
+    "@strapi/strapi": "5.23.6",
     "better-sqlite3": "11.3.0",
     "cloudinary": "^2.7.0",
     "dotenv": "^17.2.3",
