@@ -35,7 +35,51 @@
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "CSV Generated Successfully",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"year\": 2025,\n  \"quarter\": \"Q1\",\n  \"concept\": \"all\",\n  \"format\": \"csv\",\n  \"centerCode\": \"12345\"\n}"
+								},
+								"url": {
+									"raw": "{{STRAPI_URL_LOCAL}}/api/reports/233/generate",
+									"host": [
+										"{{STRAPI_URL_LOCAL}}"
+									],
+									"path": [
+										"api",
+										"reports",
+										"233",
+										"generate"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"stored\": true,\n  \"cloudinary\": {\n    \"public_id\": \"Strapi/pizquito/reports/233/2025/10/modelo233_2025_ALL_abc123.csv\",\n    \"resource_type\": \"raw\"\n  },\n  \"url\": \"https://res.cloudinary.com/denkemd6s/raw/upload/v1761238573/Strapi/pizquito/reports/233/2025/10/modelo233_2025_ALL_abc123.csv\",\n  \"meta\": {\n    \"year\": 2025,\n    \"quarter\": \"Q1\",\n    \"concept\": \"all\",\n    \"format\": \"csv\",\n    \"folder\": \"Strapi/pizquito/reports/233/2025/10\",\n    \"declarantNIF\": \"B12345678\",\n    \"centerCode\": \"12345\"\n  }\n}"
+						}
+					]
 				},
 				{
 					"name": "Register",
@@ -3205,7 +3249,7 @@
 					"response": []
 				},
 				{
-					"name": "233 Generate",
+					"name": "233 Generate XLSX",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -3220,7 +3264,40 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"year\": 2025,\n//   \"quarter\": \"Q1\",\n  \"concept\": \"all\",\n  \"format\": \"xlsx\"\n}"
+							"raw": "{\n  \"year\": 2025,\n  \"quarter\": \"Q1\",\n  \"concept\": \"all\",\n  \"format\": \"xlsx\",\n  \"centerCode\": \"12345\"\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/233/generate",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"233",
+								"generate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "233 Generate CSV",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"year\": 2025,\n  \"quarter\": \"Q1\",\n  \"concept\": \"all\",\n  \"format\": \"csv\",\n  \"centerCode\": \"12345\"\n}"
 						},
 						"url": {
 							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/233/generate",

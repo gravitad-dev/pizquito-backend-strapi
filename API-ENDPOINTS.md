@@ -100,6 +100,82 @@ Soportan query params: populate, filters, sort, pagination.
     - Nota: El Excel incluye una sola columna de Origen (en lugar de Emitido por y Registrado por).
     - Headers: Accept: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
 
+## Reportes Fiscales - Modelo 233
+
+### Preview del Reporte 233
+- Método: GET
+- URL: /api/reports/233/preview
+- Headers: Authorization: Bearer <JWT>
+- Query Parameters:
+  - `year` (requerido): Año fiscal (ej: 2025)
+  - `quarter` (opcional): Trimestre fiscal (Q1, Q2, Q3, Q4)
+  - `concept` (opcional): Concepto de facturación (all, matricula, comedor) - default: all
+  - `studentId` (opcional): ID específico del estudiante
+  - `studentName` (opcional): Filtro por nombre/apellido del estudiante (case-insensitive)
+  - `centerCode` (opcional): Código del centro educativo
+  - `includeMonths` (opcional): Incluir desglose mensual (true/false)
+  - `page` (opcional): Número de página para paginación - default: 1
+  - `pageSize` (opcional): Registros por página - default: 25
+
+### Generar Reporte 233
+- Método: POST
+- URL: /api/reports/233/generate
+- Headers: Authorization: Bearer <JWT>, Content-Type: application/json
+- Body (JSON):
+  ```json
+  {
+    "year": 2025,
+    "quarter": "Q1",
+    "concept": "all",
+    "format": "csv",
+    "centerCode": "12345"
+  }
+  ```
+- Formatos disponibles:
+  - **CSV**: Genera archivo CSV y lo sube a Cloudinary, retorna URL
+  - **XLSX**: Genera archivo Excel y lo sube a Cloudinary, retorna URL
+  - **PDF**: (Pendiente de implementación)
+
+#### Respuesta para formato CSV:
+```json
+{
+  "stored": true,
+  "cloudinary": {
+    "public_id": "Strapi/pizquito/reports/233/2025/10/modelo233_2025_ALL_abc123.csv",
+    "resource_type": "raw"
+  },
+  "url": "https://res.cloudinary.com/denkemd6s/raw/upload/v1761238573/Strapi/pizquito/reports/233/2025/10/modelo233_2025_ALL_abc123.csv",
+  "meta": {
+    "year": 2025,
+    "quarter": "Q1",
+    "concept": "all",
+    "format": "csv",
+    "folder": "Strapi/pizquito/reports/233/2025/10"
+  }
+}
+```
+
+#### Respuesta para formato XLSX:
+```json
+{
+  "stored": true,
+  "cloudinary": {
+    "public_id": "Strapi/pizquito/reports/233/2025/10/modelo233_2025_ALL_f13rek.xlsx",
+    "resource_type": "raw"
+  },
+  "url": "https://res.cloudinary.com/denkemd6s/raw/upload/v1761238573/Strapi/pizquito/reports/233/2025/10/modelo233_2025_ALL_f13rek.xlsx",
+  "meta": {
+    "year": 2025,
+    "quarter": "Q1",
+    "concept": "all",
+    "format": "xlsx",
+    "folder": "Strapi/pizquito/reports/233/2025/10"
+  }
+}
+```
+
+**Nota**: Ambos formatos ahora retornan URLs de Cloudinary para descargar los archivos generados. Los archivos se organizan automáticamente en carpetas por año y mes.
+
 ### Guardians
 - Plural: guardians
 - Ejemplos:
