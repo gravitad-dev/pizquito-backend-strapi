@@ -3140,7 +3140,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/233/preview",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/233/preview?concept=all&studentId=1&page=1&pageSize=25&year=2025&studentName=Sá",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
@@ -3154,21 +3154,49 @@
 								{
 									"key": "concept",
 									"value": "all",
-									"disabled": true
+									"description": "Filtro por concepto de facturación. Valores: 'all', 'tuition', 'transport', 'food', 'materials', 'activities'"
 								},
 								{
 									"key": "studentId",
 									"value": "1",
-									"disabled": true
+									"description": "ID específico del estudiante para filtrar"
 								},
 								{
 									"key": "page",
 									"value": "1",
-									"disabled": true
+									"description": "Número de página para paginación (por defecto: 1)"
 								},
 								{
 									"key": "pageSize",
 									"value": "25",
+									"description": "Cantidad de registros por página (por defecto: 25)"
+								},
+								{
+									"key": "year",
+									"value": "2025",
+									"description": "Año fiscal del reporte (requerido)"
+								},
+								{
+									"key": "quarter",
+									"value": "Q1",
+									"description": "Trimestre fiscal: Q1, Q2, Q3, Q4 (opcional)",
+									"disabled": true
+								},
+								{
+									"key": "studentName",
+									"value": "Sá",
+									"description": "Filtro por nombre o apellido del estudiante (búsqueda case-insensitive)"
+								},
+								{
+									"key": "centerCode",
+									"value": "",
+									"description": "Código del centro educativo (opcional)",
+									"disabled": true
+								},
+								{
+									"key": "includeMonths",
+									"value": "true",
+									"description": "Incluir desglose mensual en el reporte (true/false)",
 									"disabled": true
 								}
 							]
