@@ -7,7 +7,7 @@ import services from '../services/index';
 
 export default {
   async preview(ctx: Context) {
-    const { year, quarter, concept, centerCode, studentId, includeMonths, page = '1', pageSize = '25' } = ctx.query as Record<string, string>;
+    const { year, quarter, concept, centerCode, studentId, studentName, includeMonths, page = '1', pageSize = '25' } = ctx.query as Record<string, string>;
 
     // Si no viene year, usar el año actual para evitar 500s
     const yearParsed = year ? parseInt(year, 10) : new Date().getFullYear();
@@ -18,6 +18,7 @@ export default {
       concept: (concept as 'matricula' | 'comedor' | 'all' | undefined) ?? 'all',
       centerCode,
       studentId: studentId ? Number(studentId) : undefined,
+      studentName: studentName || undefined,
       includeMonths: includeMonths === 'true',
       page: Number(page),
       pageSize: Number(pageSize),

@@ -19,6 +19,7 @@ type PreviewParams = {
   quarter?: Quarter;
   concept?: "matricula" | "comedor" | "all";
   studentId?: number;
+  studentName?: string;
   includeMonths?: boolean;
   page?: number;
   pageSize?: number;
@@ -74,6 +75,7 @@ export default {
       quarter,
       concept = "all",
       studentId,
+      studentName,
       includeMonths = false,
       page = 1,
       pageSize = 25,
@@ -109,9 +111,45 @@ export default {
 
     // Buscar enrollments con relaciones
     const filters: any = {};
+    
+    // Construir filtros para student
+    const studentFilters: any = {};
+    
     if (studentId) {
-      filters.student = { id: studentId };
+      studentFilters.id = studentId;
     }
+    
+    // Filtro por nombre de estudiante (incluye nombre y apellido, case-insensitive)
+    if (studentName && studentName.trim()) {
+      const searchTerm = studentName.trim();
+      if (studentFilters.id) {
+        // Si ya hay un studentId, combinar con AND
+        studentFilters.$and = [
+          { id: studentFilters.id },
+          {
+            $or: [
+              { name: { $containsi: searchTerm } },
+              { lastname: { $containsi: searchTerm } }
+            ]
+          }
+        ];
+        delete studentFilters.id;
+      } else {
+        // Solo filtro por nombre
+        studentFilters.$or = [
+          { name: { $containsi: searchTerm } },
+          { lastname: { $containsi: searchTerm } }
+        ];
+      }
+    }
+    
+    if (Object.keys(studentFilters).length > 0) {
+      filters.student = studentFilters;
+    }
+
+    // Debug: log de filtros aplicados
+    console.log("🔍 Filtros aplicados:", JSON.stringify(filters, null, 2));
+    console.log("🔍 Parámetros recibidos:", { studentId, studentName });
 
     const enrollments = await (global as any).strapi.entityService.findMany(
       "api::enrollment.enrollment",
