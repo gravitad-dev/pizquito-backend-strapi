@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "0193ee07-8b38-4864-a3bd-a82a85d385b1",
+		"_postman_id": "176482ba-5d56-4593-ac26-5e74fb139778",
 		"name": "STRAPI-PIZQUITO-API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "43592215"
@@ -35,51 +35,7 @@
 							]
 						}
 					},
-					"response": [
-						{
-							"name": "CSV Generated Successfully",
-							"originalRequest": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									},
-									{
-										"key": "Authorization",
-										"value": "Bearer {{token}}"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"year\": 2025,\n  \"quarter\": \"Q1\",\n  \"concept\": \"all\",\n  \"format\": \"csv\",\n  \"centerCode\": \"12345\"\n}"
-								},
-								"url": {
-									"raw": "{{STRAPI_URL_LOCAL}}/api/reports/233/generate",
-									"host": [
-										"{{STRAPI_URL_LOCAL}}"
-									],
-									"path": [
-										"api",
-										"reports",
-										"233",
-										"generate"
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/json; charset=utf-8"
-								}
-							],
-							"cookie": [],
-							"body": "{\n  \"stored\": true,\n  \"cloudinary\": {\n    \"public_id\": \"Strapi/pizquito/reports/233/2025/10/modelo233_2025_ALL_abc123.csv\",\n    \"resource_type\": \"raw\"\n  },\n  \"url\": \"https://res.cloudinary.com/denkemd6s/raw/upload/v1761238573/Strapi/pizquito/reports/233/2025/10/modelo233_2025_ALL_abc123.csv\",\n  \"meta\": {\n    \"year\": 2025,\n    \"quarter\": \"Q1\",\n    \"concept\": \"all\",\n    \"format\": \"csv\",\n    \"folder\": \"Strapi/pizquito/reports/233/2025/10\",\n    \"declarantNIF\": \"B12345678\",\n    \"centerCode\": \"12345\"\n  }\n}"
-						}
-					]
+					"response": []
 				},
 				{
 					"name": "Register",
@@ -348,99 +304,6 @@
 							"path": [
 								"api",
 								"cron-day"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "SYSTEM LOGS",
-			"item": [
-				{
-					"name": "Get All System Logs",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/system-logs?sort[0]=timestamp:desc&pagination[page]=1&pagination[pageSize]=50",
-							"host": [
-								"{{STRAPI_URL_LOCAL}}"
-							],
-							"path": [
-								"api",
-								"system-logs"
-							],
-							"query": [
-								{
-									"key": "sort[0]",
-									"value": "timestamp:desc"
-								},
-								{
-									"key": "pagination[page]",
-									"value": "1"
-								},
-								{
-									"key": "pagination[pageSize]",
-									"value": "50"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get CRON Execution Logs",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/system-logs?filters[event_type][$eq]=cron_execution&sort[0]=timestamp:desc",
-							"host": [
-								"{{STRAPI_URL_LOCAL}}"
-							],
-							"path": [
-								"api",
-								"system-logs"
-							],
-							"query": [
-								{
-									"key": "filters[event_type][$eq]",
-									"value": "cron_execution"
-								},
-								{
-									"key": "sort[0]",
-									"value": "timestamp:desc"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get CRON Billing Logs",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/system-logs?filters[event_type][$contains]=cron_billing&sort[0]=timestamp:desc",
-							"host": [
-								"{{STRAPI_URL_LOCAL}}"
-							],
-							"path": [
-								"api",
-								"system-logs"
-							],
-							"query": [
-								{
-									"key": "filters[event_type][$contains]",
-									"value": "cron_billing"
-								},
-								{
-									"key": "sort[0]",
-									"value": "timestamp:desc"
-								}
 							]
 						}
 					},
@@ -3172,6 +3035,84 @@
 		{
 			"name": "FISCAL REPORT",
 			"item": [
+				{
+					"name": "233 History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/233/history?year=2025&page=1&pageSize=10",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"233",
+								"history"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025",
+									"description": "Filtrar por año fiscal"
+								},
+								{
+									"key": "quarter",
+									"value": "Q1",
+									"description": "Filtrar por trimestre (Q1, Q2, Q3, Q4)",
+									"disabled": true
+								},
+								{
+									"key": "concept",
+									"value": "all",
+									"description": "Filtrar por concepto (all, matricula, comedor)",
+									"disabled": true
+								},
+								{
+									"key": "format",
+									"value": "csv",
+									"description": "Filtrar por formato (csv, xlsx, pdf)",
+									"disabled": true
+								},
+								{
+									"key": "centerCode",
+									"value": "12345",
+									"description": "Filtrar por código del centro",
+									"disabled": true
+								},
+								{
+									"key": "startDate",
+									"value": "2025-01-01",
+									"description": "Fecha de inicio (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "endDate",
+									"value": "2025-12-31",
+									"description": "Fecha de fin (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Número de página"
+								},
+								{
+									"key": "pageSize",
+									"value": "10",
+									"description": "Registros por página"
+								}
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "233 Preview",
 					"request": {
