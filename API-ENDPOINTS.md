@@ -176,6 +176,66 @@ Soportan query params: populate, filters, sort, pagination.
 
 **Nota**: Ambos formatos ahora retornan URLs de Cloudinary para descargar los archivos generados. Los archivos se organizan automáticamente en carpetas por año y mes.
 
+### Historial de Reportes 233
+- Método: GET
+- URL: /api/reports/233/history
+- Headers: Authorization: Bearer <JWT>
+- Query Parameters:
+  - `year` (opcional): Filtrar por año fiscal (ej: 2025)
+  - `quarter` (opcional): Filtrar por trimestre fiscal (Q1, Q2, Q3, Q4)
+  - `concept` (opcional): Filtrar por concepto (all, matricula, comedor)
+  - `format` (opcional): Filtrar por formato (csv, xlsx, pdf)
+  - `centerCode` (opcional): Filtrar por código del centro educativo
+  - `startDate` (opcional): Fecha de inicio para filtrar (formato: YYYY-MM-DD)
+  - `endDate` (opcional): Fecha de fin para filtrar (formato: YYYY-MM-DD)
+  - `page` (opcional): Número de página para paginación - default: 1
+  - `pageSize` (opcional): Registros por página - default: 25
+
+#### Respuesta del Historial:
+```json
+{
+  "data": [
+    {
+      "id": 123,
+      "name": "modelo233_2025_ALL_abc123.csv",
+      "url": "https://res.cloudinary.com/denkemd6s/raw/upload/v1761238573/Strapi/pizquito/reports/233/2025/10/modelo233_2025_ALL_abc123.csv",
+      "format": "csv",
+      "size": 2048,
+      "createdAt": "2025-01-23T10:30:00.000Z",
+      "updatedAt": "2025-01-23T10:30:00.000Z",
+      "metadata": {
+        "year": 2025,
+        "month": 10,
+        "quarter": "Q1",
+        "concept": "all",
+        "centerCode": "12345"
+      },
+      "cloudinary": {
+        "public_id": "Strapi/pizquito/reports/233/2025/10/modelo233_2025_ALL_abc123.csv",
+        "resource_type": "raw"
+      }
+    }
+  ],
+  "meta": {
+    "pagination": {
+      "page": 1,
+      "pageSize": 25,
+      "pageCount": 1,
+      "total": 1
+    },
+    "filters": {
+      "year": 2025,
+      "quarter": null,
+      "concept": null,
+      "format": null,
+      "centerCode": null,
+      "startDate": null,
+      "endDate": null
+    }
+  }
+}
+```
+
 ### Guardians
 - Plural: guardians
 - Ejemplos:

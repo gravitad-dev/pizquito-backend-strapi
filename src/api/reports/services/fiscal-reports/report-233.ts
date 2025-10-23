@@ -694,4 +694,158 @@ export default {
         'Generación no implementada para este formato en esta build. Usa format="csv" para obtener contenido.',
     };
   },
+
+  async history(params: {
+    year?: number;
+    quarter?: Quarter;
+    concept?: "matricula" | "comedor" | "all";
+    format?: "csv" | "xlsx" | "pdf";
+    centerCode?: string;
+    page?: number;
+    pageSize?: number;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const {
+      year,
+      quarter,
+      concept,
+      format,
+      centerCode,
+      page = 1,
+      pageSize = 25,
+      startDate,
+      endDate,
+    } = params;
+
+    try {
+      // Construir filtros para buscar archivos de reportes 233
+      const filters: any = {
+        folderPath: {
+          $contains: "Strapi/pizquito/reports/233",
+        },
+      };
+
+      // Filtrar por año si se especifica
+      if (year) {
+        filters.folderPath = {
+          $contains: `Strapi/pizquito/reports/233/${year}`,
+        };
+      }
+
+      // Filtrar por formato si se especifica
+      if (format) {
+        filters.ext = format === "xlsx" ? ".xlsx" : format === "csv" ? ".csv" : ".pdf";
+      }
+
+      // Filtrar por rango de fechas si se especifica
+      if (startDate || endDate) {
+        filters.createdAt = {};
+        if (startDate) {
+          filters.createdAt.$gte = new Date(startDate);
+        }
+        if (endDate) {
+          filters.createdAt.$lte = new Date(endDate);
+        }
+      }
+
+      // Buscar archivos con paginación
+      const files = await (global as any).strapi.entityService.findMany(
+        "plugin::upload.file",
+        {
+          filters,
+          sort: { createdAt: "desc" },
+          start: (page - 1) * pageSize,
+          limit: pageSize,
+        }
+      );
+
+      // Contar total de archivos para paginación
+      const total = await (global as any).strapi.entityService.count(
+        "plugin::upload.file",
+        { filters }
+      );
+
+      // Procesar archivos para extraer metadatos del nombre y path
+      const processedFiles = files.map((file: any) => {
+        const pathParts = file.folderPath?.split("/") || [];
+        const yearFromPath = pathParts[4]; // Strapi/pizquito/reports/233/YYYY
+        const monthFromPath = pathParts[5]; // MM
+
+        // Extraer información del nombre del archivo
+        const fileName = file.name || "";
+        const fileFormat = file.ext?.replace(".", "") || "unknown";
+        
+        // Intentar extraer metadatos del nombre del archivo
+        // Formato esperado: modelo-233-YYYY-QX-concept-centerCode-timestamp
+        const nameParts = fileName.replace(file.ext || "", "").split("-");
+        
+        return {
+          id: file.id,
+          name: fileName,
+          url: file.url,
+          format: fileFormat,
+          size: file.size,
+          createdAt: file.createdAt,
+          updatedAt: file.updatedAt,
+          metadata: {
+            year: yearFromPath ? parseInt(yearFromPath, 10) : null,
+            month: monthFromPath ? parseInt(monthFromPath, 10) : null,
+            quarter: nameParts.find(part => part.startsWith("Q")) || null,
+            concept: nameParts.find(part => ["matricula", "comedor", "all"].includes(part)) || null,
+            centerCode: nameParts.length > 6 ? nameParts[5] : null,
+          },
+          cloudinary: {
+            public_id: file.provider_metadata?.public_id,
+            resource_type: file.provider_metadata?.resource_type,
+          },
+        };
+      });
+
+      // Aplicar filtros adicionales en memoria si es necesario
+      let filteredFiles = processedFiles;
+
+      if (quarter) {
+        filteredFiles = filteredFiles.filter(file => 
+          file.metadata.quarter === quarter
+        );
+      }
+
+      if (concept) {
+        filteredFiles = filteredFiles.filter(file => 
+          file.metadata.concept === concept
+        );
+      }
+
+      if (centerCode) {
+        filteredFiles = filteredFiles.filter(file => 
+          file.metadata.centerCode === centerCode
+        );
+      }
+
+      return {
+        data: filteredFiles,
+        meta: {
+          pagination: {
+            page,
+            pageSize,
+            pageCount: Math.ceil(total / pageSize),
+            total,
+          },
+          filters: {
+            year,
+            quarter,
+            concept,
+            format,
+            centerCode,
+            startDate,
+            endDate,
+          },
+        },
+      };
+    } catch (error) {
+      console.error("Error fetching report history:", error);
+      throw new errors.ApplicationError("Error al obtener el historial de reportes");
+    }
+  },
 };
