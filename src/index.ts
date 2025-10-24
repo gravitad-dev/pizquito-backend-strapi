@@ -21,7 +21,7 @@ export default {
     try {
       const env = String(process.env.BACKUP_SYNC_ON_START || '1').toLowerCase();
       if (['1','true','yes'].includes(env)) {
-        await syncBackupsIndex(strapi, { markMissingAsCorrupted: true });
+        await syncBackupsIndex(strapi, { removeOrphanFiles: true });
       }
     } catch (e: any) {
       strapi.log.warn(`Sync de backups en bootstrap falló: ${e?.message}`);

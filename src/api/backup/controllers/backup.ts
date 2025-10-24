@@ -434,15 +434,15 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
     }
   },
 
-  // Sincronizar índice de backups desde el filesystem
+  // Sincronizar archivos físicos con la BD (elimina archivos huérfanos)
   async sync(ctx) {
     try {
-      const { removeOrphans = false } = ctx.query;
+      const { removeOrphans } = ctx.query;
+      const remove = removeOrphans === 'false' ? false : true; // Por defecto elimina huérfanos
       const result = await syncBackupsIndex(strapi, { 
-        markMissingAsCorrupted: true,
-        removeOrphanFiles: removeOrphans === 'true' || removeOrphans === true
+        removeOrphanFiles: remove
       });
-      ctx.body = { data: result, message: 'Sync completado' };
+      ctx.body = { data: result, message: result.message };
     } catch (error: any) {
       strapi.log.error(`Error en sync de backups: ${error?.message}`);
       ctx.badRequest('Error al sincronizar backups', { error: error?.message });

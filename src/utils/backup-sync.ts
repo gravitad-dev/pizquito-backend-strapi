@@ -19,8 +19,8 @@ async function computeChecksum(filePath: string) {
   }
 }
 
-export async function syncBackupsIndex(strapi: any, options: { markMissingAsCorrupted?: boolean; removeOrphanFiles?: boolean } = {}) {
-  const { markMissingAsCorrupted = true, removeOrphanFiles = false } = options;
+export async function syncBackupsIndex(strapi: any, options: { removeOrphanFiles?: boolean } = {}) {
+  const { removeOrphanFiles = false } = options;
   const backupsDir = path.resolve(process.cwd(), 'backups');
 
   // Asegurar directorio de backups
@@ -28,124 +28,56 @@ export async function syncBackupsIndex(strapi: any, options: { markMissingAsCorr
     await fsp.mkdir(backupsDir, { recursive: true });
   } catch {}
 
-  // Leer archivos físicos
-  const entries = await fsp.readdir(backupsDir);
-  const files = entries
-    .filter((name) => name && name !== '.gitkeep')
-    .map((name) => ({ name, full: path.join(backupsDir, name), ext: path.extname(name).toLowerCase() }));
-
-  const scannedFiles = files.map((f) => f.full);
-
-  // Cargar registros existentes
-  const existingBackups: any[] = await strapi.entityService.findMany('api::backup.backup', {
-    fields: ['id', 'filename', 'filePath', 'checksum', 'statusBackup', 'originalSize'],
+  // 1. Obtener todos los backups registrados en la BD
+  const registeredBackups: any[] = await strapi.entityService.findMany('api::backup.backup', {
+    fields: ['id', 'filename', 'filePath'],
     pagination: { page: 1, pageSize: 1000 },
   });
 
-  const byPath = new Map<string, any>();
-  for (const b of existingBackups) {
-    if ((b as any).filePath) byPath.set((b as any).filePath, b);
+  // 2. Leer archivos físicos en la carpeta backups
+  const entries = await fsp.readdir(backupsDir);
+  const physicalFiles = entries.filter((name) => name && name !== '.gitkeep');
+
+  // 3. Crear un Set con los nombres de archivos que SÍ están en la BD
+  const registeredFilenames = new Set<string>();
+  for (const backup of registeredBackups) {
+    if (backup.filename) {
+      registeredFilenames.add(backup.filename);
+    }
   }
 
-  let created = 0;
-  let existingSkips = 0;
-  let corruptedMarked = 0;
-  let updated = 0;
   let orphanFilesRemoved = 0;
+  let orphanFilesFound = 0;
 
-  // Crear registros faltantes para archivos del filesystem
-  for (const file of files) {
-    const already = byPath.get(file.full);
-    if (already) {
-      existingSkips++;
-      // Opcionalmente actualizar tamaño/checksum si faltan
-      if (!(already as any).originalSize || !(already as any).checksum) {
-        try {
-          const stat = await fsp.stat(file.full);
-          const checksum = await computeChecksum(file.full);
-          await strapi.entityService.update('api::backup.backup', (already as any).id, {
-            data: { originalSize: stat.size, checksum },
-          });
-          updated++;
-        } catch {}
-      }
-      continue;
-    }
-
-    // Crear entrada para archivo nuevo
-    try {
-      const stat = await fsp.stat(file.full);
-      const checksum = await computeChecksum(file.full);
-      const backupType = 'other';
-      const statusBackup = 'completed';
-      const description = 'Sincronizado desde filesystem';
-      const metadata = { syncedAt: new Date().toISOString() };
-
-      await strapi.entityService.create('api::backup.backup', {
-        data: {
-          filename: file.name,
-          originalSize: stat.size,
-          compressedSize: null,
-          checksum,
-          statusBackup,
-          backupType,
-          description,
-          metadata,
-          filePath: file.full,
-        },
-      });
-      created++;
-    } catch (e: any) {
-      strapi.log.warn(`No se pudo crear entrada para ${file.name}: ${e?.message}`);
-    }
-  }
-
-  // Marcar entradas existentes cuyo archivo físico falte
-  if (markMissingAsCorrupted) {
-    for (const b of existingBackups) {
-      const p = (b as any).filePath;
-      if (!p) continue;
-      if (!existsSync(p)) {
-        try {
-          if ((b as any).statusBackup !== 'corrupted') {
-            await strapi.entityService.update('api::backup.backup', (b as any).id, {
-              data: {
-                statusBackup: 'corrupted',
-                description: 'Archivo físico faltante (marcado por sync)',
-              },
-            });
-            corruptedMarked++;
-          }
-        } catch {}
-      }
-    }
-  }
-
-  // Eliminar archivos físicos huérfanos (si está habilitado)
-  if (removeOrphanFiles) {
-    for (const file of files) {
-      const filePath = file.full;
-      const existingBackup = existingBackups.find((b: any) => b.filename === file.name);
+  // 4. Revisar cada archivo físico
+  for (const filename of physicalFiles) {
+    const filePath = path.join(backupsDir, filename);
+    
+    // Si el archivo NO está registrado en la BD, es huérfano
+    if (!registeredFilenames.has(filename)) {
+      orphanFilesFound++;
       
-      if (!existingBackup) {
+      if (removeOrphanFiles) {
         try {
           await fsp.unlink(filePath);
           orphanFilesRemoved++;
-          strapi.log.info(`Archivo huérfano eliminado: ${file.name}`);
+          strapi.log.info(`Archivo huérfano eliminado: ${filename}`);
         } catch (error: any) {
-          strapi.log.warn(`No se pudo eliminar archivo huérfano ${file.name}: ${error?.message}`);
+          strapi.log.warn(`No se pudo eliminar archivo huérfano ${filename}: ${error?.message}`);
         }
+      } else {
+        strapi.log.info(`Archivo huérfano encontrado (no eliminado): ${filename}`);
       }
     }
   }
 
   return {
-    created,
-    updated,
-    corruptedMarked,
-    existingSkips,
+    registeredBackups: registeredBackups.length,
+    physicalFiles: physicalFiles.length,
+    orphanFilesFound,
     orphanFilesRemoved,
-    totalFiles: files.length,
-    scannedFiles,
+    message: removeOrphanFiles 
+      ? `Eliminados ${orphanFilesRemoved} de ${orphanFilesFound} archivos huérfanos`
+      : `Encontrados ${orphanFilesFound} archivos huérfanos (no eliminados)`
   };
 }

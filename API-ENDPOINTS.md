@@ -257,7 +257,10 @@ Endpoints:
 - Eliminar backup: DELETE /api/backups/:documentId
 - Restaurar backup: POST /api/backups/:documentId/restore
 - Restaurar desde archivo subido: POST /api/backups/restore/upload (multipart/form-data)
-- Sincronizar backups (repoblar tabla desde filesystem): POST /api/backups/sync
+- Sincronizar backups (limpiar archivos huérfanos): POST /api/backups/sync
+  - Revisa archivos físicos en `/backups/` y los compara con registros de BD
+  - Por defecto: elimina archivos huérfanos
+  - Query parameter opcional: `removeOrphans=false` para NO eliminar archivos
 - Exportar resumen XLSX (BD actual): GET /api/backups/export/xlsx
 
 Notas importantes:
