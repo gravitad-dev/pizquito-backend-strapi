@@ -16,5 +16,11 @@ export default {
       handler: 'reports-233.generate',
       config: { policies: [], auth: false },
     },
+    {
+      method: 'GET',
+      path: '/reports/233/history',
+      handler: 'reports-233.history',
+      config: { policies: [], auth: false },
+    },
   ],
 };

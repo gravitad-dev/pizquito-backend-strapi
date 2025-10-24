@@ -19,6 +19,7 @@ type PreviewParams = {
   quarter?: Quarter;
   concept?: "matricula" | "comedor" | "all";
   studentId?: number;
+  studentName?: string;
   includeMonths?: boolean;
   page?: number;
   pageSize?: number;
@@ -74,6 +75,7 @@ export default {
       quarter,
       concept = "all",
       studentId,
+      studentName,
       includeMonths = false,
       page = 1,
       pageSize = 25,
@@ -109,9 +111,45 @@ export default {
 
     // Buscar enrollments con relaciones
     const filters: any = {};
+    
+    // Construir filtros para student
+    const studentFilters: any = {};
+    
     if (studentId) {
-      filters.student = { id: studentId };
+      studentFilters.id = studentId;
     }
+    
+    // Filtro por nombre de estudiante (incluye nombre y apellido, case-insensitive)
+    if (studentName && studentName.trim()) {
+      const searchTerm = studentName.trim();
+      if (studentFilters.id) {
+        // Si ya hay un studentId, combinar con AND
+        studentFilters.$and = [
+          { id: studentFilters.id },
+          {
+            $or: [
+              { name: { $containsi: searchTerm } },
+              { lastname: { $containsi: searchTerm } }
+            ]
+          }
+        ];
+        delete studentFilters.id;
+      } else {
+        // Solo filtro por nombre
+        studentFilters.$or = [
+          { name: { $containsi: searchTerm } },
+          { lastname: { $containsi: searchTerm } }
+        ];
+      }
+    }
+    
+    if (Object.keys(studentFilters).length > 0) {
+      filters.student = studentFilters;
+    }
+
+    // Debug: log de filtros aplicados
+    console.log("🔍 Filtros aplicados:", JSON.stringify(filters, null, 2));
+    console.log("🔍 Parámetros recibidos:", { studentId, studentName });
 
     const enrollments = await (global as any).strapi.entityService.findMany(
       "api::enrollment.enrollment",
@@ -402,10 +440,81 @@ export default {
       const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join(
         "\n",
       );
+
+      // Subir CSV a Cloudinary para consistencia con XLSX
+      const fileName = `modelo233_${year ?? new Date().getFullYear()}_${(concept || "ALL").toUpperCase()}.csv`;
+      const mime = "text/csv";
+
+      // Escribir archivo temporal y subir vía filepath
+      const csvBuffer = Buffer.from(csv, 'utf8');
+      const tmpFilePath = path.join(
+        os.tmpdir(),
+        `upload-${Date.now()}-${fileName}`,
+      );
+      await fs.promises.writeFile(tmpFilePath, csvBuffer);
+
+      // Subir con SDK de Cloudinary usando carpeta específica reports/233/YYYY/MM
+      const base = process.env.CLOUDINARY_BASE_FOLDER || "Strapi/pizquito";
+      const date = new Date();
+      const YYYY = String(date.getFullYear());
+      const MM = String(date.getMonth() + 1).padStart(2, "0");
+      const folder = `${base}/reports/233/${YYYY}/${MM}`;
+
+      let savedFile;
+      try {
+        const cloudinary = require("cloudinary").v2;
+        cloudinary.config({
+          cloud_name: process.env.CLOUDINARY_NAME,
+          api_key: process.env.CLOUDINARY_KEY,
+          api_secret: process.env.CLOUDINARY_SECRET,
+        });
+
+        const uploadResult = await cloudinary.uploader.upload(tmpFilePath, {
+          folder,
+          resource_type: "auto",
+          use_filename: true,
+          unique_filename: true,
+          filename_override: fileName,
+        });
+
+        const sizeKB = parseFloat(((csvBuffer.length || 0) / 1024).toFixed(2));
+        const ext = ".csv";
+        const fileData = {
+          name: fileName,
+          alternativeText: null,
+          caption: null,
+          width: uploadResult.width || null,
+          height: uploadResult.height || null,
+          formats: null,
+          hash: (uploadResult.public_id || "").split("/").pop() || undefined,
+          ext,
+          mime,
+          size: sizeKB,
+          url: uploadResult.secure_url || uploadResult.url,
+          previewUrl: null,
+          provider: "cloudinary",
+          provider_metadata: {
+            public_id: uploadResult.public_id,
+            resource_type: uploadResult.resource_type,
+          },
+          folderPath: folder,
+        } as any;
+
+        savedFile = await (global as any).strapi.entityService.create(
+          "plugin::upload.file",
+          { data: fileData },
+        );
+      } finally {
+        // Limpiar archivo temporal
+        try {
+          await fs.promises.unlink(tmpFilePath);
+        } catch {}
+      }
+
       return {
-        stored: false,
-        cloudinary: null,
-        url: null,
+        stored: true,
+        cloudinary: savedFile?.provider_metadata || null,
+        url: savedFile?.url || null,
         meta: {
           year,
           quarter,
@@ -413,8 +522,8 @@ export default {
           centerCode,
           declarantNIF: preview.meta?.declarantNIF,
           format: "csv",
+          folder,
         },
-        content: csv,
       };
     }
 
@@ -584,5 +693,159 @@ export default {
       message:
         'Generación no implementada para este formato en esta build. Usa format="csv" para obtener contenido.',
     };
+  },
+
+  async history(params: {
+    year?: number;
+    quarter?: Quarter;
+    concept?: "matricula" | "comedor" | "all";
+    format?: "csv" | "xlsx" | "pdf";
+    centerCode?: string;
+    page?: number;
+    pageSize?: number;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const {
+      year,
+      quarter,
+      concept,
+      format,
+      centerCode,
+      page = 1,
+      pageSize = 25,
+      startDate,
+      endDate,
+    } = params;
+
+    try {
+      // Construir filtros para buscar archivos de reportes 233
+      const filters: any = {
+        folderPath: {
+          $contains: "Strapi/pizquito/reports/233",
+        },
+      };
+
+      // Filtrar por año si se especifica
+      if (year) {
+        filters.folderPath = {
+          $contains: `Strapi/pizquito/reports/233/${year}`,
+        };
+      }
+
+      // Filtrar por formato si se especifica
+      if (format) {
+        filters.ext = format === "xlsx" ? ".xlsx" : format === "csv" ? ".csv" : ".pdf";
+      }
+
+      // Filtrar por rango de fechas si se especifica
+      if (startDate || endDate) {
+        filters.createdAt = {};
+        if (startDate) {
+          filters.createdAt.$gte = new Date(startDate);
+        }
+        if (endDate) {
+          filters.createdAt.$lte = new Date(endDate);
+        }
+      }
+
+      // Buscar archivos con paginación
+      const files = await (global as any).strapi.entityService.findMany(
+        "plugin::upload.file",
+        {
+          filters,
+          sort: { createdAt: "desc" },
+          start: (page - 1) * pageSize,
+          limit: pageSize,
+        }
+      );
+
+      // Contar total de archivos para paginación
+      const total = await (global as any).strapi.entityService.count(
+        "plugin::upload.file",
+        { filters }
+      );
+
+      // Procesar archivos para extraer metadatos del nombre y path
+      const processedFiles = files.map((file: any) => {
+        const pathParts = file.folderPath?.split("/") || [];
+        const yearFromPath = pathParts[4]; // Strapi/pizquito/reports/233/YYYY
+        const monthFromPath = pathParts[5]; // MM
+
+        // Extraer información del nombre del archivo
+        const fileName = file.name || "";
+        const fileFormat = file.ext?.replace(".", "") || "unknown";
+        
+        // Intentar extraer metadatos del nombre del archivo
+        // Formato esperado: modelo-233-YYYY-QX-concept-centerCode-timestamp
+        const nameParts = fileName.replace(file.ext || "", "").split("-");
+        
+        return {
+          id: file.id,
+          name: fileName,
+          url: file.url,
+          format: fileFormat,
+          size: file.size,
+          createdAt: file.createdAt,
+          updatedAt: file.updatedAt,
+          metadata: {
+            year: yearFromPath ? parseInt(yearFromPath, 10) : null,
+            month: monthFromPath ? parseInt(monthFromPath, 10) : null,
+            quarter: nameParts.find(part => part.startsWith("Q")) || null,
+            concept: nameParts.find(part => ["matricula", "comedor", "all"].includes(part)) || null,
+            centerCode: nameParts.length > 6 ? nameParts[5] : null,
+          },
+          cloudinary: {
+            public_id: file.provider_metadata?.public_id,
+            resource_type: file.provider_metadata?.resource_type,
+          },
+        };
+      });
+
+      // Aplicar filtros adicionales en memoria si es necesario
+      let filteredFiles = processedFiles;
+
+      if (quarter) {
+        filteredFiles = filteredFiles.filter(file => 
+          file.metadata.quarter === quarter
+        );
+      }
+
+      if (concept) {
+        filteredFiles = filteredFiles.filter(file => 
+          file.metadata.concept === concept
+        );
+      }
+
+      if (centerCode) {
+        filteredFiles = filteredFiles.filter(file => 
+          file.metadata.centerCode === centerCode
+        );
+      }
+
+      return {
+        data: filteredFiles,
+        meta: {
+          pagination: {
+            page,
+            pageSize,
+            pageCount: Math.ceil(total / pageSize),
+            total,
+          },
+          filters: {
+            year,
+            quarter,
+            concept,
+            format,
+            centerCode,
+            startDate,
+            endDate,
+          },
+        },
+      };
+    } catch (error) {
+      console.error("Error fetching report history:", error);
+      throw new errors.ApplicationError("Error al obtener el historial de reportes");
+    }
   },
 };
