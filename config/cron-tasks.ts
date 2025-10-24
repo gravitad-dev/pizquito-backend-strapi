@@ -346,6 +346,38 @@ const fetchAllBatched = async (
 };
 
 /**
+ * Map service types and titles to proper invoice concepts for fiscal reporting
+ */
+const mapServiceToConcept = (service: any): string => {
+  const title = (service?.title || "").toLowerCase().trim();
+  const serviceType = service?.serviceType || "";
+
+  // Mapeo específico por título
+  if (title.includes("matricula") || title.includes("matrícula") || title.includes("inscription")) {
+    return "matricula";
+  }
+  if (title.includes("comedor") || title.includes("lunch") || title.includes("almuerzo")) {
+    return "comedor";
+  }
+  if (title.includes("transporte") || title.includes("transport") || title.includes("bus")) {
+    return "transporte";
+  }
+  if (title.includes("material") || title.includes("libro") || title.includes("supplies")) {
+    return "material";
+  }
+
+  // Mapeo por tipo de servicio como fallback
+  if (serviceType === "student_service") {
+    // Si es un servicio de estudiante pero no tiene título específico, 
+    // asumimos que es matrícula por defecto
+    return "matricula";
+  }
+
+  // Fallback: usar el título original o "servicio"
+  return service?.title || "servicio";
+};
+
+/**
  * Create monthly invoices for active enrollments (safe, batched)
  */
 const generateEnrollmentInvoices = async ({
@@ -381,9 +413,9 @@ const generateEnrollmentInvoices = async ({
 
       for (const srv of services) {
         if (srv?.serviceStatus === "active") {
-          const title = srv?.title ?? "Servicio";
+          const concept = mapServiceToConcept(srv);
           const amount = num(srv?.amount, 0);
-          if (amount > 0) rawMap[title] = (rawMap[title] ?? 0) + amount;
+          if (amount > 0) rawMap[concept] = (rawMap[concept] ?? 0) + amount;
         }
       }
 
