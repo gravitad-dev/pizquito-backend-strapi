@@ -19,8 +19,8 @@ async function computeChecksum(filePath: string) {
   }
 }
 
-export async function syncBackupsIndex(strapi: any, options: { markMissingAsCorrupted?: boolean } = {}) {
-  const { markMissingAsCorrupted = true } = options;
+export async function syncBackupsIndex(strapi: any, options: { markMissingAsCorrupted?: boolean; removeOrphanFiles?: boolean } = {}) {
+  const { markMissingAsCorrupted = true, removeOrphanFiles = false } = options;
   const backupsDir = path.resolve(process.cwd(), 'backups');
 
   // Asegurar directorio de backups
@@ -51,6 +51,7 @@ export async function syncBackupsIndex(strapi: any, options: { markMissingAsCorr
   let existingSkips = 0;
   let corruptedMarked = 0;
   let updated = 0;
+  let orphanFilesRemoved = 0;
 
   // Crear registros faltantes para archivos del filesystem
   for (const file of files) {
@@ -120,11 +121,30 @@ export async function syncBackupsIndex(strapi: any, options: { markMissingAsCorr
     }
   }
 
+  // Eliminar archivos físicos huérfanos (si está habilitado)
+  if (removeOrphanFiles) {
+    for (const file of files) {
+      const filePath = file.full;
+      const existingBackup = existingBackups.find((b: any) => b.filename === file.name);
+      
+      if (!existingBackup) {
+        try {
+          await fsp.unlink(filePath);
+          orphanFilesRemoved++;
+          strapi.log.info(`Archivo huérfano eliminado: ${file.name}`);
+        } catch (error: any) {
+          strapi.log.warn(`No se pudo eliminar archivo huérfano ${file.name}: ${error?.message}`);
+        }
+      }
+    }
+  }
+
   return {
     created,
     updated,
     corruptedMarked,
     existingSkips,
+    orphanFilesRemoved,
     totalFiles: files.length,
     scannedFiles,
   };

@@ -437,7 +437,11 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
   // Sincronizar índice de backups desde el filesystem
   async sync(ctx) {
     try {
-      const result = await syncBackupsIndex(strapi, { markMissingAsCorrupted: true });
+      const { removeOrphans = false } = ctx.query;
+      const result = await syncBackupsIndex(strapi, { 
+        markMissingAsCorrupted: true,
+        removeOrphanFiles: removeOrphans === 'true' || removeOrphans === true
+      });
       ctx.body = { data: result, message: 'Sync completado' };
     } catch (error: any) {
       strapi.log.error(`Error en sync de backups: ${error?.message}`);
