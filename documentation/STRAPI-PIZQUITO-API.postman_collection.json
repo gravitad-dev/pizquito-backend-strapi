@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "176482ba-5d56-4593-ac26-5e74fb139778",
+		"_postman_id": "63615f33-221d-4567-8804-a5ae888cfad0",
 		"name": "STRAPI-PIZQUITO-API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "43592215"
@@ -3413,6 +3413,251 @@
 								}
 							]
 						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "BACKUP",
+			"item": [
+				{
+					"name": "List Backups",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups?sort[0]=createdAt:desc&pagination[page]=1&pagination[pageSize]=10",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"backups"
+							],
+							"query": [
+								{
+									"key": "sort[0]",
+									"value": "createdAt:desc",
+									"description": "Ordenar por fecha de creación descendente"
+								},
+								{
+									"key": "pagination[page]",
+									"value": "1",
+									"description": "Número de página para paginación"
+								},
+								{
+									"key": "pagination[pageSize]",
+									"value": "10",
+									"description": "Número de elementos por página"
+								},
+								{
+									"key": "filters[statusBackup][$eq]",
+									"value": "",
+									"description": "Filtrar por estado (pending, completed, failed, corrupted)",
+									"disabled": true
+								},
+								{
+									"key": "filters[backupType][$eq]",
+									"value": "",
+									"description": "Filtrar por tipo (manual, scheduled, other)",
+									"disabled": true
+								},
+								{
+									"key": "filters[filename][$contains]",
+									"value": "",
+									"description": "Buscar por nombre de archivo",
+									"disabled": true
+								},
+								{
+									"key": "filters[createdAt][$gte]",
+									"value": "",
+									"description": "Filtrar por fecha de creación mayor o igual (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "filters[createdAt][$lte]",
+									"value": "",
+									"description": "Filtrar por fecha de creación menor o igual (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "filters[originalSize][$gte]",
+									"value": "",
+									"description": "Filtrar por tamaño original mayor o igual (bytes)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "**Lista todos los backups disponibles**\n\n**Filtros disponibles:**\n- `filters[statusBackup][$eq]`: Estados posibles: `pending`, `completed`, `failed`, `corrupted`\n- `filters[backupType][$eq]`: Tipos: `manual`, `scheduled`, `other`\n- `filters[filename][$contains]`: Buscar por nombre de archivo\n- `filters[createdAt][$gte]` / `[$lte]`: Filtrar por rango de fechas (formato: YYYY-MM-DD)\n- `filters[originalSize][$gte]`: Filtrar por tamaño mínimo en bytes\n\n**Paginación:**\n- `pagination[page]`: Número de página (default: 1)\n- `pagination[pageSize]`: Elementos por página (default: 25, max: 100)\n\n**Ordenamiento:**\n- `sort[0]`: Campo:dirección (ej: `createdAt:desc`, `filename:asc`)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Backup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"backups"
+							]
+						},
+						"description": "Crea un backup SIMPLE de todas las tablas y lo guarda en la carpeta /backups. No requiere body. Opcional: puedes enviar { \"description\": \"texto\" } para documentar el backup.\n\nComportamiento:\n- Si la BD es sqlite: copia el archivo .tmp/data.db a /backups/backup_YYYYMMDD_hhmmss.sqlite\n- Si la BD no es sqlite: exporta todo el contenido como JSON a /backups/backup_YYYYMMDD_hhmmss.json\n\nRespuesta:\n- Devuelve el registro creado en la colección backups con filename, filePath, tamaño y checksum."
+					},
+					"response": []
+				},
+				{
+					"name": "Restore Backup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"createSafetyBackup\": false\n}"
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:Id/restore",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"backups",
+								":Id",
+								"restore"
+							],
+							"variable": [
+								{
+									"key": "Id",
+									"value": "14"
+								}
+							]
+						},
+						"description": "Restaura un backup específico.\n\nNotas importantes:\n- En sqlite: se copia el archivo a la ruta de la BD y es necesario reiniciar el servidor para aplicar cambios.\n- En bases no-sqlite: la restauración desde JSON aún no está implementada.\n\nParámetros:\n- `documentId`: ID del backup a restaurar\n- Body opcional: `{ createSafetyBackup: true }` para guardar una copia del estado actual antes de restaurar."
+					},
+					"response": []
+				},
+				{
+					"name": "Download Backup",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/octet-stream"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:Id/download",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"backups",
+								":Id",
+								"download"
+							],
+							"variable": [
+								{
+									"key": "Id",
+									"value": "12"
+								}
+							]
+						},
+						"description": "Descarga el archivo de backup desde el servidor.\n\nNotas:\n- Requiere autenticación (Bearer token).\n- Devuelve un stream binario con encabezados adecuados (Content-Disposition) para descarga.\n- Para SQLite, el archivo será .sqlite; en bases no-sqlite el formato puede ser .json.\n\nEjemplo: GET {{STRAPI_URL_LOCAL}}/api/backups/:documentId/download"
+					},
+					"response": []
+				},
+				{
+					"name": "Export Backups XLSX",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+							}
+						],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/export/xlsx",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"backups",
+								"export",
+								"xlsx"
+							]
+						},
+						"description": "Genera y descarga un Excel (.xlsx) con un resumen por tabla y hojas con hasta 200 registros por tipo, mostrando campos básicos (id, createdAt, updatedAt y algunos campos de texto).\n\nNotas:\n- Requiere autenticación (Bearer token).\n- Pensado para ofrecer al director una noción general del contenido sin exponer datos sensibles.\n\nEjemplo: GET {{STRAPI_URL_LOCAL}}/api/backups/export/xlsx"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Backup",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:Id",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"backups",
+								":Id"
+							],
+							"variable": [
+								{
+									"key": "Id",
+									"value": "16"
+								}
+							]
+						},
+						"description": "**Elimina un backup específico**\n\n**Parámetros:**\n- `documentId`: ID del backup a eliminar\n\n**⚠️ PRECAUCIÓN:**\nEsta operación es irreversible. El backup y su archivo asociado serán eliminados permanentemente.\n\n**Proceso de eliminación:**\n1. Verifica que el backup existe\n2. Elimina el archivo físico del sistema\n3. Elimina el registro de la base de datos\n\n**Estados que permiten eliminación:**\n- `completed`: Backup completado\n- `failed`: Backup fallido\n- `corrupted`: Backup corrupto\n\n**Respuesta exitosa:**\n- Status 200: Backup eliminado correctamente\n- Incluye información del backup eliminado"
+					},
+					"response": []
+				},
+				{
+					"name": "Sync Backups (Filesystem → DB)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/sync",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"backups",
+								"sync"
+							]
+						},
+						"description": "Sincroniza la tabla de backups con los archivos presentes en la carpeta /backups.\n\nAcciones:\n- Crea entradas para archivos que no tienen registro.\n- Marca como `corrupted` los registros cuyo archivo físico falte.\n- Actualiza tamaño/checksum si faltan en el registro.\n\nRespuesta: resumen con contadores (created, updated, corruptedMarked, existingSkips, totalFiles)."
 					},
 					"response": []
 				}

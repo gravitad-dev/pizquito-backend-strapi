@@ -248,6 +248,60 @@ Soportan query params: populate, filters, sort, pagination.
   - GET /api/classrooms
   - POST /api/classrooms
 
+## Backups (Simplificado)
+
+Endpoints:
+- Listar backups: GET /api/backups
+- Crear backup simple: POST /api/backups
+- Descargar backup: GET /api/backups/:documentId/download
+- Eliminar backup: DELETE /api/backups/:documentId
+- Restaurar backup: POST /api/backups/:documentId/restore
+- Restaurar desde archivo subido: POST /api/backups/restore/upload (multipart/form-data)
+- Sincronizar backups (repoblar tabla desde filesystem): POST /api/backups/sync
+- Exportar resumen XLSX (BD actual): GET /api/backups/export/xlsx
+
+Notas importantes:
+- Autenticación: requiere JWT del plugin users-permissions y permisos en Roles (Authenticated o Public según se desee). Por defecto, estos endpoints están protegidos.
+- Ubicación de archivos: todos los backups se almacenan en la carpeta local /backups del proyecto.
+- Base de datos:
+  - Si el cliente es sqlite: se copia el archivo .tmp/data.db a /backups/backup_YYYYMMDD_hhmmss.sqlite.
+  - Si el cliente es mysql/postgres: se exporta todo el contenido como JSON a /backups/backup_YYYYMMDD_hhmmss.json.
+- Restauración:
+  - Sqlite: se copia el archivo del backup sobre .tmp/data.db y se crea una copia de seguridad previa (restore_safety_...). Puede reiniciarse el servidor automáticamente si BACKUP_AUTO_RESTART=true o si envías { autoRestart: true } en el body.
+  - No-sqlite: la restauración desde JSON aún no está implementada.
+- Exportación XLSX:
+  - Endpoints:
+    - Actual: GET /api/backups/export/xlsx — genera el Excel desde la base de datos actualmente en uso.
+  - Características del XLSX:
+    - Hoja "Resumen" (conteo por tipo) y hojas por cada tipo (hasta 200 registros) con campos básicos: id, createdAt, updatedAt y hasta 6 campos de texto.
+  - Limitaciones actuales:
+    - Solo exporta desde la base de datos actualmente en uso. No se admite exportar desde archivos de backup.
+  - Parámetros opcionales:
+    - limit: número de filas por hoja (por defecto 200).
+  - Pensado para ofrecer al director una noción clara del contenido sin exponer datos sensibles.
+
+Ejemplos rápidos:
+- Crear backup simple:
+  - POST /api/backups
+  - Body opcional: { "description": "Backup manual de prueba" }
+  - Respuesta: { data: { filename, filePath, originalSize, checksum, statusBackup: "completed", backupType: "manual", metadata: { ... } } }
+- Listar backups:
+  - GET /api/backups?sort[0]=createdAt:desc&pagination[page]=1&pagination[pageSize]=10
+- Descargar backup:
+  - GET /api/backups/:documentId/download
+- Eliminar backup:
+  - DELETE /api/backups/:documentId
+- Restaurar backup (sqlite):
+  - POST /api/backups/:documentId/restore
+  - Body opcional: { "autoRestart": true }
+- Restaurar desde archivo subido (sqlite):
+  - POST /api/backups/restore/upload
+  - Content-Type: multipart/form-data (campo "file" con el .sqlite)
+  - Body opcional: { "autoRestart": true }
+- Exportar resumen XLSX (BD actual):
+  - GET /api/backups/export/xlsx
+  - Respuesta: archivo application/vnd.openxmlformats-officedocument.spreadsheetml.sheet con Content-Disposition: attachment
+
 ### Enrollments
 - Plural: enrollments
 - Ejemplos:
@@ -347,6 +401,133 @@ Estos content types usan endpoints de singleType:
 - Logs de ejecución del CRON: GET /api/histories?filters[event_type][$eq]=cron_execution
 - Logs de facturación del CRON: GET /api/histories?filters[event_type][$contains]=cron_billing
 - Headers: Authorization: Bearer <JWT>
+
+## Backups (Gestión de respaldos de base de datos)
+
+### Listar backups
+- Método: GET
+- URL: /api/backups
+- Headers: Authorization: Bearer <JWT>
+- Query params opcionales: filters, sort, pagination
+- Respuesta: 
+  ```json
+  {
+    "data": [
+      {
+        "id": 1,
+        "filename": "backup_2024-01-15T10-30-00-000Z.db",
+        "originalSize": 2048576,
+        "compressedSize": 1024288,
+        "checksum": "sha256_hash",
+        "status": "completed",
+        "backupType": "manual",
+        "description": "Manual backup before update",
+        "filePath": "/path/to/backup.db",
+        "fileExists": true,
+        "sizeFormatted": "2.0 MB",
+        "createdAt": "2024-01-15T10:30:00.000Z",
+        "metadata": { ... }
+      }
+    ],
+    "meta": { "total": 5 }
+  }
+  ```
+
+### Obtener detalles de backup
+- Método: GET
+- URL: /api/backups/:id
+- Headers: Authorization: Bearer <JWT>
+- Respuesta: objeto backup con detalles completos
+
+### Crear backup manual
+- Método: POST
+- URL: /api/backups
+- Headers: Authorization: Bearer <JWT>, Content-Type: application/json
+- Body (JSON):
+  ```json
+  {
+    "description": "Backup antes de migración importante"
+  }
+  ```
+- Respuesta:
+  ```json
+  {
+    "data": { ... },
+    "message": "Backup created successfully"
+  }
+  ```
+
+### Restaurar backup
+- Método: POST
+- URL: /api/backups/:id/restore
+- Headers: Authorization: Bearer <JWT>
+- ⚠️ **OPERACIÓN CRÍTICA**: Requiere permisos de administrador
+- Respuesta:
+  ```json
+  {
+    "data": {
+      "success": true,
+      "message": "Database restored successfully",
+      "restoredFrom": "backup_2024-01-15T10-30-00-000Z.db",
+      "safetyBackup": "backup_2024-01-15T11-00-00-000Z.db"
+    },
+    "message": "Database restored successfully. Please restart the application to ensure all connections are refreshed."
+  }
+  ```
+
+### Descargar backup
+- Método: GET
+- URL: /api/backups/:id/download
+- Headers: Authorization: Bearer <JWT>
+- Respuesta: Archivo binario (.db) para descarga
+
+### Eliminar backup
+- Método: DELETE
+- URL: /api/backups/:id
+- Headers: Authorization: Bearer <JWT>
+- Respuesta:
+  ```json
+  {
+    "data": {
+      "success": true,
+      "message": "Backup deleted successfully"
+    }
+  }
+  ```
+
+### Limpiar backups antiguos
+- Método: POST
+- URL: /api/backups/cleanup
+- Headers: Authorization: Bearer <JWT>, Content-Type: application/json
+- Body (JSON):
+  ```json
+  {
+    "retentionDays": 30
+  }
+  ```
+- Respuesta:
+  ```json
+  {
+    "data": {
+      "deletedCount": 3,
+      "message": "Cleaned up 3 old backups"
+    }
+  }
+  ```
+
+### Códigos de error específicos de Backups
+- 400: ID de backup inválido
+- 401: Autenticación requerida
+- 403: Permisos insuficientes (especialmente para restore)
+- 404: Backup no encontrado o archivo no existe
+- 500: Error en operación de backup/restore
+
+### Notas importantes sobre Backups
+- **Seguridad**: Todos los endpoints requieren autenticación
+- **Restauración**: Crea automáticamente un backup de seguridad antes de restaurar
+- **Integridad**: Verifica la integridad de los backups antes de operaciones críticas
+- **Almacenamiento**: Los archivos se guardan en `/backups/` (no incluidos en git)
+- **Reinicio**: Después de restaurar, se recomienda reiniciar la aplicación
 
 ## Parámetros de consulta (Query params)
 - pagination[page]=1&pagination[pageSize]=25

@@ -430,6 +430,50 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiBackupBackup extends Struct.CollectionTypeSchema {
+  collectionName: 'backups';
+  info: {
+    displayName: 'Backup';
+    pluralName: 'backups';
+    singularName: 'backup';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    backupType: Schema.Attribute.Enumeration<['manual', 'scheduled', 'other']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'manual'>;
+    checksum: Schema.Attribute.String;
+    compressedSize: Schema.Attribute.BigInteger;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.Text;
+    filename: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    filePath: Schema.Attribute.String & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::backup.backup'
+    > &
+      Schema.Attribute.Private;
+    metadata: Schema.Attribute.JSON;
+    originalSize: Schema.Attribute.BigInteger & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    statusBackup: Schema.Attribute.Enumeration<
+      ['pending', 'completed', 'failed', 'corrupted']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiClassroomClassroom extends Struct.CollectionTypeSchema {
   collectionName: 'classrooms';
   info: {
@@ -1640,6 +1684,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
+      'api::backup.backup': ApiBackupBackup;
       'api::classroom.classroom': ApiClassroomClassroom;
       'api::company.company': ApiCompanyCompany;
       'api::cron-day.cron-day': ApiCronDayCronDay;
