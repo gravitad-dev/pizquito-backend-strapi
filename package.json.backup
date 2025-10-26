@@ -1,0 +1,52 @@
+{
+  "name": "my-strapi-project",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A Strapi application",
+  "scripts": {
+    "build": "strapi build",
+    "console": "strapi console",
+    "deploy": "strapi deploy",
+    "dev": "strapi develop",
+    "develop": "strapi develop",
+    "seed:example": "node ./scripts/seed.js",
+    "start": "strapi start",
+    "strapi": "strapi",
+    "upgrade": "npx @strapi/upgrade latest",
+    "upgrade:dry": "npx @strapi/upgrade latest --dry"
+  },
+  "dependencies": {
+    "@strapi/plugin-cloud": "5.23.6",
+    "@strapi/plugin-graphql": "^5.23.6",
+    "@strapi/plugin-users-permissions": "5.23.6",
+    "@strapi/provider-upload-cloudinary": "^5.26.0",
+    "@strapi/strapi": "5.23.6",
+    "better-sqlite3": "11.3.0",
+    "cloudinary": "^2.7.0",
+    "dotenv": "^17.2.3",
+    "exceljs": "^4.4.0",
+    "fs-extra": "^10.1.0",
+    "mime-types": "^2.1.27",
+    "pdfkit": "^0.17.2",
+    "pg": "^8.16.3",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-router-dom": "^6.0.0",
+    "styled-components": "^6.0.0"
+  },
+  "devDependencies": {
+    "@strapi/types": "^5.27.0",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.0.0 <=22.x.x",
+    "npm": ">=6.0.0"
+  },
+  "strapi": {
+    "uuid": "507ad7a6-f59e-4b65-b6cd-3965a7c74817",
+    "installId": "1f6eb216de8ecf8a0ae1fa19c36f23cc42a620c88584f5be655c7259f54c1488"
+  }
+}

@@ -25,7 +25,10 @@
       "required": true,
       "unique": true
     },
-    "address": {
+    "IBAN": {
+      "type": "string"
+    },
+    "BIC": {
       "type": "string"
     }
   }

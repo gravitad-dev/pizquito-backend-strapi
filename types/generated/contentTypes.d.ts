@@ -529,10 +529,12 @@ export interface ApiCompanyCompany extends Struct.SingleTypeSchema {
   };
   attributes: {
     address: Schema.Attribute.String;
+    BIC: Schema.Attribute.String;
     code: Schema.Attribute.String;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    IBAN: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
