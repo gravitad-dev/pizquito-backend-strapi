@@ -3648,7 +3648,7 @@
 								"xlsx"
 							]
 						},
-						"description": "Genera y descarga un Excel (.xlsx) con un resumen por tabla y hojas con hasta 200 registros por tipo, mostrando campos básicos (id, createdAt, updatedAt y algunos campos de texto).\n\nNotas:\n- Requiere autenticación (Bearer token).\n- Pensado para ofrecer al director una noción general del contenido sin exponer datos sensibles.\n\nEjemplo: GET {{STRAPI_URL_LOCAL}}/api/backups/export/xlsx"
+                    "description": "Genera y descarga un Excel (.xlsx) con un resumen por tabla y hojas por content-type.\n\nComportamiento:\n- Hoja \"Resumen\": incluye columnas `Tabla`, `UID` (uid completo api::...), `Hoja` (nombre de la hoja), y `Cantidad`.\n- Hojas de datos: incluyen `id`, `createdAt`, `updatedAt` y TODOS los campos de tipo `string/text` del content-type (sin límite).\n- Por defecto exporta todas las filas; puedes limitar con `?limit=<n>` (ej. `?limit=200`).\n\nNotas:\n- Requiere autenticación (Bearer token).\n- Pensado para ofrecer al director una noción general del contenido sin exponer datos sensibles.\n\nEjemplo: GET {{STRAPI_URL_LOCAL}}/api/backups/export/xlsx"
 					},
 					"response": []
 				},
@@ -3691,7 +3691,7 @@
 								"xlsx"
 							]
 						},
-                        "description": "Restaura la base de datos a partir de un archivo XLSX exportado.\n\n**Comportamiento:**\n- Asocia cada hoja a su content-type por nombre (según export).\n- Opcionalmente crea un backup de seguridad (JSON) antes de importar.\n- Opcionalmente TRUNCATE (Postgres/MySQL) sólo las tablas incluidas para evitar duplicados.\n- Inserta únicamente campos de tipo string/text y omite `id`, `createdAt`, `updatedAt`.\n\n**Campos form-data aceptados:**\n- `file` (recomendado), `xlsx`, `files` o `backup`.\n\n**Limitaciones:**\n- No importa relaciones, componentes ni campos complejos.\n- Para SQLite, se realiza DELETE en lugar de TRUNCATE.\n\nEjemplo: POST {{STRAPI_URL_LOCAL}}/api/backups/restore/xlsx (form-data con `file`)."
+                        "description": "Restaura la base de datos a partir de un archivo XLSX exportado.\n\n**Comportamiento:**\n- Si la hoja \"Resumen\" existe, usa sus columnas `UID` y `Hoja` para mapear cada hoja al content-type correcto. Si no existe, mapea por `singularName` como en el export.\n- Opcionalmente crea un backup de seguridad (JSON) antes de importar.\n- Opcionalmente TRUNCATE (Postgres/MySQL) sólo las tablas incluidas para evitar duplicados.\n- Inserta únicamente campos de tipo `string/text` y omite `id`, `createdAt`, `updatedAt`.\n\n**Campos form-data aceptados:**\n- `file` (recomendado), `xlsx`, `files` o `backup`.\n\n**Parámetros (form-data) booleanos:**\n- `createSafetyBackup` y `truncate` aceptan `true/false`, `1/0`, `yes/no`, `on/off`.\n\n**Limitaciones:**\n- No importa relaciones, componentes ni campos complejos.\n- Para SQLite, se realiza DELETE en lugar de TRUNCATE.\n\nEjemplo: POST {{STRAPI_URL_LOCAL}}/api/backups/restore/xlsx (form-data con `file`)."
 					},
 					"response": []
 				},
