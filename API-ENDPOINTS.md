@@ -271,7 +271,7 @@ Notas importantes:
   - Si el cliente es mysql/postgres: se exporta todo el contenido como JSON a /backups/backup_YYYYMMDD_hhmmss.json.
 - Restauración:
   - Sqlite: se copia el archivo del backup sobre .tmp/data.db y se crea una copia de seguridad previa (restore_safety_...). Puede reiniciarse el servidor automáticamente si BACKUP_AUTO_RESTART=true o si envías { autoRestart: true } en el body.
-  - No-sqlite: la restauración desde JSON aún no está implementada.
+  - PostgreSQL/MySQL: restaura desde archivos JSON con transacciones seguras. Crea backup de seguridad automático antes de restaurar. Limpia y reinserta todos los datos (excepto tabla backups).
 - Exportación XLSX:
   - Endpoints:
     - Actual: GET /api/backups/export/xlsx — genera el Excel desde la base de datos actualmente en uso.
