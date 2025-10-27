@@ -1,3 +1,4 @@
+import { syncBackupsIndex } from './utils/backup-sync';
 // import type { Core } from '@strapi/strapi';
 
 export default {
@@ -16,5 +17,14 @@ export default {
    * This gives you an opportunity to set up your data model,
    * run jobs, or perform some special logic.
    */
-  bootstrap(/* { strapi }: { strapi: Core.Strapi } */) {},
+  async bootstrap({ strapi }: any) {
+    try {
+      const env = String(process.env.BACKUP_SYNC_ON_START || '1').toLowerCase();
+      if (['1','true','yes'].includes(env)) {
+        await syncBackupsIndex(strapi, { removeOrphanFiles: true });
+      }
+    } catch (e: any) {
+      strapi.log.warn(`Sync de backups en bootstrap falló: ${e?.message}`);
+    }
+  },
 };

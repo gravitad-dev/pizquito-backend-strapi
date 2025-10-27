@@ -140,6 +140,21 @@ While configuration is now managed via Strapi Admin, these environment variables
 - `BILLING_CRON_RULE` (optional): Full cron rule to override admin configuration
 - Legacy variables are maintained for backward compatibility
 
+### Daily Cleanup Task
+The system includes an automatic cleanup task that runs daily at 2:00 AM:
+
+```
+🧹 [Cleanup] INICIO - Ejecutando limpieza diaria (2025-01-20 02:00:00)
+📋 [Cleanup] Limpiando registros de history antiguos...
+✅ [Cleanup] Eliminados 150 registros de history antiguos
+✅ [Cleanup] COMPLETADO - Limpieza completada exitosamente (2025-01-20 02:00:15)
+```
+
+**What gets cleaned:**
+- **History Records**: Removes system logs older than 90 days
+- **Retention Policy**: Configurable (default: 90 days)
+- **Execution**: Daily at 2:00 AM (Europe/Madrid timezone)
+
 ### Testing & Development
 - **Test Mode**: Enable in admin panel for frequent execution (every N minutes)
 - **Manual Execution**: Trigger via admin panel or API
@@ -152,3 +167,4 @@ While configuration is now managed via Strapi Admin, these environment variables
 - Review **Billing Configuration** for last execution details
 - Monitor execution notes for success/error information
 - Use trace IDs to correlate logs across system components
+- **Cleanup Logs**: Monitor daily cleanup execution in System Logs with event_type `cron_cleanup_*`

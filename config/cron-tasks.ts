@@ -346,6 +346,58 @@ const fetchAllBatched = async (
 };
 
 /**
+ * Helper: clean old history records (older than specified days)
+ */
+const cleanOldHistoryRecords = async (
+  strapi: Core.Strapi,
+  daysToKeep = 90,
+): Promise<{ deleted: number }> => {
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+
+    strapi.log.info(`🧹 [Cleanup] Limpiando registros de history anteriores a ${cutoffDate.toISOString()}`);
+
+    // Buscar registros antiguos
+    const oldRecords = await strapi.entityService.findMany("api::history.history", {
+      filters: {
+        timestamp: {
+          $lt: cutoffDate.toISOString(),
+        },
+      },
+      fields: ["id", "timestamp", "title"],
+      limit: 1000, // Procesar en lotes para evitar sobrecarga
+    });
+
+    if (!Array.isArray(oldRecords) || oldRecords.length === 0) {
+      strapi.log.info("🧹 [Cleanup] No hay registros de history antiguos para limpiar");
+      return { deleted: 0 };
+    }
+
+    strapi.log.info(`🧹 [Cleanup] Encontrados ${oldRecords.length} registros de history para eliminar`);
+
+    // Eliminar registros en lotes
+    let deletedCount = 0;
+    for (const record of oldRecords) {
+      try {
+        await strapi.entityService.delete("api::history.history", record.id);
+        deletedCount++;
+      } catch (error) {
+        strapi.log.error(`❌ [Cleanup] Error eliminando registro de history ${record.id}:`, error);
+      }
+    }
+
+    strapi.log.info(`✅ [Cleanup] Eliminados ${deletedCount} registros de history antiguos`);
+    return { deleted: deletedCount };
+  } catch (error) {
+    strapi.log.error("❌ [Cleanup] Error en limpieza de history:", error);
+    return { deleted: 0 };
+  }
+};
+
+
+
+/**
  * Map service types and titles to proper invoice concepts for fiscal reporting
  */
 const mapServiceToConcept = (service: any): string => {
@@ -857,6 +909,95 @@ export default {
               error && (error as Error).stack
                 ? (error as Error).stack
                 : undefined,
+            timestamp,
+          },
+        });
+
+        throw error;
+      }
+    },
+  },
+
+  /**
+   * Daily cleanup task: clean old history records (logs)
+   * Runs every day at 2:00 AM
+   */
+  daily_cleanup: {
+    options: {
+      rule: "0 2 * * *", // Every day at 2:00 AM
+      tz: "Europe/Madrid",
+    },
+    task: async (ctx: TaskContext) => {
+      const startTime = Date.now();
+      const timestamp = new Date().toLocaleString("es-ES", {
+        timeZone: "Europe/Madrid",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+
+      ctx.strapi.log.info(`🧹 [Cleanup] INICIO - Ejecutando limpieza diaria de logs (${timestamp})`);
+
+      // Registrar inicio en history
+      await logCronExecution(ctx.strapi, {
+        title: "Cron Limpieza - Inicio",
+        message: "Iniciando proceso de limpieza automática de logs antiguos",
+        level: "INFO",
+        event_type: "cron_cleanup_start",
+        payload: {
+          timestamp,
+          retention_days: 90,
+        },
+      });
+
+      let historyResults = { deleted: 0 };
+
+      try {
+        // Limpiar registros de history antiguos (>90 días)
+        ctx.strapi.log.info(`📋 [Cleanup] Limpiando registros de history antiguos...`);
+        historyResults = await cleanOldHistoryRecords(ctx.strapi, 90);
+
+        const duration = Date.now() - startTime;
+        const successMessage = `Limpieza completada exitosamente. History: ${historyResults.deleted} registros eliminados.`;
+
+        ctx.strapi.log.info(`✅ [Cleanup] COMPLETADO - ${successMessage} (${timestamp})`);
+
+        // Registrar éxito en history
+        await logCronExecution(ctx.strapi, {
+          title: "Cron Limpieza - Completado",
+          message: successMessage,
+          level: "INFO",
+          event_type: "cron_cleanup_success",
+          duration_ms: duration.toString(),
+          payload: {
+            execution_duration_ms: duration,
+            history_records_deleted: historyResults.deleted,
+            retention_days: 90,
+            timestamp,
+          },
+        });
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        const errorMessage = `Falló la limpieza: ${(error && (error as Error).message) || error}`;
+
+        ctx.strapi.log.error(`❌ [Cleanup] ERROR - ${errorMessage}`);
+
+        // Registrar error en history
+        await logCronExecution(ctx.strapi, {
+          title: "Cron Limpieza - Error",
+          message: errorMessage,
+          level: "ERROR",
+          event_type: "cron_cleanup_error",
+          duration_ms: duration.toString(),
+          status_code: "500",
+          payload: {
+            execution_duration_ms: duration,
+            error_message: (error && (error as Error).message) || error,
+            error_stack: error && (error as Error).stack ? (error as Error).stack : undefined,
+            retention_days: 90,
             timestamp,
           },
         });
