@@ -303,8 +303,10 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
           }
         }
 
-        await strapi.entityService.update('api::backup.backup', documentId, {
-          data: { statusBackup: 'completed', description: `Backup restaurado desde ${ (backup as any).filename }` },
+        await strapi.documents('api::backup.backup').update({
+          documentId,
+          status: 'published',
+          data: { statusBackup: 'completed', description: `Backup restaurado desde ${(backup as any).filename}` },
         });
 
         const autoRestartEnv = String(process.env.BACKUP_AUTO_RESTART || '').toLowerCase();
@@ -407,7 +409,9 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
           // Confirmar transacción
           await trx.commit();
 
-          await strapi.entityService.update('api::backup.backup', documentId, {
+          await strapi.documents('api::backup.backup').update({
+            documentId,
+            status: 'published',
             data: { 
               statusBackup: 'completed', 
               description: `Backup JSON restaurado desde ${(backup as any).filename} (${restoredCount} registros)` 
