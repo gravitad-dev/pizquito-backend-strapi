@@ -334,31 +334,37 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
       } else {
         // Restauración desde JSON para PostgreSQL/MySQL
         const jsonData = JSON.parse(await fsp.readFile((backup as any).filePath, 'utf8'));
-        
+
         // Obtener todas las entidades del sistema
-        const contentTypes = Object.keys(strapi.contentTypes).filter(key => 
+        const contentTypes = Object.keys(strapi.contentTypes).filter(key =>
           key.startsWith('api::') && !key.includes('backup')
         );
 
-        // Crear backup de seguridad antes de restaurar
+        // Respetar bandera para crear backup de seguridad antes de restaurar
+        const createSafetyBackupBody = Boolean((ctx.request.body as any)?.createSafetyBackup);
+        const shouldCreateSafetyBackup = (ctx.request.body as any)?.createSafetyBackup === false ? false : true;
         const ts = formatTimestamp(new Date());
-        const safetyFilename = `restore_safety_${ts}.json`;
         const backupsDir = path.resolve(process.cwd(), 'backups');
-        const safetyPath = path.join(backupsDir, safetyFilename);
-        
-        const safetyData: any = {};
-        for (const contentType of contentTypes) {
-          try {
-            const entities = await strapi.entityService.findMany(contentType as any, { 
-              populate: '*',
-              pagination: { limit: -1 }
-            });
-            safetyData[contentType] = entities;
-          } catch (e) {
-            strapi.log.warn(`No se pudo respaldar ${contentType}: ${e}`);
+        let safetyFilename: string | null = null;
+        let safetyPath: string | null = null;
+        if (shouldCreateSafetyBackup) {
+          safetyFilename = `restore_safety_${ts}.json`;
+          safetyPath = path.join(backupsDir, safetyFilename);
+
+          const safetyData: any = {};
+          for (const contentType of contentTypes) {
+            try {
+              const entities = await strapi.entityService.findMany(contentType as any, {
+                populate: '*',
+                pagination: { limit: -1 }
+              });
+              safetyData[contentType] = entities;
+            } catch (e) {
+              strapi.log.warn(`No se pudo respaldar ${contentType}: ${e}`);
+            }
           }
+          await fsp.writeFile(safetyPath, JSON.stringify(safetyData, null, 2));
         }
-        await fsp.writeFile(safetyPath, JSON.stringify(safetyData, null, 2));
 
         // Iniciar transacción para rollback seguro
         const knex = (strapi.db as any).connection;
@@ -366,7 +372,7 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
         
         try {
           // Deshabilitar foreign keys temporalmente
-          if (client === 'postgresql') {
+          if (client === 'postgresql' || client === 'postgres') {
             await trx.raw('SET session_replication_role = replica;');
           } else if (client === 'mysql') {
             await trx.raw('SET FOREIGN_KEY_CHECKS = 0;');
@@ -375,7 +381,13 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
           // Limpiar tablas existentes (excepto backups)
           for (const contentType of contentTypes) {
             const tableName = strapi.db.metadata.get(contentType).tableName;
-            await trx.raw(`DELETE FROM "${tableName}"`);
+            if (client === 'postgresql' || client === 'postgres') {
+              await trx.raw(`TRUNCATE TABLE "${tableName}" RESTART IDENTITY CASCADE;`);
+            } else if (client === 'mysql') {
+              await trx.raw(`TRUNCATE TABLE \`${tableName}\`;`);
+            } else {
+              await trx.raw(`DELETE FROM "${tableName}"`);
+            }
           }
 
           // Restaurar datos desde JSON
@@ -400,7 +412,7 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
           }
 
           // Rehabilitar foreign keys
-          if (client === 'postgresql') {
+          if (client === 'postgresql' || client === 'postgres') {
             await trx.raw('SET session_replication_role = DEFAULT;');
           } else if (client === 'mysql') {
             await trx.raw('SET FOREIGN_KEY_CHECKS = 1;');
