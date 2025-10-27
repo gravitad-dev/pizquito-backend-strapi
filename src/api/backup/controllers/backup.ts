@@ -481,20 +481,27 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
       await ensureDir(backupsDir);
 
       const files: any = (ctx.request as any).files || {};
-      const file: any = files.file || files.backup || null;
-      if (!file || !file.path) {
+      let file: any = files.file || files.backup || null;
+      if ((!file || (!file.path && !file.filepath)) && files && typeof files === 'object') {
+        const firstKey = Object.keys(files)[0];
+        if (firstKey) {
+          file = (Array.isArray(files[firstKey]) ? files[firstKey][0] : files[firstKey]) || null;
+        }
+      }
+      const filePath = file?.path || file?.filepath;
+      if (!file || !filePath) {
         return ctx.badRequest('Debe enviar un archivo de backup en multipart/form-data (campo "file")');
       }
 
       const now = new Date();
       const ts = formatTimestamp(now);
-      const originalName: string = file.name || `uploaded_${ts}.sqlite`;
+      const originalName: string = file.name || file.originalFilename || `uploaded_${ts}.sqlite`;
       const ext = path.extname(originalName) || '.sqlite';
       const filename = `uploaded_${ts}${ext}`;
       const destPath = path.join(backupsDir, filename);
 
       // Mover/copiar el archivo subido al directorio de backups
-      await fsp.copyFile(file.path, destPath);
+      await fsp.copyFile(filePath, destPath);
       const stat = await fsp.stat(destPath);
       const checksum = await computeChecksum(destPath);
 
@@ -694,19 +701,20 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
       // Soportar arrays (por si el parser devuelve lista de archivos)
       if (Array.isArray(file)) file = file[0];
       // Fallback: tomar el primer archivo disponible si el nombre del campo no coincide
-      if ((!file || !file.path) && files && typeof files === 'object') {
+      if ((!file || (!file.path && !file.filepath)) && files && typeof files === 'object') {
         const firstKey = Object.keys(files)[0];
         if (firstKey) {
           file = (Array.isArray(files[firstKey]) ? files[firstKey][0] : files[firstKey]) || null;
         }
       }
-      if (!file || !file.path) {
+      const filePath = file?.path || file?.filepath;
+      if (!file || !filePath) {
         return ctx.badRequest('Debe enviar un archivo XLSX en multipart/form-data (campo "file", "xlsx", "files" o "backup")');
       }
 
       // Leer workbook
       const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.readFile(file.path);
+      await workbook.xlsx.readFile(filePath);
 
       // Construir mapping de sheetName -> contentType UID
       const contentTypes = Object.keys(strapi.contentTypes).filter((uid) => {
