@@ -334,6 +334,12 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
       } else {
         // Restauración desde JSON para PostgreSQL/MySQL
         const jsonData = JSON.parse(await fsp.readFile((backup as any).filePath, 'utf8'));
+        // Los backups JSON creados por este controlador usan la forma
+        // { createdAt: string, data: { 'api::...': [entities] } }
+        // Por compatibilidad, si no existe jsonData.data, intentamos usar el propio jsonData
+        const payloadData: Record<string, any> = (jsonData && typeof jsonData === 'object' && jsonData.data && typeof jsonData.data === 'object')
+          ? jsonData.data
+          : jsonData;
 
         // Obtener todas las entidades del sistema
         const contentTypes = Object.keys(strapi.contentTypes).filter(key =>
@@ -341,7 +347,6 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
         );
 
         // Respetar bandera para crear backup de seguridad antes de restaurar
-        const createSafetyBackupBody = Boolean((ctx.request.body as any)?.createSafetyBackup);
         const shouldCreateSafetyBackup = (ctx.request.body as any)?.createSafetyBackup === false ? false : true;
         const ts = formatTimestamp(new Date());
         const backupsDir = path.resolve(process.cwd(), 'backups');
@@ -364,6 +369,13 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
             }
           }
           await fsp.writeFile(safetyPath, JSON.stringify(safetyData, null, 2));
+        }
+
+        // Validar que el payload contiene claves de content-types válidas antes de borrar nada
+        const payloadKeys = Object.keys(payloadData || {});
+        const hasValidContent = payloadKeys.some((k) => k.startsWith('api::') && !k.includes('backup'));
+        if (!hasValidContent) {
+          return ctx.badRequest('Backup JSON inválido o sin datos de content-types. Restauración abortada para proteger la base de datos.');
         }
 
         // Iniciar transacción para rollback seguro
@@ -392,7 +404,7 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
 
           // Restaurar datos desde JSON
           let restoredCount = 0;
-          for (const [contentType, entities] of Object.entries(jsonData)) {
+          for (const [contentType, entities] of Object.entries(payloadData)) {
             if (!contentType.startsWith('api::') || contentType.includes('backup')) continue;
             
             const entitiesArray = Array.isArray(entities) ? entities : [];
@@ -660,6 +672,175 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
     } catch (error: any) {
       strapi.log.error(`Error en restoreFromUpload: ${error?.message}`);
       ctx.badRequest('Error al restaurar desde archivo subido', { error: error?.message });
+    }
+  },
+
+  // Restaurar la BD desde un archivo XLSX exportado (campos básicos)
+  async restoreFromXlsx(ctx) {
+    try {
+      const client = process.env.DATABASE_CLIENT || 'sqlite';
+
+      // Obtener archivo subido (multipart/form-data)
+      const files: any = (ctx.request as any).files || {};
+      const file: any = files.file || files.xlsx || null;
+      if (!file || !file.path) {
+        return ctx.badRequest('Debe enviar un archivo XLSX en multipart/form-data (campo "file" o "xlsx")');
+      }
+
+      // Leer workbook
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(file.path);
+
+      // Construir mapping de sheetName -> contentType UID según exportXlsx
+      const contentTypes = Object.keys(strapi.contentTypes).filter((uid) => {
+        const ct: any = (strapi.contentTypes as any)[uid];
+        return ct && ct.kind === 'collectionType' && uid.startsWith('api::') && uid !== 'api::backup.backup';
+      });
+
+      const sheetNameForUid = (uid: string) => {
+        const ct: any = (strapi.contentTypes as any)[uid];
+        const name = (ct?.info?.singularName || uid.split('.').pop() || 'data').toString();
+        return name.substring(0, 31);
+      };
+
+      const uidBySheetName: Record<string, string> = {};
+      for (const uid of contentTypes) {
+        uidBySheetName[sheetNameForUid(uid)] = uid;
+      }
+
+      // Detectar hojas válidas (omitir "Resumen")
+      const validSheets = workbook.worksheets
+        .filter((ws) => !!ws && !!ws.name && ws.name !== 'Resumen' && uidBySheetName[ws.name]);
+
+      if (validSheets.length === 0) {
+        return ctx.badRequest('El XLSX no contiene hojas válidas con nombres de content-types exportados.');
+      }
+
+      // Opciones de ejecución
+      const shouldCreateSafetyBackup = (ctx.request.body as any)?.createSafetyBackup === false ? false : true;
+      const shouldTruncate = (ctx.request.body as any)?.truncate === false ? false : true; // por defecto truncamos tablas incluidas
+
+      // Crear backup de seguridad previo (JSON) si corresponde
+      let safetyFilename: string | null = null;
+      let safetyPath: string | null = null;
+      if (shouldCreateSafetyBackup) {
+        const ts = formatTimestamp(new Date());
+        const backupsDir = path.resolve(process.cwd(), 'backups');
+        await ensureDir(backupsDir);
+        safetyFilename = `restore_xlsx_safety_${ts}.json`;
+        safetyPath = path.join(backupsDir, safetyFilename);
+
+        const safetyData: any = {};
+        for (const ws of validSheets) {
+          const uid = uidBySheetName[ws.name];
+          try {
+            const entities = await strapi.entityService.findMany(uid as any, {
+              populate: '*',
+              pagination: { limit: -1 },
+            });
+            safetyData[uid] = entities;
+          } catch (e) {
+            strapi.log.warn(`No se pudo respaldar ${uid}: ${e}`);
+          }
+        }
+        await fsp.writeFile(safetyPath, JSON.stringify(safetyData, null, 2));
+      }
+
+      // Iniciar transacción para operaciones de truncado segura
+      const knex = (strapi.db as any).connection;
+      const trx = await knex.transaction();
+
+      try {
+        // Deshabilitar FKs temporalmente
+        if (client === 'postgresql' || client === 'postgres') {
+          await trx.raw('SET session_replication_role = replica;');
+        } else if (client === 'mysql') {
+          await trx.raw('SET FOREIGN_KEY_CHECKS = 0;');
+        }
+
+        // Limpiar sólo las tablas incluidas en el XLSX, si se solicita
+        if (shouldTruncate) {
+          for (const ws of validSheets) {
+            const uid = uidBySheetName[ws.name];
+            const tableName = strapi.db.metadata.get(uid).tableName;
+            if (client === 'postgresql' || client === 'postgres') {
+              await trx.raw(`TRUNCATE TABLE "${tableName}" RESTART IDENTITY CASCADE;`);
+            } else if (client === 'mysql') {
+              await trx.raw(`TRUNCATE TABLE \`${tableName}\`;`);
+            } else {
+              await trx.raw(`DELETE FROM "${tableName}"`);
+            }
+          }
+        }
+
+        // Importar filas por hoja (campos básicos)
+        const restoredSummary: Record<string, number> = {};
+        for (const ws of validSheets) {
+          const uid = uidBySheetName[ws.name];
+          const ct: any = (strapi.contentTypes as any)[uid];
+          const attributes = ct?.attributes || {};
+
+          // Columnas del XLSX: usar encabezados de la hoja
+          const headerRow = ws.getRow(1);
+          const headers: string[] = Array.from({ length: ws.columnCount }, (_, i) => headerRow.getCell(i + 1).value)
+            .map((v: any) => (v == null ? '' : String(v)))
+            .filter((h) => !!h);
+
+          let count = 0;
+          for (let rowNumber = 2; rowNumber <= ws.rowCount; rowNumber++) {
+            const row = ws.getRow(rowNumber);
+            try {
+              const data: any = {};
+              headers.forEach((key, idx) => {
+                const cellVal = row.getCell(idx + 1).value;
+                const val = cellVal == null ? null : String(cellVal);
+                // omitir campos de sistema
+                if (['id', 'createdAt', 'updatedAt'].includes(key)) return;
+                // solo importar campos que existan y sean de tipo string/text
+                const attr = attributes[key];
+                if (attr && (attr.type === 'string' || attr.type === 'text')) {
+                  data[key] = val;
+                }
+              });
+              // insertar si hay algún dato
+              if (Object.keys(data).length > 0) {
+                await strapi.entityService.create(uid as any, { data });
+                count++;
+              }
+            } catch (e) {
+              strapi.log.warn(`Error restaurando fila en hoja ${ws.name}: ${e}`);
+            }
+          }
+          restoredSummary[uid] = count;
+        }
+
+        // Rehabilitar FKs
+        if (client === 'postgresql' || client === 'postgres') {
+          await trx.raw('SET session_replication_role = DEFAULT;');
+        } else if (client === 'mysql') {
+          await trx.raw('SET FOREIGN_KEY_CHECKS = 1;');
+        }
+
+        // Confirmar truncados
+        await trx.commit();
+
+        ctx.body = {
+          data: {
+            restored: true,
+            restoredByContentType: restoredSummary,
+            safetyBackup: safetyFilename,
+            truncatedTables: shouldTruncate,
+          },
+          message: 'Restauración desde XLSX completada (campos básicos).',
+        };
+      } catch (error: any) {
+        await trx.rollback();
+        strapi.log.error(`Error durante restauración XLSX: ${error?.message}`);
+        ctx.badRequest('Error al restaurar desde XLSX', { error: error?.message });
+      }
+    } catch (error: any) {
+      strapi.log.error(`Error procesando archivo XLSX: ${error?.message}`);
+      ctx.badRequest('Error procesando archivo XLSX', { error: error?.message });
     }
   },
 

@@ -3536,24 +3536,24 @@
 							"raw": "{\n  \"createSafetyBackup\": false\n}"
 						},
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:Id/restore",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:documentId/restore",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
 							"path": [
 								"api",
 								"backups",
-								":Id",
+								":documentId",
 								"restore"
 							],
 							"variable": [
 								{
-									"key": "Id",
+									"key": "documentId",
 									"value": "14"
 								}
 							]
 						},
-						"description": "Restaura un backup específico.\n\n**Funcionalidad por tipo de base de datos:**\n- **SQLite**: Copia el archivo .sqlite a la ruta de la BD (requiere reinicio del servidor)\n- **PostgreSQL/MySQL**: Restaura desde archivo .json con transacciones seguras y rollback automático\n\n**Características de seguridad:**\n- Backup de seguridad automático antes de restaurar (opcional)\n- Transacciones con rollback en caso de error\n- Manejo de foreign keys y constraints\n- Validación de integridad de datos\n\n**Parámetros:**\n- `documentId`: ID del backup a restaurar\n- Body opcional: `{ \"createSafetyBackup\": true }` para crear backup de seguridad antes de restaurar\n\n**Proceso de restauración JSON:**\n1. Validación del archivo y estructura\n2. Creación de backup de seguridad (si se solicita)\n3. Inicio de transacción\n4. Limpieza de datos existentes\n5. Restauración de datos desde JSON\n6. Commit o rollback según resultado"
+						"description": "Restaura un backup específico.\n\n**Funcionalidad por tipo de base de datos:**\n- **SQLite**: Copia el archivo .sqlite a la ruta de la BD (puede requerir reinicio del servidor)\n- **PostgreSQL/MySQL**: Restaura desde archivo .json, deshabilitando constraints temporalmente y usando TRUNCATE seguro antes de reinsertar.\n\n**Características de seguridad:**\n- Backup de seguridad automático antes de restaurar (opcional)\n- Transacciones con rollback en caso de error\n- Manejo de foreign keys y constraints\n- Validación de integridad de datos\n\n**Parámetros:**\n- `documentId`: UUID del backup a restaurar\n- Body opcional: `{ \"createSafetyBackup\": true }` para crear backup de seguridad antes de restaurar\n\n**Proceso de restauración JSON:**\n1. Validación del archivo y estructura\n2. (Opcional) Creación de backup de seguridad\n3. Inicio de transacción\n4. Limpieza de datos existentes (sólo tablas válidas)\n5. Restauración de datos desde JSON\n6. Commit o rollback según resultado"
 					},
 					"response": []
 				},
@@ -3566,7 +3566,7 @@
 							"mode": "formdata",
 							"formdata": [
 								{
-									"key": "files",
+									"key": "file",
 									"type": "file",
 									"src": []
 								},
@@ -3579,17 +3579,18 @@
 							]
 						},
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/restore-from-upload",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/restore/upload",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
 							"path": [
 								"api",
 								"backups",
-								"restore-from-upload"
+								"restore",
+								"upload"
 							]
 						},
-						"description": "Sube y restaura un archivo de backup directamente.\n\n**Tipos de archivo soportados:**\n- `.sqlite`: Para bases de datos SQLite\n- `.json`: Para PostgreSQL/MySQL (estructura JSON completa)\n\n**Parámetros form-data:**\n- `files`: Archivo de backup a subir y restaurar\n- `createSafetyBackup`: (opcional) \"true\" para crear backup de seguridad antes de restaurar\n\n**Proceso:**\n1. Validación del archivo subido\n2. Detección automática del tipo (SQLite/JSON)\n3. Creación de backup de seguridad (si se solicita)\n4. Restauración según el tipo de archivo\n5. Limpieza de archivos temporales\n\n**Características de seguridad:**\n- Validación de tipos de archivo\n- Transacciones con rollback automático (JSON)\n- Backup de seguridad antes de restaurar\n- Manejo de errores con limpieza automática\n\n**Respuesta exitosa:**\n- Información del proceso de restauración\n- Detalles del backup de seguridad (si se creó)\n- Estadísticas de restauración"
+						"description": "Sube y restaura un archivo de backup directamente.\n\n**Tipos de archivo soportados:**\n- `.sqlite`: Para bases de datos SQLite\n- `.json`: Para PostgreSQL/MySQL (estructura JSON completa)\n\n**Parámetros form-data:**\n- `file` (o `backup`): Archivo de backup a subir y restaurar\n- `createSafetyBackup`: (opcional) \"true\" para crear backup de seguridad antes de restaurar\n\n**Proceso:**\n1. Validación del archivo subido\n2. Detección automática del tipo (SQLite/JSON)\n3. Creación de backup de seguridad (si se solicita)\n4. Restauración según el tipo de archivo\n5. Limpieza de archivos temporales\n\n**Características de seguridad:**\n- Validación de tipos de archivo\n- Transacciones con rollback automático (JSON)\n- Backup de seguridad antes de restaurar\n- Manejo de errores con limpieza automática\n\n**Respuesta exitosa:**\n- Información del proceso de restauración\n- Detalles del backup de seguridad (si se creó)\n- Estadísticas de restauración"
 					},
 					"response": []
 				},
@@ -3604,21 +3605,21 @@
 							}
 						],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:Id/download",
+						"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:documentId/download",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
 							"path": [
 								"api",
 								"backups",
-								":Id",
+							":documentId",
 								"download"
 							],
 							"variable": [
 								{
-									"key": "Id",
-									"value": "12"
-								}
+								"key": "documentId",
+								"value": "12"
+							}
 							]
 						},
 						"description": "Descarga el archivo de backup desde el servidor.\n\n**Headers de respuesta:**\n- `Content-Type`: `application/json` para archivos .json (PostgreSQL/MySQL), `application/octet-stream` para .sqlite\n- `Content-Disposition`: attachment; filename=\"backup_YYYYMMDD_HHMMSS.ext\" (nombre real del archivo)\n- `Access-Control-Expose-Headers`: Content-Disposition (permite al frontend acceder al filename)\n\n**Notas:**\n- Requiere autenticación (Bearer token).\n- Para SQLite: archivo .sqlite\n- Para PostgreSQL/MySQL: archivo .json con estructura completa de datos\n- El frontend puede extraer el filename correcto del header Content-Disposition\n\n**Ejemplo:** GET {{STRAPI_URL_LOCAL}}/api/backups/:documentId/download"
@@ -3652,25 +3653,68 @@
 					"response": []
 				},
 				{
-					"name": "Delete Backup",
+					"name": "Restore Backups XLSX",
 					"request": {
-						"method": "DELETE",
+						"method": "POST",
 						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "createSafetyBackup",
+									"value": "true",
+									"type": "text",
+									"description": "Crear backup de seguridad JSON previo antes de importar"
+								},
+								{
+									"key": "truncate",
+									"value": "true",
+									"type": "text",
+									"description": "Si true, limpia (TRUNCATE) sólo las tablas incluidas en el XLSX antes de reinsertar"
+								}
+							]
+						},
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:Id",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/restore/xlsx",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
 							"path": [
 								"api",
 								"backups",
-								":Id"
+								"restore",
+								"xlsx"
+							]
+						},
+						"description": "Restaura la base de datos a partir de un archivo XLSX exportado.\n\n**Comportamiento:**\n- Asocia cada hoja a su content-type por nombre (según export).\n- Opcionalmente crea un backup de seguridad (JSON) antes de importar.\n- Opcionalmente TRUNCATE (Postgres/MySQL) sólo las tablas incluidas para evitar duplicados.\n- Inserta únicamente campos de tipo string/text y omite `id`, `createdAt`, `updatedAt`.\n\n**Limitaciones:**\n- No importa relaciones, componentes ni campos complejos.\n- Para SQLite, se realiza DELETE en lugar de TRUNCATE.\n\nEjemplo: POST {{STRAPI_URL_LOCAL}}/api/backups/restore/xlsx (form-data con `file`)."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Backup",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+						"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:documentId",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"backups",
+							":documentId"
 							],
 							"variable": [
 								{
-									"key": "Id",
-									"value": "16"
-								}
+								"key": "documentId",
+								"value": "16"
+							}
 							]
 						},
 						"description": "**Elimina un backup específico**\n\n**Parámetros:**\n- `documentId`: ID del backup a eliminar\n\n**⚠️ PRECAUCIÓN:**\nEsta operación es irreversible. El backup y su archivo asociado serán eliminados permanentemente.\n\n**Proceso de eliminación:**\n1. Verifica que el backup existe\n2. Elimina el archivo físico del sistema\n3. Elimina el registro de la base de datos\n\n**Estados que permiten eliminación:**\n- `completed`: Backup completado\n- `failed`: Backup fallido\n- `corrupted`: Backup corrupto\n\n**Respuesta exitosa:**\n- Status 200: Backup eliminado correctamente\n- Incluye información del backup eliminado"
