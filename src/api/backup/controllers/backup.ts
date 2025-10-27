@@ -334,6 +334,12 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
       } else {
         // Restauración desde JSON para PostgreSQL/MySQL
         const jsonData = JSON.parse(await fsp.readFile((backup as any).filePath, 'utf8'));
+        // Los backups JSON creados por este controlador usan la forma
+        // { createdAt: string, data: { 'api::...': [entities] } }
+        // Por compatibilidad, si no existe jsonData.data, intentamos usar el propio jsonData
+        const payloadData: Record<string, any> = (jsonData && typeof jsonData === 'object' && jsonData.data && typeof jsonData.data === 'object')
+          ? jsonData.data
+          : jsonData;
 
         // Obtener todas las entidades del sistema
         const contentTypes = Object.keys(strapi.contentTypes).filter(key =>
@@ -366,6 +372,13 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
           await fsp.writeFile(safetyPath, JSON.stringify(safetyData, null, 2));
         }
 
+        // Validar que el payload contiene claves de content-types válidas antes de borrar nada
+        const payloadKeys = Object.keys(payloadData || {});
+        const hasValidContent = payloadKeys.some((k) => k.startsWith('api::') && !k.includes('backup'));
+        if (!hasValidContent) {
+          return ctx.badRequest('Backup JSON inválido o sin datos de content-types. Restauración abortada para proteger la base de datos.');
+        }
+
         // Iniciar transacción para rollback seguro
         const knex = (strapi.db as any).connection;
         const trx = await knex.transaction();
@@ -392,7 +405,7 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
 
           // Restaurar datos desde JSON
           let restoredCount = 0;
-          for (const [contentType, entities] of Object.entries(jsonData)) {
+          for (const [contentType, entities] of Object.entries(payloadData)) {
             if (!contentType.startsWith('api::') || contentType.includes('backup')) continue;
             
             const entitiesArray = Array.isArray(entities) ? entities : [];
