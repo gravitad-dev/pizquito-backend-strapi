@@ -128,6 +128,8 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
       const resumen = workbook.addWorksheet('Resumen');
       resumen.columns = [
         { header: 'Tabla', key: 'tabla', width: 32 },
+        { header: 'UID', key: 'uid', width: 40 },
+        { header: 'Hoja', key: 'hoja', width: 32 },
         { header: 'Cantidad', key: 'cantidad', width: 12 },
       ];
 
@@ -142,10 +144,13 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
         try {
           count = await (strapi.db as any).query(uid).count();
         } catch {
-          const items = await strapi.entityService.findMany(uid as any, {} as any);
+          const items = await strapi.entityService.findMany(uid as any, { pagination: { limit: -1 } } as any);
           count = Array.isArray(items) ? items.length : 0;
         }
-        resumen.addRow({ tabla: uid.replace('api::', ''), cantidad: count });
+        const ct: any = (strapi.contentTypes as any)[uid];
+        const name = (ct?.info?.singularName || uid.split('.').pop() || 'data').toString();
+        const hoja = name.substring(0, 31);
+        resumen.addRow({ tabla: uid.replace('api::', ''), uid, hoja, cantidad: count });
       }
 
       // Crear hojas por cada tipo con campos básicos
@@ -155,8 +160,7 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
         const sheet = workbook.addWorksheet(name.substring(0, 31));
 
         const stringFields = Object.keys(ct.attributes || {})
-          .filter((k) => (ct.attributes[k]?.type === 'string' || ct.attributes[k]?.type === 'text'))
-          .slice(0, 6);
+          .filter((k) => (ct.attributes[k]?.type === 'string' || ct.attributes[k]?.type === 'text'));
 
         const cols = [
           { header: 'id', key: 'id', width: 10 },
@@ -166,7 +170,11 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
         ];
         sheet.columns = cols as any;
 
-        const items = await strapi.entityService.findMany(uid as any, { limit: 200 } as any);
+        // Permitir controlar el límite de filas exportadas vía query (?limit=)
+        const limitParam = (ctx.query as any)?.limit;
+        const parsed = parseInt(limitParam, 10);
+        const limitValue = Number.isFinite(parsed) ? parsed : -1; // -1 exporta todo
+        const items = await strapi.entityService.findMany(uid as any, { pagination: { limit: limitValue } } as any);
         for (const it of items as any[]) {
           const row: any = {
             id: it.id,
@@ -682,43 +690,90 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
 
       // Obtener archivo subido (multipart/form-data)
       const files: any = (ctx.request as any).files || {};
-      const file: any = files.file || files.xlsx || null;
+      let file: any = files.file || files.xlsx || files.files || files.backup || null;
+      // Soportar arrays (por si el parser devuelve lista de archivos)
+      if (Array.isArray(file)) file = file[0];
+      // Fallback: tomar el primer archivo disponible si el nombre del campo no coincide
+      if ((!file || !file.path) && files && typeof files === 'object') {
+        const firstKey = Object.keys(files)[0];
+        if (firstKey) {
+          file = (Array.isArray(files[firstKey]) ? files[firstKey][0] : files[firstKey]) || null;
+        }
+      }
       if (!file || !file.path) {
-        return ctx.badRequest('Debe enviar un archivo XLSX en multipart/form-data (campo "file" o "xlsx")');
+        return ctx.badRequest('Debe enviar un archivo XLSX en multipart/form-data (campo "file", "xlsx", "files" o "backup")');
       }
 
       // Leer workbook
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.readFile(file.path);
 
-      // Construir mapping de sheetName -> contentType UID según exportXlsx
+      // Construir mapping de sheetName -> contentType UID
       const contentTypes = Object.keys(strapi.contentTypes).filter((uid) => {
         const ct: any = (strapi.contentTypes as any)[uid];
         return ct && ct.kind === 'collectionType' && uid.startsWith('api::') && uid !== 'api::backup.backup';
       });
 
-      const sheetNameForUid = (uid: string) => {
-        const ct: any = (strapi.contentTypes as any)[uid];
-        const name = (ct?.info?.singularName || uid.split('.').pop() || 'data').toString();
-        return name.substring(0, 31);
-      };
-
-      const uidBySheetName: Record<string, string> = {};
-      for (const uid of contentTypes) {
-        uidBySheetName[sheetNameForUid(uid)] = uid;
+      // 1) Intentar construir el mapping desde la hoja "Resumen" si existe (usa columnas UID y Hoja)
+      const resumenSheet = workbook.getWorksheet('Resumen');
+      let uidBySheetName: Record<string, string> = {};
+      if (resumenSheet) {
+        const headerRow = resumenSheet.getRow(1);
+        const headers: string[] = Array.from({ length: resumenSheet.columnCount }, (_, i) => headerRow.getCell(i + 1).value)
+          .map((v: any) => (v == null ? '' : String(v)))
+          .filter((h) => !!h);
+        const idxUID = headers.findIndex((h) => h.toLowerCase() === 'uid');
+        const idxHoja = headers.findIndex((h) => h.toLowerCase() === 'hoja');
+        if (idxUID >= 0 && idxHoja >= 0) {
+          for (let r = 2; r <= resumenSheet.rowCount; r++) {
+            const row = resumenSheet.getRow(r);
+            const hojaVal = row.getCell(idxHoja + 1).value;
+            const uidVal = row.getCell(idxUID + 1).value;
+            const hoja = hojaVal == null ? '' : String(hojaVal);
+            const uid = uidVal == null ? '' : String(uidVal);
+            if (hoja && uid) uidBySheetName[hoja] = uid;
+          }
+        }
+      }
+      // 2) Si no hay mapping desde Resumen, construirlo por singularName (como exportXlsx)
+      if (Object.keys(uidBySheetName).length === 0) {
+        const sheetNameForUid = (uid: string) => {
+          const ct: any = (strapi.contentTypes as any)[uid];
+          const name = (ct?.info?.singularName || uid.split('.').pop() || 'data').toString();
+          return name.substring(0, 31);
+        };
+        for (const uid of contentTypes) {
+          uidBySheetName[sheetNameForUid(uid)] = uid;
+        }
       }
 
-      // Detectar hojas válidas (omitir "Resumen")
+      // Detectar hojas válidas (omitir "Resumen" y asegurar que el UID existe en el proyecto actual)
       const validSheets = workbook.worksheets
-        .filter((ws) => !!ws && !!ws.name && ws.name !== 'Resumen' && uidBySheetName[ws.name]);
+        .filter((ws) => {
+          if (!ws || !ws.name || ws.name === 'Resumen') return false;
+          const uid = uidBySheetName[ws.name];
+          if (!uid) return false;
+          return !!(strapi.contentTypes as any)[uid];
+        });
 
       if (validSheets.length === 0) {
         return ctx.badRequest('El XLSX no contiene hojas válidas con nombres de content-types exportados.');
       }
 
-      // Opciones de ejecución
-      const shouldCreateSafetyBackup = (ctx.request.body as any)?.createSafetyBackup === false ? false : true;
-      const shouldTruncate = (ctx.request.body as any)?.truncate === false ? false : true; // por defecto truncamos tablas incluidas
+      // Opciones de ejecución (soportar valores string como 'true'/'false')
+      const parseBoolean = (v: any, def: boolean) => {
+        if (typeof v === 'string') {
+          const s = v.trim().toLowerCase();
+          if (['true', '1', 'yes', 'on'].includes(s)) return true;
+          if (['false', '0', 'no', 'off'].includes(s)) return false;
+          return def;
+        }
+        if (typeof v === 'boolean') return v;
+        if (v === null || v === undefined) return def;
+        return Boolean(v);
+      };
+      const shouldCreateSafetyBackup = parseBoolean((ctx.request.body as any)?.createSafetyBackup, true);
+      const shouldTruncate = parseBoolean((ctx.request.body as any)?.truncate, true); // por defecto truncamos tablas incluidas
 
       // Crear backup de seguridad previo (JSON) si corresponde
       let safetyFilename: string | null = null;
