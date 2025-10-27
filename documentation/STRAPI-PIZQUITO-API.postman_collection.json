@@ -3653,49 +3653,6 @@
 					"response": []
 				},
 				{
-					"name": "Restore Backups XLSX",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "file",
-									"type": "file",
-									"src": []
-								},
-								{
-									"key": "createSafetyBackup",
-									"value": "true",
-									"type": "text",
-									"description": "Crear backup de seguridad JSON previo antes de importar"
-								},
-								{
-									"key": "truncate",
-									"value": "true",
-									"type": "text",
-									"description": "Si true, limpia (TRUNCATE) sólo las tablas incluidas en el XLSX antes de reinsertar"
-								}
-							]
-						},
-						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/restore/xlsx",
-							"host": [
-								"{{STRAPI_URL_LOCAL}}"
-							],
-							"path": [
-								"api",
-								"backups",
-								"restore",
-								"xlsx"
-							]
-						},
-                        "description": "Restaura la base de datos a partir de un archivo XLSX exportado.\n\n**Comportamiento:**\n- Si la hoja \"Resumen\" existe, usa sus columnas `UID` y `Hoja` para mapear cada hoja al content-type correcto. Si no existe, mapea por `singularName` como en el export.\n- Opcionalmente crea un backup de seguridad (JSON) antes de importar.\n- Opcionalmente TRUNCATE (Postgres/MySQL) sólo las tablas incluidas para evitar duplicados.\n- Inserta únicamente campos de tipo `string/text` y omite `id`, `createdAt`, `updatedAt`.\n\n**Campos form-data aceptados:**\n- `file` (recomendado), `xlsx`, `files` o `backup`.\n\n**Parámetros (form-data) booleanos:**\n- `createSafetyBackup` y `truncate` aceptan `true/false`, `1/0`, `yes/no`, `on/off`.\n\n**Limitaciones:**\n- No importa relaciones, componentes ni campos complejos.\n- Para SQLite, se realiza DELETE en lugar de TRUNCATE.\n\nEjemplo: POST {{STRAPI_URL_LOCAL}}/api/backups/restore/xlsx (form-data con `file`)."
-					},
-					"response": []
-				},
-				{
 					"name": "Delete Backup",
 					"request": {
 						"method": "DELETE",

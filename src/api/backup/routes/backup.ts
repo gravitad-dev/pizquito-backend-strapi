@@ -68,15 +68,7 @@ export default {
         description: 'Sube un archivo de backup (.sqlite o .json) y restaura la base de datos (sqlite implementado)'
       },
     },
-    // Restaurar desde archivo XLSX exportado
-    {
-      method: "POST",
-      path: "/backups/restore/xlsx",
-      handler: "backup.restoreFromXlsx",
-      config: {
-        description: 'Restaura la base de datos a partir de un archivo XLSX exportado (campos básicos: string/text)'
-      },
-    },
+    // (REMOVED) Restaurar desde archivo XLSX exportado
     // Sincronizar backups (repoblar tabla desde filesystem)
     {
       method: "POST",
