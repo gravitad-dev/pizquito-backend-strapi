@@ -204,8 +204,13 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
       }
 
       const filename = (backup as any).filename || path.basename(filePath);
-      ctx.set('Content-Type', 'application/octet-stream');
+      
+      // Configurar headers correctos para descarga
+      const isJson = filename.endsWith('.json');
+      ctx.set('Content-Type', isJson ? 'application/json' : 'application/octet-stream');
       ctx.set('Content-Disposition', `attachment; filename="${filename}"`);
+      ctx.set('Access-Control-Expose-Headers', 'Content-Disposition');
+      
       try {
         const stat = await fsp.stat(filePath);
         ctx.set('Content-Length', String(stat.size));
