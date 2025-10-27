@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "63615f33-221d-4567-8804-a5ae888cfad0",
+		"_postman_id": "541caf0b-b6e7-41b1-8406-c210b0fc0313",
 		"name": "STRAPI-PIZQUITO-API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "43592215"
@@ -3205,7 +3205,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"year\": 2025,\n  \"quarter\": \"Q1\",\n  \"concept\": \"all\",\n  \"format\": \"xlsx\",\n  \"centerCode\": \"12345\"\n}"
+							"raw": "{\n  \"year\": 2025,\n//   \"quarter\": \"Q1\",\n  \"concept\": \"all\",\n  \"format\": \"xlsx\",\n  \"centerCode\": \"12345\"\n}"
 						},
 						"url": {
 							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/233/generate",
@@ -3533,23 +3533,23 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"createSafetyBackup\": false\n}"
+							"raw": "{\n\"dryRun\": false,\n\"mode\": \"merge\",\n\"excludeBackupsTable\": true,\n\"restartAfterRestore\": false\n}"
 						},
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:documentId/restore",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:id/restore",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
 							"path": [
 								"api",
 								"backups",
-								":documentId",
+								":id",
 								"restore"
 							],
 							"variable": [
 								{
-									"key": "documentId",
-									"value": "14"
+									"key": "id",
+									"value": "8"
 								}
 							]
 						},
@@ -3573,8 +3573,8 @@
 								{
 									"key": "createSafetyBackup",
 									"value": "true",
-									"type": "text",
-									"description": "Crear backup de seguridad antes de restaurar"
+									"description": "Crear backup de seguridad antes de restaurar",
+									"type": "text"
 								}
 							]
 						},
@@ -3605,21 +3605,21 @@
 							}
 						],
 						"url": {
-						"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:documentId/download",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:documentId/download",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
 							"path": [
 								"api",
 								"backups",
-							":documentId",
+								":documentId",
 								"download"
 							],
 							"variable": [
 								{
-								"key": "documentId",
-								"value": "12"
-							}
+									"key": "documentId",
+									"value": "12"
+								}
 							]
 						},
 						"description": "Descarga el archivo de backup desde el servidor.\n\n**Headers de respuesta:**\n- `Content-Type`: `application/json` para archivos .json (PostgreSQL/MySQL), `application/octet-stream` para .sqlite\n- `Content-Disposition`: attachment; filename=\"backup_YYYYMMDD_HHMMSS.ext\" (nombre real del archivo)\n- `Access-Control-Expose-Headers`: Content-Disposition (permite al frontend acceder al filename)\n\n**Notas:**\n- Requiere autenticación (Bearer token).\n- Para SQLite: archivo .sqlite\n- Para PostgreSQL/MySQL: archivo .json con estructura completa de datos\n- El frontend puede extraer el filename correcto del header Content-Disposition\n\n**Ejemplo:** GET {{STRAPI_URL_LOCAL}}/api/backups/:documentId/download"
@@ -3648,7 +3648,7 @@
 								"xlsx"
 							]
 						},
-                    "description": "Genera y descarga un Excel (.xlsx) con un resumen por tabla y hojas por content-type.\n\nComportamiento:\n- Hoja \"Resumen\": incluye columnas `Tabla`, `UID` (uid completo api::...), `Hoja` (nombre de la hoja), y `Cantidad`.\n- Hojas de datos: incluyen `id`, `createdAt`, `updatedAt` y TODOS los campos de tipo `string/text` del content-type (sin límite).\n- Por defecto exporta todas las filas; puedes limitar con `?limit=<n>` (ej. `?limit=200`).\n\nNotas:\n- Requiere autenticación (Bearer token).\n- Pensado para ofrecer al director una noción general del contenido sin exponer datos sensibles.\n\nEjemplo: GET {{STRAPI_URL_LOCAL}}/api/backups/export/xlsx"
+						"description": "Genera y descarga un Excel (.xlsx) con un resumen por tabla y hojas por content-type.\n\nComportamiento:\n- Hoja \"Resumen\": incluye columnas `Tabla`, `UID` (uid completo api::...), `Hoja` (nombre de la hoja), y `Cantidad`.\n- Hojas de datos: incluyen `id`, `createdAt`, `updatedAt` y TODOS los campos de tipo `string/text` del content-type (sin límite).\n- Por defecto exporta todas las filas; puedes limitar con `?limit=<n>` (ej. `?limit=200`).\n\nNotas:\n- Requiere autenticación (Bearer token).\n- Pensado para ofrecer al director una noción general del contenido sin exponer datos sensibles.\n\nEjemplo: GET {{STRAPI_URL_LOCAL}}/api/backups/export/xlsx"
 					},
 					"response": []
 				},
@@ -3658,20 +3658,20 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-						"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:documentId",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:documentId",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
 							"path": [
 								"api",
 								"backups",
-							":documentId"
+								":documentId"
 							],
 							"variable": [
 								{
-								"key": "documentId",
-								"value": "16"
-							}
+									"key": "documentId",
+									"value": "16"
+								}
 							]
 						},
 						"description": "**Elimina un backup específico**\n\n**Parámetros:**\n- `documentId`: ID del backup a eliminar\n\n**⚠️ PRECAUCIÓN:**\nEsta operación es irreversible. El backup y su archivo asociado serán eliminados permanentemente.\n\n**Proceso de eliminación:**\n1. Verifica que el backup existe\n2. Elimina el archivo físico del sistema\n3. Elimina el registro de la base de datos\n\n**Estados que permiten eliminación:**\n- `completed`: Backup completado\n- `failed`: Backup fallido\n- `corrupted`: Backup corrupto\n\n**Respuesta exitosa:**\n- Status 200: Backup eliminado correctamente\n- Incluye información del backup eliminado"
