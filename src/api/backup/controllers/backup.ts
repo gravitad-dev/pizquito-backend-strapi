@@ -682,9 +682,18 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
 
       // Obtener archivo subido (multipart/form-data)
       const files: any = (ctx.request as any).files || {};
-      const file: any = files.file || files.xlsx || null;
+      let file: any = files.file || files.xlsx || files.files || files.backup || null;
+      // Soportar arrays (por si el parser devuelve lista de archivos)
+      if (Array.isArray(file)) file = file[0];
+      // Fallback: tomar el primer archivo disponible si el nombre del campo no coincide
+      if ((!file || !file.path) && files && typeof files === 'object') {
+        const firstKey = Object.keys(files)[0];
+        if (firstKey) {
+          file = (Array.isArray(files[firstKey]) ? files[firstKey][0] : files[firstKey]) || null;
+        }
+      }
       if (!file || !file.path) {
-        return ctx.badRequest('Debe enviar un archivo XLSX en multipart/form-data (campo "file" o "xlsx")');
+        return ctx.badRequest('Debe enviar un archivo XLSX en multipart/form-data (campo "file", "xlsx", "files" o "backup")');
       }
 
       // Leer workbook
