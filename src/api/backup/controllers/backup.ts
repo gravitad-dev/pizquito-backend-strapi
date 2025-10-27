@@ -314,11 +314,106 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
             : 'Backup restaurado correctamente (sqlite). Reinicia el servidor para aplicar cambios.',
         };
       } else {
-        ctx.status = 501;
-        ctx.body = {
-          error: 'restore_not_implemented',
-          message: 'La restauración desde JSON aún no está implementada para bases no-sqlite.',
-        };
+        // Restauración desde JSON para PostgreSQL/MySQL
+        const jsonData = JSON.parse(await fsp.readFile((backup as any).filePath, 'utf8'));
+        
+        // Obtener todas las entidades del sistema
+        const contentTypes = Object.keys(strapi.contentTypes).filter(key => 
+          key.startsWith('api::') && !key.includes('backup')
+        );
+
+        // Crear backup de seguridad antes de restaurar
+        const ts = formatTimestamp(new Date());
+        const safetyFilename = `restore_safety_${ts}.json`;
+        const backupsDir = path.resolve(process.cwd(), 'backups');
+        const safetyPath = path.join(backupsDir, safetyFilename);
+        
+        const safetyData: any = {};
+        for (const contentType of contentTypes) {
+          try {
+            const entities = await strapi.entityService.findMany(contentType as any, { 
+              populate: '*',
+              pagination: { limit: -1 }
+            });
+            safetyData[contentType] = entities;
+          } catch (e) {
+            strapi.log.warn(`No se pudo respaldar ${contentType}: ${e}`);
+          }
+        }
+        await fsp.writeFile(safetyPath, JSON.stringify(safetyData, null, 2));
+
+        // Iniciar transacción para rollback seguro
+        const knex = (strapi.db as any).connection;
+        const trx = await knex.transaction();
+        
+        try {
+          // Deshabilitar foreign keys temporalmente
+          if (client === 'postgresql') {
+            await trx.raw('SET session_replication_role = replica;');
+          } else if (client === 'mysql') {
+            await trx.raw('SET FOREIGN_KEY_CHECKS = 0;');
+          }
+
+          // Limpiar tablas existentes (excepto backups)
+          for (const contentType of contentTypes) {
+            const tableName = strapi.db.metadata.get(contentType).tableName;
+            await trx.raw(`DELETE FROM "${tableName}"`);
+          }
+
+          // Restaurar datos desde JSON
+          let restoredCount = 0;
+          for (const [contentType, entities] of Object.entries(jsonData)) {
+            if (!contentType.startsWith('api::') || contentType.includes('backup')) continue;
+            
+            const entitiesArray = Array.isArray(entities) ? entities : [];
+            for (const entity of entitiesArray) {
+              try {
+                // Remover campos de sistema que pueden causar conflictos
+                const { id, documentId, createdAt, updatedAt, publishedAt, ...cleanData } = entity as any;
+                
+                await strapi.entityService.create(contentType as any, {
+                  data: cleanData,
+                });
+                restoredCount++;
+              } catch (e) {
+                strapi.log.warn(`Error restaurando entidad ${contentType}: ${e}`);
+              }
+            }
+          }
+
+          // Rehabilitar foreign keys
+          if (client === 'postgresql') {
+            await trx.raw('SET session_replication_role = DEFAULT;');
+          } else if (client === 'mysql') {
+            await trx.raw('SET FOREIGN_KEY_CHECKS = 1;');
+          }
+
+          // Confirmar transacción
+          await trx.commit();
+
+          await strapi.entityService.update('api::backup.backup', documentId, {
+            data: { 
+              statusBackup: 'completed', 
+              description: `Backup JSON restaurado desde ${(backup as any).filename} (${restoredCount} registros)` 
+            },
+          });
+
+          ctx.body = {
+            data: {
+              restored: true,
+              restoredEntities: restoredCount,
+              safetyBackup: safetyFilename,
+              requiresServerRestart: false,
+            },
+            message: `Backup JSON restaurado correctamente. ${restoredCount} registros procesados.`,
+          };
+
+        } catch (error: any) {
+          // Rollback en caso de error
+          await trx.rollback();
+          strapi.log.error(`Error durante restauración JSON: ${error?.message}`);
+          throw error;
+        }
       }
     } catch (error: any) {
       strapi.log.error(`Error restaurando backup: ${error?.message}`);
@@ -422,11 +517,113 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
             : 'Restauración completada desde archivo subido (sqlite). Reinicia el servidor para aplicar cambios.',
         };
       } else {
-        ctx.status = 501;
-        ctx.body = {
-          error: 'restore_upload_not_implemented',
-          message: 'La restauración desde archivo subido aún no está implementada para bases no-sqlite.',
-        };
+        // Restauración desde archivo JSON subido para PostgreSQL/MySQL
+        const jsonData = JSON.parse(await fsp.readFile(destPath, 'utf8'));
+        
+        // Obtener todas las entidades del sistema
+        const contentTypes = Object.keys(strapi.contentTypes).filter(key => 
+          key.startsWith('api::') && !key.includes('backup')
+        );
+
+        // Crear backup de seguridad antes de restaurar
+        const ts = formatTimestamp(new Date());
+        const safetyFilename = `restore_upload_safety_${ts}.json`;
+        const backupsDir = path.resolve(process.cwd(), 'backups');
+        const safetyPath = path.join(backupsDir, safetyFilename);
+        
+        const safetyData: any = {};
+        for (const contentType of contentTypes) {
+          try {
+            const entities = await strapi.entityService.findMany(contentType as any, { 
+              populate: '*',
+              pagination: { limit: -1 }
+            });
+            safetyData[contentType] = entities;
+          } catch (e) {
+            strapi.log.warn(`No se pudo respaldar ${contentType}: ${e}`);
+          }
+        }
+        await fsp.writeFile(safetyPath, JSON.stringify(safetyData, null, 2));
+
+        // Iniciar transacción para rollback seguro
+        const knex = (strapi.db as any).connection;
+        const trx = await knex.transaction();
+        
+        try {
+          // Deshabilitar foreign keys temporalmente
+          if (client === 'postgresql') {
+            await trx.raw('SET session_replication_role = replica;');
+          } else if (client === 'mysql') {
+            await trx.raw('SET FOREIGN_KEY_CHECKS = 0;');
+          }
+
+          // Limpiar tablas existentes (excepto backups)
+          for (const contentType of contentTypes) {
+            const tableName = strapi.db.metadata.get(contentType).tableName;
+            await trx.raw(`DELETE FROM "${tableName}"`);
+          }
+
+          // Restaurar datos desde JSON
+          let restoredCount = 0;
+          for (const [contentType, entities] of Object.entries(jsonData)) {
+            if (!contentType.startsWith('api::') || contentType.includes('backup')) continue;
+            
+            const entitiesArray = Array.isArray(entities) ? entities : [];
+            for (const entity of entitiesArray) {
+              try {
+                // Remover campos de sistema que pueden causar conflictos
+                const { id, documentId, createdAt, updatedAt, publishedAt, ...cleanData } = entity as any;
+                
+                await strapi.entityService.create(contentType as any, {
+                  data: cleanData,
+                });
+                restoredCount++;
+              } catch (e) {
+                strapi.log.warn(`Error restaurando entidad ${contentType}: ${e}`);
+              }
+            }
+          }
+
+          // Rehabilitar foreign keys
+          if (client === 'postgresql') {
+            await trx.raw('SET session_replication_role = DEFAULT;');
+          } else if (client === 'mysql') {
+            await trx.raw('SET FOREIGN_KEY_CHECKS = 1;');
+          }
+
+          // Confirmar transacción
+          await trx.commit();
+
+          // Crear registro del backup restaurado
+          const created = await strapi.entityService.create('api::backup.backup', {
+            data: {
+              filename: originalName,
+              filePath: destPath,
+              originalSize: stat.size,
+              backupType: 'manual',
+              statusBackup: 'completed',
+              description: `Backup JSON restaurado desde archivo subido (${restoredCount} registros)`,
+              checksum: await computeChecksum(destPath),
+            },
+          });
+
+          ctx.body = {
+            data: {
+              restored: true,
+              restoredEntities: restoredCount,
+              createdBackupId: (created as any).id,
+              safetyBackup: safetyFilename,
+              requiresServerRestart: false,
+            },
+            message: `Restauración JSON completada desde archivo subido. ${restoredCount} registros procesados.`,
+          };
+
+        } catch (error: any) {
+          // Rollback en caso de error
+          await trx.rollback();
+          strapi.log.error(`Error durante restauración JSON desde upload: ${error?.message}`);
+          throw error;
+        }
       }
     } catch (error: any) {
       strapi.log.error(`Error en restoreFromUpload: ${error?.message}`);
