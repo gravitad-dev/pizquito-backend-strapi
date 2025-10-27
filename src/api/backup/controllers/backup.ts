@@ -195,7 +195,10 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
   async download(ctx) {
     try {
       const { documentId } = ctx.params;
-      const backup = await strapi.entityService.findOne('api::backup.backup', documentId);
+      const backup = await strapi.documents('api::backup.backup').findOne({
+        documentId,
+        status: 'published'
+      });
       if (!backup) return ctx.notFound('Backup no encontrado');
 
       const filePath: string | undefined = (backup as any).filePath;
@@ -227,7 +230,10 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
   async delete(ctx) {
     try {
       const { documentId } = ctx.params;
-      const backup = await strapi.entityService.findOne('api::backup.backup', documentId);
+      const backup = await strapi.documents('api::backup.backup').findOne({
+        documentId,
+        status: 'published'
+      });
       if (!backup) return ctx.notFound('Backup no encontrado');
 
       if ((backup as any).filePath) {
@@ -238,7 +244,9 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
         }
       }
 
-      const deleted = await strapi.entityService.delete('api::backup.backup', documentId);
+      const deleted = await strapi.documents('api::backup.backup').delete({
+        documentId
+      });
       ctx.body = { data: deleted, message: 'Backup eliminado correctamente' };
     } catch (error: any) {
       strapi.log.error(`Error eliminando backup: ${error?.message}`);
@@ -250,7 +258,10 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
   async restore(ctx) {
     try {
       const { documentId } = ctx.params;
-      const backup = await strapi.entityService.findOne('api::backup.backup', documentId);
+      const backup = await strapi.documents('api::backup.backup').findOne({
+        documentId,
+        status: 'published'
+      });
       if (!backup) return ctx.notFound('Backup no encontrado');
 
       const client = process.env.DATABASE_CLIENT || 'sqlite';
