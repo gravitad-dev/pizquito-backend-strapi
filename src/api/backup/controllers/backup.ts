@@ -347,7 +347,6 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
         );
 
         // Respetar bandera para crear backup de seguridad antes de restaurar
-        const createSafetyBackupBody = Boolean((ctx.request.body as any)?.createSafetyBackup);
         const shouldCreateSafetyBackup = (ctx.request.body as any)?.createSafetyBackup === false ? false : true;
         const ts = formatTimestamp(new Date());
         const backupsDir = path.resolve(process.cwd(), 'backups');
