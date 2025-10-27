@@ -3691,7 +3691,7 @@
 								"xlsx"
 							]
 						},
-						"description": "Restaura la base de datos a partir de un archivo XLSX exportado.\n\n**Comportamiento:**\n- Asocia cada hoja a su content-type por nombre (según export).\n- Opcionalmente crea un backup de seguridad (JSON) antes de importar.\n- Opcionalmente TRUNCATE (Postgres/MySQL) sólo las tablas incluidas para evitar duplicados.\n- Inserta únicamente campos de tipo string/text y omite `id`, `createdAt`, `updatedAt`.\n\n**Limitaciones:**\n- No importa relaciones, componentes ni campos complejos.\n- Para SQLite, se realiza DELETE en lugar de TRUNCATE.\n\nEjemplo: POST {{STRAPI_URL_LOCAL}}/api/backups/restore/xlsx (form-data con `file`)."
+                        "description": "Restaura la base de datos a partir de un archivo XLSX exportado.\n\n**Comportamiento:**\n- Asocia cada hoja a su content-type por nombre (según export).\n- Opcionalmente crea un backup de seguridad (JSON) antes de importar.\n- Opcionalmente TRUNCATE (Postgres/MySQL) sólo las tablas incluidas para evitar duplicados.\n- Inserta únicamente campos de tipo string/text y omite `id`, `createdAt`, `updatedAt`.\n\n**Campos form-data aceptados:**\n- `file` (recomendado), `xlsx`, `files` o `backup`.\n\n**Limitaciones:**\n- No importa relaciones, componentes ni campos complejos.\n- Para SQLite, se realiza DELETE en lugar de TRUNCATE.\n\nEjemplo: POST {{STRAPI_URL_LOCAL}}/api/backups/restore/xlsx (form-data con `file`)."
 					},
 					"response": []
 				},
