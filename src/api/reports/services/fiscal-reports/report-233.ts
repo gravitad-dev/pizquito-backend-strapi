@@ -253,12 +253,17 @@ export default {
           }
         });
 
+        // Calcular additionalAmount sumando todos los valores del objeto
+        const additionalAmountValue = enr?.additionalAmount 
+          ? Object.values(enr.additionalAmount).reduce((sum: number, value: any) => sum + ensureNumber(value), 0)
+          : 0;
+
         const rowAmounts = {
           matricula: sums.matricula,
           comedor: sums.comedor,
           subsidized: sums.subsidized,
           total:
-            sums.matricula + sums.comedor + sums.subsidized + sums.totalOnly,
+            (sums.matricula as number) + (sums.comedor as number) + (sums.subsidized as number) + (sums.totalOnly as number) + (additionalAmountValue as number),
         };
 
         const rowMonths = includeMonths
