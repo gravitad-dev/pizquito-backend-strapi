@@ -68,7 +68,6 @@ export default {
         description: 'Sube un archivo de backup (.sqlite o .json) y restaura la base de datos (sqlite implementado)'
       },
     },
-    // (REMOVED) Restaurar desde archivo XLSX exportado
     // Sincronizar backups (repoblar tabla desde filesystem)
     {
       method: "POST",

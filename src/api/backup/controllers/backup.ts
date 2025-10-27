@@ -690,7 +690,7 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
     }
   },
 
-  // (REMOVED) Restaurar la BD desde un archivo XLSX exportado
+  
 
   // Sincronizar archivos físicos con la BD (elimina archivos huérfanos)
   async sync(ctx) {
