@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "63615f33-221d-4567-8804-a5ae888cfad0",
+		"_postman_id": "541caf0b-b6e7-41b1-8406-c210b0fc0313",
 		"name": "STRAPI-PIZQUITO-API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "43592215"
@@ -3205,7 +3205,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"year\": 2025,\n  \"quarter\": \"Q1\",\n  \"concept\": \"all\",\n  \"format\": \"xlsx\",\n  \"centerCode\": \"12345\"\n}"
+							"raw": "{\n  \"year\": 2025,\n//   \"quarter\": \"Q1\",\n  \"concept\": \"all\",\n  \"format\": \"xlsx\",\n  \"centerCode\": \"12345\"\n}"
 						},
 						"url": {
 							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/233/generate",
@@ -3533,27 +3533,27 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"createSafetyBackup\": false\n}"
+							"raw": "{\n\"dryRun\": false,\n\"mode\": \"merge\",\n\"excludeBackupsTable\": true,\n\"restartAfterRestore\": false\n}"
 						},
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:Id/restore",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:id/restore",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
 							"path": [
 								"api",
 								"backups",
-								":Id",
+								":id",
 								"restore"
 							],
 							"variable": [
 								{
-									"key": "Id",
-									"value": "14"
+									"key": "id",
+									"value": "8"
 								}
 							]
 						},
-						"description": "Restaura un backup específico.\n\n**Funcionalidad por tipo de base de datos:**\n- **SQLite**: Copia el archivo .sqlite a la ruta de la BD (requiere reinicio del servidor)\n- **PostgreSQL/MySQL**: Restaura desde archivo .json con transacciones seguras y rollback automático\n\n**Características de seguridad:**\n- Backup de seguridad automático antes de restaurar (opcional)\n- Transacciones con rollback en caso de error\n- Manejo de foreign keys y constraints\n- Validación de integridad de datos\n\n**Parámetros:**\n- `documentId`: ID del backup a restaurar\n- Body opcional: `{ \"createSafetyBackup\": true }` para crear backup de seguridad antes de restaurar\n\n**Proceso de restauración JSON:**\n1. Validación del archivo y estructura\n2. Creación de backup de seguridad (si se solicita)\n3. Inicio de transacción\n4. Limpieza de datos existentes\n5. Restauración de datos desde JSON\n6. Commit o rollback según resultado"
+						"description": "Restaura un backup específico.\n\n**Funcionalidad por tipo de base de datos:**\n- **SQLite**: Copia el archivo .sqlite a la ruta de la BD (puede requerir reinicio del servidor)\n- **PostgreSQL/MySQL**: Restaura desde archivo .json, deshabilitando constraints temporalmente y usando TRUNCATE seguro antes de reinsertar.\n\n**Características de seguridad:**\n- Backup de seguridad automático antes de restaurar (opcional)\n- Transacciones con rollback en caso de error\n- Manejo de foreign keys y constraints\n- Validación de integridad de datos\n\n**Parámetros:**\n- `documentId`: UUID del backup a restaurar\n- Body opcional: `{ \"createSafetyBackup\": true }` para crear backup de seguridad antes de restaurar\n\n**Proceso de restauración JSON:**\n1. Validación del archivo y estructura\n2. (Opcional) Creación de backup de seguridad\n3. Inicio de transacción\n4. Limpieza de datos existentes (sólo tablas válidas)\n5. Restauración de datos desde JSON\n6. Commit o rollback según resultado"
 					},
 					"response": []
 				},
@@ -3566,30 +3566,31 @@
 							"mode": "formdata",
 							"formdata": [
 								{
-									"key": "files",
+									"key": "file",
 									"type": "file",
 									"src": []
 								},
 								{
 									"key": "createSafetyBackup",
 									"value": "true",
-									"type": "text",
-									"description": "Crear backup de seguridad antes de restaurar"
+									"description": "Crear backup de seguridad antes de restaurar",
+									"type": "text"
 								}
 							]
 						},
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/restore-from-upload",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/restore/upload",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
 							"path": [
 								"api",
 								"backups",
-								"restore-from-upload"
+								"restore",
+								"upload"
 							]
 						},
-						"description": "Sube y restaura un archivo de backup directamente.\n\n**Tipos de archivo soportados:**\n- `.sqlite`: Para bases de datos SQLite\n- `.json`: Para PostgreSQL/MySQL (estructura JSON completa)\n\n**Parámetros form-data:**\n- `files`: Archivo de backup a subir y restaurar\n- `createSafetyBackup`: (opcional) \"true\" para crear backup de seguridad antes de restaurar\n\n**Proceso:**\n1. Validación del archivo subido\n2. Detección automática del tipo (SQLite/JSON)\n3. Creación de backup de seguridad (si se solicita)\n4. Restauración según el tipo de archivo\n5. Limpieza de archivos temporales\n\n**Características de seguridad:**\n- Validación de tipos de archivo\n- Transacciones con rollback automático (JSON)\n- Backup de seguridad antes de restaurar\n- Manejo de errores con limpieza automática\n\n**Respuesta exitosa:**\n- Información del proceso de restauración\n- Detalles del backup de seguridad (si se creó)\n- Estadísticas de restauración"
+						"description": "Sube y restaura un archivo de backup directamente.\n\n**Tipos de archivo soportados:**\n- `.sqlite`: Para bases de datos SQLite\n- `.json`: Para PostgreSQL/MySQL (estructura JSON completa)\n\n**Parámetros form-data:**\n- `file` (o `backup`): Archivo de backup a subir y restaurar\n- `createSafetyBackup`: (opcional) \"true\" para crear backup de seguridad antes de restaurar\n\n**Proceso:**\n1. Validación del archivo subido\n2. Detección automática del tipo (SQLite/JSON)\n3. Creación de backup de seguridad (si se solicita)\n4. Restauración según el tipo de archivo\n5. Limpieza de archivos temporales\n\n**Características de seguridad:**\n- Validación de tipos de archivo\n- Transacciones con rollback automático (JSON)\n- Backup de seguridad antes de restaurar\n- Manejo de errores con limpieza automática\n\n**Respuesta exitosa:**\n- Información del proceso de restauración\n- Detalles del backup de seguridad (si se creó)\n- Estadísticas de restauración"
 					},
 					"response": []
 				},
@@ -3604,19 +3605,19 @@
 							}
 						],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:Id/download",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:documentId/download",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
 							"path": [
 								"api",
 								"backups",
-								":Id",
+								":documentId",
 								"download"
 							],
 							"variable": [
 								{
-									"key": "Id",
+									"key": "documentId",
 									"value": "12"
 								}
 							]
@@ -3647,7 +3648,7 @@
 								"xlsx"
 							]
 						},
-						"description": "Genera y descarga un Excel (.xlsx) con un resumen por tabla y hojas con hasta 200 registros por tipo, mostrando campos básicos (id, createdAt, updatedAt y algunos campos de texto).\n\nNotas:\n- Requiere autenticación (Bearer token).\n- Pensado para ofrecer al director una noción general del contenido sin exponer datos sensibles.\n\nEjemplo: GET {{STRAPI_URL_LOCAL}}/api/backups/export/xlsx"
+						"description": "Genera y descarga un Excel (.xlsx) con un resumen por tabla y hojas por content-type.\n\nComportamiento:\n- Hoja \"Resumen\": incluye columnas `Tabla`, `UID` (uid completo api::...), `Hoja` (nombre de la hoja), y `Cantidad`.\n- Hojas de datos: incluyen `id`, `createdAt`, `updatedAt` y TODOS los campos de tipo `string/text` del content-type (sin límite).\n- Por defecto exporta todas las filas; puedes limitar con `?limit=<n>` (ej. `?limit=200`).\n\nNotas:\n- Requiere autenticación (Bearer token).\n- Pensado para ofrecer al director una noción general del contenido sin exponer datos sensibles.\n\nEjemplo: GET {{STRAPI_URL_LOCAL}}/api/backups/export/xlsx"
 					},
 					"response": []
 				},
@@ -3657,18 +3658,18 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:Id",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/:documentId",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
 							"path": [
 								"api",
 								"backups",
-								":Id"
+								":documentId"
 							],
 							"variable": [
 								{
-									"key": "Id",
+									"key": "documentId",
 									"value": "16"
 								}
 							]

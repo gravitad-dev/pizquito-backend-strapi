@@ -253,6 +253,14 @@ export default {
           }
         });
 
+        // Incluir additionalAmount en los totales del alumno
+        // Criterio: sumar como "otros" (totalOnly) para que se refleje en el total
+        // y no alterar los importes de matrícula/comedor/subvencionado.
+        const additionalAmountValue = ensureNumber(enr?.additionalAmount);
+        if (additionalAmountValue > 0) {
+          sums.totalOnly += additionalAmountValue;
+        }
+
         const rowAmounts = {
           matricula: sums.matricula,
           comedor: sums.comedor,
