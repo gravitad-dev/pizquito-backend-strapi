@@ -40,7 +40,25 @@ export default {
         description: 'Genera y descarga un XLSX con resumen por tabla desde la BD actual y muestras de campos de texto',
       },
     },
-    // Exportar XLSX desde un backup específico
+    // Exportar XLSX desde un backup específico (.tar.gz)
+    {
+      method: "GET",
+      path: "/backups/:documentId/export/xlsx",
+      handler: "backup.exportXlsxByDocument",
+      config: {
+        description: 'Genera y descarga un XLSX basado en los datos del backup .tar.gz indicado por documentId',
+      },
+    },
+    // Exportar JSON consolidado desde un backup específico (.tar.gz)
+    {
+      method: "GET",
+      path: "/backups/:documentId/export/json",
+      handler: "backup.exportJsonByDocument",
+      config: {
+        description: 'Genera y descarga un JSON con los datos del backup .tar.gz indicado por documentId (excluye api::backup.backup)',
+      },
+    },
+    // (El endpoint de exportación XLSX ha sido retirado en la nueva implementación tar.gz)
     // Eliminar backup
     {
       method: "DELETE",
@@ -65,7 +83,7 @@ export default {
       path: "/backups/restore/upload",
       handler: "backup.restoreFromUpload",
       config: {
-        description: 'Sube un archivo de backup (.sqlite o .json) y restaura la base de datos (sqlite implementado)'
+        description: 'Sube un archivo de backup (.tar.gz) y restaura la base de datos sin modificar api::backup.backup'
       },
     },
     // Sincronizar backups (repoblar tabla desde filesystem)

@@ -139,3 +139,5 @@ postgresql_data
 ############################
 
 scripts/
+
+tmp/

@@ -248,62 +248,64 @@ Soportan query params: populate, filters, sort, pagination.
   - GET /api/classrooms
   - POST /api/classrooms
 
-## Backups (Simplificado)
+## Backups (Sistema de respaldo .tar.gz)
+
+Resumen:
+- Formato nativo: cada backup es un archivo .tar.gz con la estructura:
+  - manifest.json (metadatos del backup)
+  - data/*.json (dump por content-type)
+  - assets/uploads (archivos subidos del media library)
+- Identificador: todos los endpoints usan `documentId` (string) para referenciar un backup.
+- Seguridad: durante restauración se excluye el content-type `api::backup.backup` para no modificar el índice de respaldos.
 
 Endpoints:
 - Listar backups: GET /api/backups
-- Crear backup simple: POST /api/backups
-- Descargar backup: GET /api/backups/:documentId/download
+- Crear backup: POST /api/backups
+- Descargar backup (.tar.gz): GET /api/backups/:documentId/download
 - Eliminar backup: DELETE /api/backups/:documentId
-- Restaurar backup: POST /api/backups/:documentId/restore
-- Restaurar desde archivo subido: POST /api/backups/restore/upload (multipart/form-data)
-- Sincronizar backups (limpiar archivos huérfanos): POST /api/backups/sync
-  - Revisa archivos físicos en `/backups/` y los compara con registros de BD
-  - Por defecto: elimina archivos huérfanos
-  - Query parameter opcional: `removeOrphans=false` para NO eliminar archivos
+- Restaurar backup desde .tar.gz: POST /api/backups/:documentId/restore
+- Restaurar desde archivo subido (.tar.gz): POST /api/backups/restore/upload (multipart/form-data)
 - Exportar resumen XLSX (BD actual): GET /api/backups/export/xlsx
+- Exportar XLSX desde un backup .tar.gz: GET /api/backups/:documentId/export/xlsx
+- Exportar JSON consolidado desde un backup .tar.gz: GET /api/backups/:documentId/export/json
+- Sincronizar índice de backups (FS → BD): POST /api/backups/sync
+  - Revisa archivos en `/backups/` y los compara con registros de BD
+  - No elimina archivos huérfanos por defecto
 
 Notas importantes:
-- Autenticación: requiere JWT del plugin users-permissions y permisos en Roles (Authenticated o Public según se desee). Por defecto, estos endpoints están protegidos.
-- Ubicación de archivos: todos los backups se almacenan en la carpeta local /backups del proyecto.
-- Base de datos:
-  - Si el cliente es sqlite: se copia el archivo .tmp/data.db a /backups/backup_YYYYMMDD_hhmmss.sqlite.
-  - Si el cliente es mysql/postgres: se exporta todo el contenido como JSON a /backups/backup_YYYYMMDD_hhmmss.json.
-- Restauración:
-  - Sqlite: se copia el archivo del backup sobre .tmp/data.db y se crea una copia de seguridad previa (restore_safety_...). Puede reiniciarse el servidor automáticamente si BACKUP_AUTO_RESTART=true o si envías { autoRestart: true } en el body.
-  - PostgreSQL/MySQL: restaura desde archivos JSON con transacciones seguras. Crea backup de seguridad automático antes de restaurar. Limpia y reinserta todos los datos (excepto tabla backups).
-- Exportación XLSX:
-  - Endpoints:
-    - Actual: GET /api/backups/export/xlsx — genera el Excel desde la base de datos actualmente en uso.
-  - Características del XLSX:
-    - Hoja "Resumen" (conteo por tipo) y hojas por cada tipo (hasta 200 registros) con campos básicos: id, createdAt, updatedAt y hasta 6 campos de texto.
-  - Limitaciones actuales:
-    - Solo exporta desde la base de datos actualmente en uso. No se admite exportar desde archivos de backup.
-  - Parámetros opcionales:
-    - limit: número de filas por hoja (por defecto 200).
-  - Pensado para ofrecer al director una noción clara del contenido sin exponer datos sensibles.
+- Autenticación: requiere JWT y permisos de Roles & Permissions.
+- Ubicación de archivos: todos los .tar.gz se almacenan en `/backups`.
+- Exportación XLSX (BD actual):
+  - Hoja "Resumen" y una hoja por cada content-type
+  - Cada hoja incluye `documentId` y hasta 7 campos de texto por entry
+  - Límite de filas por hoja configurable con `?limit=<n>` (por defecto 1000)
+  - Excluye el content-type `api::backup.backup`
 
 Ejemplos rápidos:
-- Crear backup simple:
+- Crear backup:
   - POST /api/backups
   - Body opcional: { "description": "Backup manual de prueba" }
-  - Respuesta: { data: { filename, filePath, originalSize, checksum, statusBackup: "completed", backupType: "manual", metadata: { ... } } }
+  - Respuesta: { data: { documentId, filename, filePath, originalSize, checksum, statusBackup: "completed", backupType: "manual", metadata: { ... } } }
 - Listar backups:
   - GET /api/backups?sort[0]=createdAt:desc&pagination[page]=1&pagination[pageSize]=10
-- Descargar backup:
+- Descargar backup (.tar.gz):
   - GET /api/backups/:documentId/download
 - Eliminar backup:
   - DELETE /api/backups/:documentId
-- Restaurar backup (sqlite):
+- Restaurar backup desde .tar.gz:
   - POST /api/backups/:documentId/restore
-  - Body opcional: { "autoRestart": true }
-- Restaurar desde archivo subido (sqlite):
+  - Body opcional: { "createSafetyBackup": true }
+- Restaurar desde archivo subido (.tar.gz):
   - POST /api/backups/restore/upload
-  - Content-Type: multipart/form-data (campo "file" con el .sqlite)
-  - Body opcional: { "autoRestart": true }
+  - Content-Type: multipart/form-data (campo "file" con el .tar.gz)
+  - Body opcional: { "createSafetyBackup": true }
 - Exportar resumen XLSX (BD actual):
   - GET /api/backups/export/xlsx
-  - Respuesta: archivo application/vnd.openxmlformats-officedocument.spreadsheetml.sheet con Content-Disposition: attachment
+  - Respuesta: archivo `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` con `Content-Disposition: attachment`
+- Exportar XLSX desde un backup .tar.gz:
+  - GET /api/backups/:documentId/export/xlsx
+- Exportar JSON consolidado desde un backup .tar.gz:
+  - GET /api/backups/:documentId/export/json
 
 ### Enrollments
 - Plural: enrollments
@@ -405,132 +407,93 @@ Estos content types usan endpoints de singleType:
 - Logs de facturación del CRON: GET /api/histories?filters[event_type][$contains]=cron_billing
 - Headers: Authorization: Bearer <JWT>
 
-## Backups (Gestión de respaldos de base de datos)
+## Backups (Gestión y exportación .tar.gz)
 
 ### Listar backups
 - Método: GET
 - URL: /api/backups
 - Headers: Authorization: Bearer <JWT>
 - Query params opcionales: filters, sort, pagination
-- Respuesta: 
-  ```json
-  {
-    "data": [
-      {
-        "id": 1,
-        "filename": "backup_2024-01-15T10-30-00-000Z.db",
-        "originalSize": 2048576,
-        "compressedSize": 1024288,
-        "checksum": "sha256_hash",
-        "status": "completed",
-        "backupType": "manual",
-        "description": "Manual backup before update",
-        "filePath": "/path/to/backup.db",
-        "fileExists": true,
-        "sizeFormatted": "2.0 MB",
-        "createdAt": "2024-01-15T10:30:00.000Z",
-        "metadata": { ... }
-      }
-    ],
-    "meta": { "total": 5 }
-  }
-  ```
-
-### Obtener detalles de backup
-- Método: GET
-- URL: /api/backups/:id
-- Headers: Authorization: Bearer <JWT>
-- Respuesta: objeto backup con detalles completos
+- Respuesta: incluye `documentId`, `filename`, `filePath`, `originalSize`, `checksum`, `statusBackup`, `backupType`, `createdAt` y metadatos.
 
 ### Crear backup manual
 - Método: POST
 - URL: /api/backups
 - Headers: Authorization: Bearer <JWT>, Content-Type: application/json
-- Body (JSON):
+- Body (JSON opcional):
   ```json
-  {
-    "description": "Backup antes de migración importante"
-  }
+  { "description": "Backup antes de migración importante" }
   ```
-- Respuesta:
-  ```json
-  {
-    "data": { ... },
-    "message": "Backup created successfully"
-  }
-  ```
+- Respuesta: registro creado con `documentId` y detalles del .tar.gz.
 
-### Restaurar backup
-- Método: POST
-- URL: /api/backups/:id/restore
-- Headers: Authorization: Bearer <JWT>
-- ⚠️ **OPERACIÓN CRÍTICA**: Requiere permisos de administrador
-- Respuesta:
-  ```json
-  {
-    "data": {
-      "success": true,
-      "message": "Database restored successfully",
-      "restoredFrom": "backup_2024-01-15T10-30-00-000Z.db",
-      "safetyBackup": "backup_2024-01-15T11-00-00-000Z.db"
-    },
-    "message": "Database restored successfully. Please restart the application to ensure all connections are refreshed."
-  }
-  ```
-
-### Descargar backup
+### Descargar backup (.tar.gz)
 - Método: GET
-- URL: /api/backups/:id/download
+- URL: /api/backups/:documentId/download
 - Headers: Authorization: Bearer <JWT>
-- Respuesta: Archivo binario (.db) para descarga
+- Respuesta: archivo .tar.gz con headers `Content-Type` y `Content-Disposition` para descarga.
+
+### Restaurar backup desde .tar.gz
+- Método: POST
+- URL: /api/backups/:documentId/restore
+- Headers: Authorization: Bearer <JWT>
+- Body opcional:
+  ```json
+  { "createSafetyBackup": true }
+  ```
+- Comportamiento: restaura datos y archivos del .tar.gz, excluyendo `api::backup.backup`.
+
+### Restaurar desde archivo subido (.tar.gz)
+- Método: POST
+- URL: /api/backups/restore/upload
+- Headers: Authorization: Bearer <JWT>, Content-Type: multipart/form-data
+- Form-data:
+  - file: archivo .tar.gz
+  - createSafetyBackup: (opcional) "true"
+- Respuesta: detalles del proceso de restauración (dry-run no habilitado en esta versión).
+
+### Exportar resumen XLSX (BD actual)
+- Método: GET
+- URL: /api/backups/export/xlsx
+- Headers: Authorization: Bearer <JWT>
+- Query opcional: `limit=<n>` (por defecto 1000)
+- Descripción: Genera un Excel con hoja "Resumen" y hojas por content-type, incluyendo `documentId` y hasta 7 campos de texto por entry. Excluye `api::backup.backup`.
+
+### Exportar XLSX desde un backup .tar.gz
+- Método: GET
+- URL: /api/backups/:documentId/export/xlsx
+- Headers: Authorization: Bearer <JWT>
+- Descripción: Genera el mismo Excel pero leyendo exclusivamente el contenido del .tar.gz identificado por `documentId`.
+
+### Exportar JSON consolidado desde un backup .tar.gz
+- Método: GET
+- URL: /api/backups/:documentId/export/json
+- Headers: Authorization: Bearer <JWT>
+- Respuesta: `application/json` con estructura `{ manifest, data, assets }` derivada del .tar.gz.
 
 ### Eliminar backup
 - Método: DELETE
-- URL: /api/backups/:id
+- URL: /api/backups/:documentId
 - Headers: Authorization: Bearer <JWT>
-- Respuesta:
-  ```json
-  {
-    "data": {
-      "success": true,
-      "message": "Backup deleted successfully"
-    }
-  }
-  ```
+- Respuesta: confirmación de eliminación del registro y archivo físico.
 
-### Limpiar backups antiguos
+### Sincronizar backups (Filesystem → DB)
 - Método: POST
-- URL: /api/backups/cleanup
-- Headers: Authorization: Bearer <JWT>, Content-Type: application/json
-- Body (JSON):
-  ```json
-  {
-    "retentionDays": 30
-  }
-  ```
-- Respuesta:
-  ```json
-  {
-    "data": {
-      "deletedCount": 3,
-      "message": "Cleaned up 3 old backups"
-    }
-  }
-  ```
+- URL: /api/backups/sync
+- Headers: Authorization: Bearer <JWT>
+- Descripción: sincroniza entradas con los .tar.gz presentes en `/backups`. No elimina archivos huérfanos por defecto.
 
 ### Códigos de error específicos de Backups
-- 400: ID de backup inválido
+- 400: `documentId` inválido
 - 401: Autenticación requerida
-- 403: Permisos insuficientes (especialmente para restore)
+- 403: Permisos insuficientes
 - 404: Backup no encontrado o archivo no existe
 - 500: Error en operación de backup/restore
 
 ### Notas importantes sobre Backups
 - **Seguridad**: Todos los endpoints requieren autenticación
-- **Restauración**: Crea automáticamente un backup de seguridad antes de restaurar
-- **Integridad**: Verifica la integridad de los backups antes de operaciones críticas
-- **Almacenamiento**: Los archivos se guardan en `/backups/` (no incluidos en git)
-- **Reinicio**: Después de restaurar, se recomienda reiniciar la aplicación
+- **Integridad**: Se valida estructura y se excluye `api::backup.backup` al restaurar
+- **Almacenamiento**: Los archivos se guardan en `/backups/`
+- **Reinicio**: No se fuerza reinicio automático; evaluar según infraestructura
 
 ## Parámetros de consulta (Query params)
 - pagination[page]=1&pagination[pageSize]=25

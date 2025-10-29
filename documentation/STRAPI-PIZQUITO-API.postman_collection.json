@@ -3517,7 +3517,7 @@
 								"backups"
 							]
 						},
-						"description": "Crea un backup SIMPLE de todas las tablas y lo guarda en la carpeta /backups. No requiere body. Opcional: puedes enviar { \"description\": \"texto\" } para documentar el backup.\n\nComportamiento:\n- Si la BD es sqlite: copia el archivo .tmp/data.db a /backups/backup_YYYYMMDD_hhmmss.sqlite\n- Si la BD no es sqlite: exporta todo el contenido como JSON a /backups/backup_YYYYMMDD_hhmmss.json\n\nRespuesta:\n- Devuelve el registro creado en la colección backups con filename, filePath, tamaño y checksum."
+                    "description": "Crea un backup en formato .tar.gz de toda la instancia. No requiere body. Opcional: puedes enviar { \"description\": \"texto\" } para documentar el backup.\n\nEstructura del .tar.gz:\n- manifest.json (metadatos)\n- data/*.json (dump por content-type)\n- assets/uploads (archivos del media library)\n\nRespuesta:\n- Devuelve el registro creado con documentId, filename, filePath, tamaño (originalSize), checksum y metadatos."
 					},
 					"response": []
 				},
@@ -3540,20 +3540,20 @@
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
-							"path": [
-								"api",
-								"backups",
-								":id",
-								"restore"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "8"
-								}
-							]
-						},
-						"description": "Restaura un backup específico.\n\n**Funcionalidad por tipo de base de datos:**\n- **SQLite**: Copia el archivo .sqlite a la ruta de la BD (puede requerir reinicio del servidor)\n- **PostgreSQL/MySQL**: Restaura desde archivo .json, deshabilitando constraints temporalmente y usando TRUNCATE seguro antes de reinsertar.\n\n**Características de seguridad:**\n- Backup de seguridad automático antes de restaurar (opcional)\n- Transacciones con rollback en caso de error\n- Manejo de foreign keys y constraints\n- Validación de integridad de datos\n\n**Parámetros:**\n- `documentId`: UUID del backup a restaurar\n- Body opcional: `{ \"createSafetyBackup\": true }` para crear backup de seguridad antes de restaurar\n\n**Proceso de restauración JSON:**\n1. Validación del archivo y estructura\n2. (Opcional) Creación de backup de seguridad\n3. Inicio de transacción\n4. Limpieza de datos existentes (sólo tablas válidas)\n5. Restauración de datos desde JSON\n6. Commit o rollback según resultado"
+                            "path": [
+                                "api",
+                                "backups",
+                                ":documentId",
+                                "restore"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "documentId",
+                                    "value": "8"
+                                }
+                            ]
+                        },
+                        "description": "Restaura un backup .tar.gz específico.\n\n**Comportamiento:**\n- Extrae el .tar.gz, valida manifest y datos\n- Restaura entries y archivos subidos\n- Excluye el content-type `api::backup.backup` para no modificar el índice\n\n**Parámetros:**\n- `documentId`: identificador del backup a restaurar\n- Body opcional: `{ \"createSafetyBackup\": true }` para crear backup de seguridad antes de restaurar"
 					},
 					"response": []
 				},
@@ -3590,7 +3590,7 @@
 								"upload"
 							]
 						},
-						"description": "Sube y restaura un archivo de backup directamente.\n\n**Tipos de archivo soportados:**\n- `.sqlite`: Para bases de datos SQLite\n- `.json`: Para PostgreSQL/MySQL (estructura JSON completa)\n\n**Parámetros form-data:**\n- `file` (o `backup`): Archivo de backup a subir y restaurar\n- `createSafetyBackup`: (opcional) \"true\" para crear backup de seguridad antes de restaurar\n\n**Proceso:**\n1. Validación del archivo subido\n2. Detección automática del tipo (SQLite/JSON)\n3. Creación de backup de seguridad (si se solicita)\n4. Restauración según el tipo de archivo\n5. Limpieza de archivos temporales\n\n**Características de seguridad:**\n- Validación de tipos de archivo\n- Transacciones con rollback automático (JSON)\n- Backup de seguridad antes de restaurar\n- Manejo de errores con limpieza automática\n\n**Respuesta exitosa:**\n- Información del proceso de restauración\n- Detalles del backup de seguridad (si se creó)\n- Estadísticas de restauración"
+                        "description": "Sube y restaura un archivo de backup en formato `.tar.gz`.\n\n**Parámetros form-data:**\n- `file`: Archivo .tar.gz a subir y restaurar\n- `createSafetyBackup`: (opcional) \"true\" para crear backup de seguridad antes de restaurar\n\n**Proceso:**\n1. Validación del archivo subido y estructura del .tar.gz\n2. (Opcional) Creación de backup de seguridad\n3. Restauración de datos y assets\n4. Limpieza de temporales\n\n**Seguridad:** Excluye el content-type `api::backup.backup` durante la restauración"
 					},
 					"response": []
 				},
@@ -3622,36 +3622,102 @@
 								}
 							]
 						},
-						"description": "Descarga el archivo de backup desde el servidor.\n\n**Headers de respuesta:**\n- `Content-Type`: `application/json` para archivos .json (PostgreSQL/MySQL), `application/octet-stream` para .sqlite\n- `Content-Disposition`: attachment; filename=\"backup_YYYYMMDD_HHMMSS.ext\" (nombre real del archivo)\n- `Access-Control-Expose-Headers`: Content-Disposition (permite al frontend acceder al filename)\n\n**Notas:**\n- Requiere autenticación (Bearer token).\n- Para SQLite: archivo .sqlite\n- Para PostgreSQL/MySQL: archivo .json con estructura completa de datos\n- El frontend puede extraer el filename correcto del header Content-Disposition\n\n**Ejemplo:** GET {{STRAPI_URL_LOCAL}}/api/backups/:documentId/download"
+                        "description": "Descarga el archivo de backup (.tar.gz) desde el servidor.\n\n**Headers de respuesta:**\n- `Content-Type`: `application/octet-stream`\n- `Content-Disposition`: attachment; filename=\"<nombre-real>.tar.gz\"\n- `Access-Control-Expose-Headers`: Content-Disposition (permite al frontend acceder al filename)\n\n**Notas:**\n- Requiere autenticación (Bearer token).\n- El frontend puede extraer el filename correcto del header Content-Disposition\n\n**Ejemplo:** GET {{STRAPI_URL_LOCAL}}/api/backups/:documentId/download"
 					},
 					"response": []
 				},
-				{
-					"name": "Export Backups XLSX",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Accept",
-								"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-							}
-						],
-						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/backups/export/xlsx",
-							"host": [
-								"{{STRAPI_URL_LOCAL}}"
-							],
-							"path": [
-								"api",
-								"backups",
-								"export",
-								"xlsx"
-							]
-						},
-						"description": "Genera y descarga un Excel (.xlsx) con un resumen por tabla y hojas por content-type.\n\nComportamiento:\n- Hoja \"Resumen\": incluye columnas `Tabla`, `UID` (uid completo api::...), `Hoja` (nombre de la hoja), y `Cantidad`.\n- Hojas de datos: incluyen `id`, `createdAt`, `updatedAt` y TODOS los campos de tipo `string/text` del content-type (sin límite).\n- Por defecto exporta todas las filas; puedes limitar con `?limit=<n>` (ej. `?limit=200`).\n\nNotas:\n- Requiere autenticación (Bearer token).\n- Pensado para ofrecer al director una noción general del contenido sin exponer datos sensibles.\n\nEjemplo: GET {{STRAPI_URL_LOCAL}}/api/backups/export/xlsx"
-					},
-					"response": []
-				},
+                {
+                    "name": "Export Backups XLSX",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{STRAPI_URL_LOCAL}}/api/backups/export/xlsx",
+                            "host": [
+                                "{{STRAPI_URL_LOCAL}}"
+                            ],
+                            "path": [
+                                "api",
+                                "backups",
+                                "export",
+                                "xlsx"
+                            ]
+                        },
+                        "description": "Genera y descarga un Excel (.xlsx) con un resumen por tabla y hojas por content-type.\n\nComportamiento:\n- Hoja \"Resumen\": incluye columnas `Tabla`, `UID` (uid completo api::...), `Hoja` (nombre de la hoja), y `Cantidad`.\n- Hojas de datos: incluyen `documentId` y hasta 7 campos de tipo `string/text` por entry.\n- Por defecto exporta hasta 1000 filas por hoja; puedes limitar con `?limit=<n>` (ej. `?limit=200`).\n- Excluye el content-type `api::backup.backup`.\n\nNotas:\n- Requiere autenticación (Bearer token).\n\nEjemplo: GET {{STRAPI_URL_LOCAL}}/api/backups/export/xlsx"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Export XLSX desde backup (.tar.gz)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{STRAPI_URL_LOCAL}}/api/backups/:documentId/export/xlsx",
+                            "host": [
+                                "{{STRAPI_URL_LOCAL}}"
+                            ],
+                            "path": [
+                                "api",
+                                "backups",
+                                ":documentId",
+                                "export",
+                                "xlsx"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "documentId",
+                                    "value": "example-doc-id"
+                                }
+                            ]
+                        },
+                        "description": "Genera y descarga un Excel (.xlsx) leyendo exclusivamente el contenido del backup .tar.gz identificado por `documentId`.\n\nNotas:\n- Requiere autenticación (Bearer token).\n- Excluye el content-type `api::backup.backup`."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Export JSON desde backup (.tar.gz)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{STRAPI_URL_LOCAL}}/api/backups/:documentId/export/json",
+                            "host": [
+                                "{{STRAPI_URL_LOCAL}}"
+                            ],
+                            "path": [
+                                "api",
+                                "backups",
+                                ":documentId",
+                                "export",
+                                "json"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "documentId",
+                                    "value": "example-doc-id"
+                                }
+                            ]
+                        },
+                        "description": "Descarga un JSON consolidado del backup .tar.gz identificado por `documentId`. La estructura incluye `{ manifest, data, assets }`.\n\nNotas:\n- Requiere autenticación (Bearer token)."
+                    },
+                    "response": []
+                },
 				{
 					"name": "Delete Backup",
 					"request": {
@@ -3694,7 +3760,7 @@
 								"sync"
 							]
 						},
-						"description": "Sincroniza la tabla de backups con los archivos presentes en la carpeta /backups.\n\nAcciones:\n- Crea entradas para archivos que no tienen registro.\n- Marca como `corrupted` los registros cuyo archivo físico falte.\n- Actualiza tamaño/checksum si faltan en el registro.\n\nRespuesta: resumen con contadores (created, updated, corruptedMarked, existingSkips, totalFiles)."
+                        "description": "Sincroniza la tabla de backups con los archivos .tar.gz presentes en la carpeta /backups.\n\nAcciones:\n- Crea entradas para archivos que no tienen registro.\n- Marca como `corrupted` los registros cuyo archivo físico falte.\n- Actualiza tamaño/checksum si faltan en el registro.\n\nNotas:\n- No elimina archivos huérfanos por defecto.\n\nRespuesta: resumen con contadores (created, updated, corruptedMarked, existingSkips, totalFiles)."
 					},
 					"response": []
 				}
