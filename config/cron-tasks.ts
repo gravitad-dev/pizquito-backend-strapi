@@ -437,6 +437,7 @@ const generateEnrollmentInvoices = async ({
   billingConfig,
 }: TaskContext & { billingConfig: BillingConfig }): Promise<{
   created: number;
+  skipped: number;
 }> => {
   const now = new Date();
   const { start, end } = getMonthBounds(now);
@@ -446,7 +447,7 @@ const generateEnrollmentInvoices = async ({
   const enrollmentList = await fetchAllBatched(
     strapi,
     "api::enrollment.enrollment",
-    { services: true, student: true },
+    { services: true, student: true, school_period: true },
     500,
     { isActive: true },
   );
@@ -455,9 +456,19 @@ const generateEnrollmentInvoices = async ({
     `👥 [Cron] Enrollments activos encontrados: ${enrollmentList.length}`,
   );
   let createdCount = 0;
+  let skippedCount = 0;
 
   for (const enr of enrollmentList) {
     try {
+      // Validar que el enrollment tenga un periodo escolar asignado
+      if (!(enr as any).school_period) {
+        strapi.log.warn(
+          `⚠️ [Cron] Enrollment ${(enr as any).id} sin periodo escolar asignado, omitiendo facturación`
+        );
+        skippedCount++;
+        continue;
+      }
+
       const services = Array.isArray((enr as any).services)
         ? (enr as any).services
         : [];
@@ -543,8 +554,10 @@ const generateEnrollmentInvoices = async ({
     }
   }
 
-  strapi.log.info(`📊 [Cron] Facturas de alumnos creadas: ${createdCount}`);
-  return { created: createdCount };
+  strapi.log.info(
+    `📊 [Cron] Facturas de alumnos creadas: ${createdCount}, omitidos sin periodo escolar: ${skippedCount}`
+  );
+  return { created: createdCount, skipped: skippedCount };
 };
 
 /**
@@ -831,7 +844,7 @@ export default {
         },
       });
 
-      let enrollmentResults = { created: 0 };
+      let enrollmentResults = { created: 0, skipped: 0 };
       let payrollResults = { created: 0, skipped: 0 };
 
       try {
@@ -848,11 +861,15 @@ export default {
         });
 
         const duration = Date.now() - startTime;
-        const skippedText =
+        const enrollmentSkippedText =
+          enrollmentResults.skipped && enrollmentResults.skipped > 0
+            ? ` (${enrollmentResults.skipped} omitidos sin periodo escolar)`
+            : "";
+        const payrollSkippedText =
           payrollResults.skipped && payrollResults.skipped > 0
             ? ` (${payrollResults.skipped} empleados omitidos por frecuencia de pago)`
             : "";
-        const successMessage = `Facturación completada exitosamente. Facturas: ${enrollmentResults.created} creadas. Nóminas: ${payrollResults.created} creadas${skippedText}.`;
+        const successMessage = `Facturación completada exitosamente. Facturas: ${enrollmentResults.created} creadas${enrollmentSkippedText}. Nóminas: ${payrollResults.created} creadas${payrollSkippedText}.`;
 
         ctx.strapi.log.info(
           `✅ [Cron] COMPLETADO - ${successMessage} (${timestamp})`,
@@ -862,7 +879,7 @@ export default {
         await updateExecutionTimestamps(
           ctx.strapi,
           new Date(),
-          `Ejecución exitosa: ${enrollmentResults.created} facturas, ${payrollResults.created} nóminas${skippedText}`,
+          `Ejecución exitosa: ${enrollmentResults.created} facturas${enrollmentSkippedText}, ${payrollResults.created} nóminas${payrollSkippedText}`,
         );
 
         // Registrar éxito en history
