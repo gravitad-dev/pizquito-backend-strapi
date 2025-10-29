@@ -237,6 +237,37 @@ const getLastDayOfMonth = (d: Date) =>
   new Date(d.getFullYear(), d.getMonth() + 1, 0);
 
 /**
+ * Check if current date is within school period range
+ * @param schoolPeriod - The school period object with period array
+ * @param currentDate - The date to check (defaults to now)
+ * @returns true if current date is within any period range, false otherwise
+ */
+const isDateWithinSchoolPeriod = (schoolPeriod: any, currentDate: Date = new Date()): boolean => {
+  if (!schoolPeriod || !schoolPeriod.period || !Array.isArray(schoolPeriod.period)) {
+    return false;
+  }
+
+  const currentDateOnly = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+
+  for (const period of schoolPeriod.period) {
+    if (!period.start || !period.end) continue;
+
+    const startDate = new Date(period.start);
+    const endDate = new Date(period.end);
+    
+    // Set to start/end of day for proper comparison
+    const periodStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const periodEnd = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+
+    if (currentDateOnly >= periodStart && currentDateOnly <= periodEnd) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+/**
  * Decide whether to bill employee based on paymentPeriod and billingDay (if provided)
  * - billingDay is used for 'monthly' to respect the configured day in DB
  */
@@ -437,6 +468,7 @@ const generateEnrollmentInvoices = async ({
   billingConfig,
 }: TaskContext & { billingConfig: BillingConfig }): Promise<{
   created: number;
+  skipped: number;
 }> => {
   const now = new Date();
   const { start, end } = getMonthBounds(now);
@@ -446,7 +478,11 @@ const generateEnrollmentInvoices = async ({
   const enrollmentList = await fetchAllBatched(
     strapi,
     "api::enrollment.enrollment",
-    { services: true, student: true },
+    { 
+      services: true, 
+      student: true, 
+      school_period: { populate: { period: true } }
+    },
     500,
     { isActive: true },
   );
@@ -455,9 +491,32 @@ const generateEnrollmentInvoices = async ({
     `👥 [Cron] Enrollments activos encontrados: ${enrollmentList.length}`,
   );
   let createdCount = 0;
+  let skippedCount = 0;
+  let skippedNoSchoolPeriod = 0;
+  let skippedOutOfRange = 0;
 
   for (const enr of enrollmentList) {
     try {
+      // Validar que el enrollment tenga un periodo escolar asignado
+      if (!(enr as any).school_period) {
+        strapi.log.warn(
+          `⚠️ [Cron] Enrollment ${(enr as any).id} sin periodo escolar asignado, omitiendo facturación`
+        );
+        skippedNoSchoolPeriod++;
+        skippedCount++;
+        continue;
+      }
+
+      // Validar que la fecha actual esté dentro del rango del periodo escolar
+      if (!isDateWithinSchoolPeriod((enr as any).school_period, now)) {
+        strapi.log.warn(
+          `📅 [Cron] Enrollment ${(enr as any).id} fuera del rango del periodo escolar, omitiendo facturación`
+        );
+        skippedOutOfRange++;
+        skippedCount++;
+        continue;
+      }
+
       const services = Array.isArray((enr as any).services)
         ? (enr as any).services
         : [];
@@ -543,8 +602,21 @@ const generateEnrollmentInvoices = async ({
     }
   }
 
-  strapi.log.info(`📊 [Cron] Facturas de alumnos creadas: ${createdCount}`);
-  return { created: createdCount };
+  // Log detallado de estadísticas
+  const skippedDetails = [];
+  if (skippedNoSchoolPeriod > 0) {
+    skippedDetails.push(`${skippedNoSchoolPeriod} sin periodo escolar`);
+  }
+  if (skippedOutOfRange > 0) {
+    skippedDetails.push(`${skippedOutOfRange} fuera de rango`);
+  }
+  
+  const skippedText = skippedDetails.length > 0 ? `, omitidos: ${skippedDetails.join(', ')}` : '';
+  
+  strapi.log.info(
+    `📊 [Cron] Facturas de alumnos creadas: ${createdCount}${skippedText}`
+  );
+  return { created: createdCount, skipped: skippedCount };
 };
 
 /**
@@ -831,7 +903,7 @@ export default {
         },
       });
 
-      let enrollmentResults = { created: 0 };
+      let enrollmentResults = { created: 0, skipped: 0 };
       let payrollResults = { created: 0, skipped: 0 };
 
       try {
@@ -848,11 +920,15 @@ export default {
         });
 
         const duration = Date.now() - startTime;
-        const skippedText =
+        const enrollmentSkippedText =
+          enrollmentResults.skipped && enrollmentResults.skipped > 0
+            ? ` (${enrollmentResults.skipped} omitidos sin periodo escolar)`
+            : "";
+        const payrollSkippedText =
           payrollResults.skipped && payrollResults.skipped > 0
             ? ` (${payrollResults.skipped} empleados omitidos por frecuencia de pago)`
             : "";
-        const successMessage = `Facturación completada exitosamente. Facturas: ${enrollmentResults.created} creadas. Nóminas: ${payrollResults.created} creadas${skippedText}.`;
+        const successMessage = `Facturación completada exitosamente. Facturas: ${enrollmentResults.created} creadas${enrollmentSkippedText}. Nóminas: ${payrollResults.created} creadas${payrollSkippedText}.`;
 
         ctx.strapi.log.info(
           `✅ [Cron] COMPLETADO - ${successMessage} (${timestamp})`,
@@ -862,7 +938,7 @@ export default {
         await updateExecutionTimestamps(
           ctx.strapi,
           new Date(),
-          `Ejecución exitosa: ${enrollmentResults.created} facturas, ${payrollResults.created} nóminas${skippedText}`,
+          `Ejecución exitosa: ${enrollmentResults.created} facturas${enrollmentSkippedText}, ${payrollResults.created} nóminas${payrollSkippedText}`,
         );
 
         // Registrar éxito en history
