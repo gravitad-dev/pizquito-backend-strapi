@@ -223,7 +223,7 @@ const calculateIVA = (subtotal: number) => {
   // TEMPORAL: Comentado el cálculo del IVA
   // const iva = Math.round(subtotal * IVA_RATE * 100) / 100; // 2 decimals
   // const total = Math.round((subtotal + iva) * 100) / 100;
-  
+
   // TEMPORAL: Sin IVA - el total es igual al subtotal
   const iva = 0;
   const total = Math.round(subtotal * 100) / 100;
@@ -237,27 +237,62 @@ const getLastDayOfMonth = (d: Date) =>
   new Date(d.getFullYear(), d.getMonth() + 1, 0);
 
 /**
+ * Obtiene el guardian principal de un enrollment
+ * Prioriza el guardian marcado como principal, o toma el primero disponible
+ */
+const getPrimaryGuardian = (enrollment: any) => {
+  const guardians = Array.isArray(enrollment.guardians) ? enrollment.guardians : [];
+  if (guardians.length === 0) return null;
+  
+  // Buscar guardian principal
+  const primaryGuardian = guardians.find((g: any) => g.isPrimary === true);
+  if (primaryGuardian) return primaryGuardian;
+  
+  // Si no hay principal, tomar el primero
+  return guardians[0];
+};
+
+/**
  * Check if current date is within school period range
  * @param schoolPeriod - The school period object with period array
  * @param currentDate - The date to check (defaults to now)
  * @returns true if current date is within any period range, false otherwise
  */
-const isDateWithinSchoolPeriod = (schoolPeriod: any, currentDate: Date = new Date()): boolean => {
-  if (!schoolPeriod || !schoolPeriod.period || !Array.isArray(schoolPeriod.period)) {
+const isDateWithinSchoolPeriod = (
+  schoolPeriod: any,
+  currentDate: Date = new Date(),
+): boolean => {
+  if (
+    !schoolPeriod ||
+    !schoolPeriod.period ||
+    !Array.isArray(schoolPeriod.period)
+  ) {
     return false;
   }
 
-  const currentDateOnly = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+  const currentDateOnly = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    currentDate.getDate(),
+  );
 
   for (const period of schoolPeriod.period) {
     if (!period.start || !period.end) continue;
 
     const startDate = new Date(period.start);
     const endDate = new Date(period.end);
-    
+
     // Set to start/end of day for proper comparison
-    const periodStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-    const periodEnd = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+    const periodStart = new Date(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      startDate.getDate(),
+    );
+    const periodEnd = new Date(
+      endDate.getFullYear(),
+      endDate.getMonth(),
+      endDate.getDate(),
+    );
 
     if (currentDateOnly >= periodStart && currentDateOnly <= periodEnd) {
       return true;
@@ -360,12 +395,18 @@ const fetchAllBatched = async (
 ) => {
   let start = 0;
   const results: any[] = [];
+
+  // Usar documentService para consistencia con la API REST
+  const documentService = strapi.documents(entity as any);
+
   while (true) {
-    const page = (await strapi.entityService.findMany(entity as any, {
+    const page = (await documentService.findMany({
       filters,
       populate,
       start,
       limit: batch,
+      sort: "id:asc", // Asegurar orden consistente
+      status: "published", // Solo registros publicados
     })) as any[];
 
     if (!Array.isArray(page) || page.length === 0) break;
@@ -373,6 +414,18 @@ const fetchAllBatched = async (
     if (page.length < batch) break;
     start += batch;
   }
+
+  // Log para debug con más detalles
+  strapi.log.info(
+    `🔍 [fetchAllBatched] Obtenidos ${results.length} registros de ${entity}`,
+  );
+
+  if (results.length > 0) {
+    strapi.log.info(
+      `🔍 [fetchAllBatched] IDs obtenidos: ${results.map((r: any) => r.id).join(", ")}`,
+    );
+  }
+
   return results;
 };
 
@@ -387,25 +440,34 @@ const cleanOldHistoryRecords = async (
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
 
-    strapi.log.info(`🧹 [Cleanup] Limpiando registros de history anteriores a ${cutoffDate.toISOString()}`);
+    strapi.log.info(
+      `🧹 [Cleanup] Limpiando registros de history anteriores a ${cutoffDate.toISOString()}`,
+    );
 
     // Buscar registros antiguos
-    const oldRecords = await strapi.entityService.findMany("api::history.history", {
-      filters: {
-        timestamp: {
-          $lt: cutoffDate.toISOString(),
+    const oldRecords = await strapi.entityService.findMany(
+      "api::history.history",
+      {
+        filters: {
+          timestamp: {
+            $lt: cutoffDate.toISOString(),
+          },
         },
+        fields: ["id", "timestamp", "title"],
+        limit: 1000, // Procesar en lotes para evitar sobrecarga
       },
-      fields: ["id", "timestamp", "title"],
-      limit: 1000, // Procesar en lotes para evitar sobrecarga
-    });
+    );
 
     if (!Array.isArray(oldRecords) || oldRecords.length === 0) {
-      strapi.log.info("🧹 [Cleanup] No hay registros de history antiguos para limpiar");
+      strapi.log.info(
+        "🧹 [Cleanup] No hay registros de history antiguos para limpiar",
+      );
       return { deleted: 0 };
     }
 
-    strapi.log.info(`🧹 [Cleanup] Encontrados ${oldRecords.length} registros de history para eliminar`);
+    strapi.log.info(
+      `🧹 [Cleanup] Encontrados ${oldRecords.length} registros de history para eliminar`,
+    );
 
     // Eliminar registros en lotes
     let deletedCount = 0;
@@ -414,19 +476,22 @@ const cleanOldHistoryRecords = async (
         await strapi.entityService.delete("api::history.history", record.id);
         deletedCount++;
       } catch (error) {
-        strapi.log.error(`❌ [Cleanup] Error eliminando registro de history ${record.id}:`, error);
+        strapi.log.error(
+          `❌ [Cleanup] Error eliminando registro de history ${record.id}:`,
+          error,
+        );
       }
     }
 
-    strapi.log.info(`✅ [Cleanup] Eliminados ${deletedCount} registros de history antiguos`);
+    strapi.log.info(
+      `✅ [Cleanup] Eliminados ${deletedCount} registros de history antiguos`,
+    );
     return { deleted: deletedCount };
   } catch (error) {
     strapi.log.error("❌ [Cleanup] Error en limpieza de history:", error);
     return { deleted: 0 };
   }
 };
-
-
 
 /**
  * Map service types and titles to proper invoice concepts for fiscal reporting
@@ -436,22 +501,38 @@ const mapServiceToConcept = (service: any): string => {
   const serviceType = service?.serviceType || "";
 
   // Mapeo específico por título
-  if (title.includes("matricula") || title.includes("matrícula") || title.includes("inscription")) {
+  if (
+    title.includes("matricula") ||
+    title.includes("matrícula") ||
+    title.includes("inscription")
+  ) {
     return "matricula";
   }
-  if (title.includes("comedor") || title.includes("lunch") || title.includes("almuerzo")) {
+  if (
+    title.includes("comedor") ||
+    title.includes("lunch") ||
+    title.includes("almuerzo")
+  ) {
     return "comedor";
   }
-  if (title.includes("transporte") || title.includes("transport") || title.includes("bus")) {
+  if (
+    title.includes("transporte") ||
+    title.includes("transport") ||
+    title.includes("bus")
+  ) {
     return "transporte";
   }
-  if (title.includes("material") || title.includes("libro") || title.includes("supplies")) {
+  if (
+    title.includes("material") ||
+    title.includes("libro") ||
+    title.includes("supplies")
+  ) {
     return "material";
   }
 
   // Mapeo por tipo de servicio como fallback
   if (serviceType === "student_service") {
-    // Si es un servicio de estudiante pero no tiene título específico, 
+    // Si es un servicio de estudiante pero no tiene título específico,
     // asumimos que es matrícula por defecto
     return "matricula";
   }
@@ -478,10 +559,11 @@ const generateEnrollmentInvoices = async ({
   const enrollmentList = await fetchAllBatched(
     strapi,
     "api::enrollment.enrollment",
-    { 
-      services: true, 
-      student: true, 
-      school_period: { populate: { period: true } }
+    {
+      services: true,
+      student: true,
+      guardians: true,
+      school_period: { populate: { period: true } },
     },
     500,
     { isActive: true },
@@ -500,7 +582,7 @@ const generateEnrollmentInvoices = async ({
       // Validar que el enrollment tenga un periodo escolar asignado
       if (!(enr as any).school_period) {
         strapi.log.warn(
-          `⚠️ [Cron] Enrollment ${(enr as any).id} sin periodo escolar asignado, omitiendo facturación`
+          `⚠️ [Cron] Enrollment ${(enr as any).id} sin periodo escolar asignado, omitiendo facturación`,
         );
         skippedNoSchoolPeriod++;
         skippedCount++;
@@ -510,7 +592,7 @@ const generateEnrollmentInvoices = async ({
       // Validar que la fecha actual esté dentro del rango del periodo escolar
       if (!isDateWithinSchoolPeriod((enr as any).school_period, now)) {
         strapi.log.warn(
-          `📅 [Cron] Enrollment ${(enr as any).id} fuera del rango del periodo escolar, omitiendo facturación`
+          `📅 [Cron] Enrollment ${(enr as any).id} fuera del rango del periodo escolar, omitiendo facturación`,
         );
         skippedOutOfRange++;
         skippedCount++;
@@ -567,24 +649,34 @@ const generateEnrollmentInvoices = async ({
         JSON.stringify(amountsList),
       );
 
+      // Obtener guardian principal para la factura
+      const primaryGuardian = getPrimaryGuardian(enr);
+      
       try {
+        const invoiceData: any = {
+          invoiceCategory: "invoice_enrollment",
+          invoiceType: "charge",
+          invoiceStatus: "unpaid",
+          enrollment: (enr as any).documentId, // Usar documentId para relaciones en Strapi v5
+          emissionDate: now.toISOString(),
+          expirationDate: getLastDayOfMonth(now).toISOString(),
+          amounts: amountsList as any,
+          total,
+          IVA: iva,
+          issuedby: "Sistema",
+          registeredBy: "system" as const,
+          title: invoiceTitle,
+          notes: invoiceNote,
+          publishedAt: now.toISOString(),
+        };
+        
+        // Agregar relación con guardian si existe
+        if (primaryGuardian?.documentId) {
+          invoiceData.guardian = primaryGuardian.documentId;
+        }
+        
         await strapi.entityService.create("api::invoice.invoice", {
-          data: {
-            invoiceCategory: "invoice_enrollment",
-            invoiceType: "charge",
-            invoiceStatus: "unpaid",
-            enrollment: (enr as any).id,
-            emissionDate: now.toISOString(),
-            expirationDate: getLastDayOfMonth(now).toISOString(),
-            amounts: amountsList as any,
-            total,
-            IVA: iva,
-            issuedby: "Sistema",
-            registeredBy: "system",
-            title: invoiceTitle,
-            notes: invoiceNote,
-            publishedAt: now.toISOString(),
-          },
+          data: invoiceData,
         });
         createdCount++;
       } catch (err) {
@@ -610,11 +702,12 @@ const generateEnrollmentInvoices = async ({
   if (skippedOutOfRange > 0) {
     skippedDetails.push(`${skippedOutOfRange} fuera de rango`);
   }
-  
-  const skippedText = skippedDetails.length > 0 ? `, omitidos: ${skippedDetails.join(', ')}` : '';
-  
+
+  const skippedText =
+    skippedDetails.length > 0 ? `, omitidos: ${skippedDetails.join(", ")}` : "";
+
   strapi.log.info(
-    `📊 [Cron] Facturas de alumnos creadas: ${createdCount}${skippedText}`
+    `📊 [Cron] Facturas de alumnos creadas: ${createdCount}${skippedText}`,
   );
   return { created: createdCount, skipped: skippedCount };
 };
@@ -648,9 +741,14 @@ const generateEmployeePayrolls = async ({
   for (const emp of employeeList) {
     try {
       const terms = Array.isArray((emp as any).terms) ? (emp as any).terms : [];
+
+      strapi.log.info(
+        `🔍 [Cron] Procesando empleado: ${(emp as any).name} (ID: ${(emp as any).id}) - Términos: ${terms.length}`,
+      );
+
       const latest = terms[terms.length - 1];
       if (!latest) {
-        strapi.log.debug(
+        strapi.log.warn(
           `⚠️ [Cron] Empleado ${(emp as any).name} sin términos de contrato, omitiendo`,
         );
         continue;
@@ -665,7 +763,7 @@ const generateEmployeePayrolls = async ({
         : billingConfig?.day;
 
       if (!shouldBillEmployee(period, now, effectiveBillingDay)) {
-        strapi.log.debug(
+        strapi.log.warn(
           `⏭️ [Cron] Empleado ${employeeName} (${period}) no debe ser facturado hoy, omitiendo`,
         );
         skippedCount++;
@@ -691,7 +789,7 @@ const generateEmployeePayrolls = async ({
       const salary = baseSalary + additionalTotal;
 
       if (!Number.isFinite(salary) || salary <= 0) {
-        strapi.log.debug(
+        strapi.log.warn(
           `⚠️ [Cron] Empleado ${employeeName} con salario inválido (${salary}), omitiendo`,
         );
         continue;
@@ -733,49 +831,65 @@ const generateEmployeePayrolls = async ({
       const payrollAmounts = normalizeInvoiceAmounts(rawPayrollMap);
       const payrollSubtotal = subtotalFromAmounts(payrollAmounts);
 
-      strapi.log.debug(
-        `💰 [Cron] Guardando amounts para employee ${employeeName} (${period}):`,
-        JSON.stringify(payrollAmounts),
-      );
-
       // (Se elimina control de duplicados para permitir múltiples nóminas por mes según solicitud)
 
       try {
-        await strapi.entityService.create("api::invoice.invoice", {
-          data: {
-            invoiceCategory: "invoice_employ",
-            invoiceType: "expense",
-            invoiceStatus: "unpaid",
-            employee: (emp as any).id,
-            emissionDate: now.toISOString(),
-            expirationDate: getLastDayOfMonth(now).toISOString(),
-            amounts: payrollAmounts as any,
-            total,
-            IVA: iva,
-            issuedby: "Sistema",
-            registeredBy: "system",
-            title: payrollTitle,
-            notes: payrollNote,
-            publishedAt: now.toISOString(),
+        const invoiceData = {
+          invoiceCategory: "invoice_employ" as const,
+          invoiceType: "expense" as const,
+          invoiceStatus: "unpaid" as const,
+          employee: (emp as any).documentId, // Usar documentId para relaciones en Strapi v5
+          emissionDate: now.toISOString(),
+          expirationDate: getLastDayOfMonth(now).toISOString(),
+          amounts: payrollAmounts as any,
+          total,
+          IVA: iva,
+          issuedby: "Sistema",
+          registeredBy: "system" as const,
+          title: payrollTitle,
+          notes: payrollNote,
+          publishedAt: now.toISOString(),
+        };
+
+        const createdInvoice = await strapi.entityService.create(
+          "api::invoice.invoice",
+          {
+            data: invoiceData,
           },
-        });
+        );
 
         strapi.log.info(
-          `✅ [Cron] Nómina creada para ${employeeName} (${periodLabel}): €${salary.toFixed(2)}`,
+          `✅ [Cron] Nómina creada para ${employeeName} (${periodLabel}): €${salary.toFixed(2)} - ID: ${createdInvoice.id}`,
         );
         createdCount++;
       } catch (err) {
         strapi.log.error(
-          `❌ [Cron] Error creando nómina para empleado ${(emp as any).id}:`,
+          `❌ [Cron] Error creando nómina para empleado ${(emp as any).id} (${employeeName}):`,
           err && (err as Error).message ? (err as Error).message : err,
+        );
+        strapi.log.error(
+          `❌ [Cron] Stack trace:`,
+          err && (err as Error).stack
+            ? (err as Error).stack
+            : "No stack trace available",
         );
       }
     } catch (err) {
       strapi.log.error(
-        `❌ [Cron] Error procesando empleado ${(emp as any).id}:`,
+        `❌ [Cron] Error procesando empleado ${(emp as any).id} (${(emp as any).name}):`,
         err && (err as Error).message ? (err as Error).message : err,
       );
+      strapi.log.error(
+        `❌ [Cron] Stack trace del error general:`,
+        err && (err as Error).stack
+          ? (err as Error).stack
+          : "No stack trace available",
+      );
     }
+
+    strapi.log.info(
+      `🔍 [Cron] Terminado procesamiento de empleado: ${(emp as any).name} (ID: ${(emp as any).id})`,
+    );
   }
 
   strapi.log.info(
@@ -1015,7 +1129,9 @@ export default {
         second: "2-digit",
       });
 
-      ctx.strapi.log.info(`🧹 [Cleanup] INICIO - Ejecutando limpieza diaria de logs (${timestamp})`);
+      ctx.strapi.log.info(
+        `🧹 [Cleanup] INICIO - Ejecutando limpieza diaria de logs (${timestamp})`,
+      );
 
       // Registrar inicio en history
       await logCronExecution(ctx.strapi, {
@@ -1033,13 +1149,17 @@ export default {
 
       try {
         // Limpiar registros de history antiguos (>90 días)
-        ctx.strapi.log.info(`📋 [Cleanup] Limpiando registros de history antiguos...`);
+        ctx.strapi.log.info(
+          `📋 [Cleanup] Limpiando registros de history antiguos...`,
+        );
         historyResults = await cleanOldHistoryRecords(ctx.strapi, 90);
 
         const duration = Date.now() - startTime;
         const successMessage = `Limpieza completada exitosamente. History: ${historyResults.deleted} registros eliminados.`;
 
-        ctx.strapi.log.info(`✅ [Cleanup] COMPLETADO - ${successMessage} (${timestamp})`);
+        ctx.strapi.log.info(
+          `✅ [Cleanup] COMPLETADO - ${successMessage} (${timestamp})`,
+        );
 
         // Registrar éxito en history
         await logCronExecution(ctx.strapi, {
@@ -1072,7 +1192,10 @@ export default {
           payload: {
             execution_duration_ms: duration,
             error_message: (error && (error as Error).message) || error,
-            error_stack: error && (error as Error).stack ? (error as Error).stack : undefined,
+            error_stack:
+              error && (error as Error).stack
+                ? (error as Error).stack
+                : undefined,
             retention_days: 90,
             timestamp,
           },

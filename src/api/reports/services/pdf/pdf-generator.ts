@@ -39,24 +39,22 @@ const fetchCompany = async () => {
   return Array.isArray(company) ? company[0] : company;
 };
 
-const fetchInvoice = async (id: number): Promise<InvoiceEntity | null> => {
-  const inv = await (global as any).strapi.entityService.findOne(
-    "api::invoice.invoice",
-    id,
-    {
-      populate: {
-        enrollment: {
-          populate: {
-            student: true,
-            guardians: true,
-            classroom: true,
-          },
+const fetchInvoice = async (documentId: string): Promise<InvoiceEntity | null> => {
+  const inv = await (global as any).strapi.documents("api::invoice.invoice").findOne({
+    documentId,
+    status: 'published',
+    populate: {
+      enrollment: {
+        populate: {
+          student: true,
+          guardians: true,
+          classroom: true,
         },
-        employee: true,
-        guardian: true, // Guardian directo asociado a la factura
       },
+      employee: true,
+      guardian: true, // Guardian directo asociado a la factura
     },
-  );
+  });
   return inv ?? null;
 };
 
@@ -466,11 +464,11 @@ const uploadBufferAsFile = async (
 };
 
 export default {
-  async generateInvoicePdf(id: number, reportType?: string) {
+  async generateInvoicePdf(documentId: string, reportType?: string) {
     const company = await fetchCompany();
-    const inv = await fetchInvoice(id);
+    const inv = await fetchInvoice(documentId);
     if (!inv) {
-      return { stored: false, url: null, message: `Invoice ${id} not found` };
+      return { stored: false, url: null, message: `Invoice ${documentId} not found` };
     }
 
     const doc = new PDFDocument({ size: "A4", margin: 40 });
@@ -639,14 +637,14 @@ export default {
       },
     };
   },
-  async generateInvoicePdfBuffer(id: number, reportType?: string) {
+  async generateInvoicePdfBuffer(documentId: string, reportType?: string) {
     const company = await fetchCompany();
-    const inv = await fetchInvoice(id);
+    const inv = await fetchInvoice(documentId);
     if (!inv) {
       return {
         buffer: null,
         fileName: null,
-        message: `Invoice ${id} not found`,
+        message: `Invoice ${documentId} not found`,
       };
     }
 
