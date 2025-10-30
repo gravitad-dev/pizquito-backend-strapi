@@ -111,14 +111,14 @@ export default {
 
     // Buscar enrollments con relaciones
     const filters: any = {};
-    
+
     // Construir filtros para student
     const studentFilters: any = {};
-    
+
     if (studentId) {
       studentFilters.id = studentId;
     }
-    
+
     // Filtro por nombre de estudiante (incluye nombre y apellido, case-insensitive)
     if (studentName && studentName.trim()) {
       const searchTerm = studentName.trim();
@@ -129,20 +129,20 @@ export default {
           {
             $or: [
               { name: { $containsi: searchTerm } },
-              { lastname: { $containsi: searchTerm } }
-            ]
-          }
+              { lastname: { $containsi: searchTerm } },
+            ],
+          },
         ];
         delete studentFilters.id;
       } else {
         // Solo filtro por nombre
         studentFilters.$or = [
           { name: { $containsi: searchTerm } },
-          { lastname: { $containsi: searchTerm } }
+          { lastname: { $containsi: searchTerm } },
         ];
       }
     }
-    
+
     if (Object.keys(studentFilters).length > 0) {
       filters.student = studentFilters;
     }
@@ -186,7 +186,7 @@ export default {
           if (!emission || !inRange(emission, year, quarter)) return;
           monthsWith.add(monthIndex(emission));
 
-          // Usar el total de la factura (que incluye IVA) en lugar de amounts
+          // Usar el total del recibo (que incluye IVA) en lugar de amounts
           const invoiceTotal = ensureNumber(inv.total);
           const rawAmounts = inv.amounts;
 
@@ -198,36 +198,44 @@ export default {
             // Normalizar array
             const acc = new Map<string, { concept: string; amount: number }>();
             for (const item of rawAmounts) {
-              if (!item || typeof item !== 'object') continue;
-              const concept = String(item.concept || '').trim();
+              if (!item || typeof item !== "object") continue;
+              const concept = String(item.concept || "").trim();
               const amount = ensureNumber(item.amount);
               if (!concept || !Number.isFinite(amount) || amount < 0) continue;
               const key = concept.toLowerCase();
               const prev = acc.get(key);
-              acc.set(key, { concept: prev?.concept || concept, amount: (prev?.amount || 0) + amount });
+              acc.set(key, {
+                concept: prev?.concept || concept,
+                amount: (prev?.amount || 0) + amount,
+              });
             }
             pairs = Array.from(acc.values());
-          } else if (rawAmounts && typeof rawAmounts === 'object') {
+          } else if (rawAmounts && typeof rawAmounts === "object") {
             // Legacy: objeto plano { concepto: valor }
             const keys = Object.keys(rawAmounts);
             pairs = keys
-              .map((k) => ({ concept: k, amount: ensureNumber((rawAmounts as any)[k]) }))
-              .filter((p) => p.concept && Number.isFinite(p.amount) && p.amount >= 0);
+              .map((k) => ({
+                concept: k,
+                amount: ensureNumber((rawAmounts as any)[k]),
+              }))
+              .filter(
+                (p) => p.concept && Number.isFinite(p.amount) && p.amount >= 0,
+              );
           }
-          
+
           if (pairs.length === 0) {
             // Si no hay amounts, todo va a totalOnly
             sums.totalOnly += invoiceTotal;
           } else {
             // Calcular la proporción de cada concepto y aplicarla al total con IVA
             const subtotal = pairs.reduce((acc, p) => acc + p.amount, 0);
-            
+
             if (subtotal > 0) {
               pairs.forEach(({ concept, amount }) => {
                 const proportion = amount / subtotal;
                 const totalWithIVA = invoiceTotal * proportion;
                 const keyNorm = concept.toLowerCase();
-                
+
                 if (keyNorm.includes("matri")) {
                   sums.matricula += totalWithIVA;
                 } else if (
@@ -454,7 +462,7 @@ export default {
       const mime = "text/csv";
 
       // Escribir archivo temporal y subir vía filepath
-      const csvBuffer = Buffer.from(csv, 'utf8');
+      const csvBuffer = Buffer.from(csv, "utf8");
       const tmpFilePath = path.join(
         os.tmpdir(),
         `upload-${Date.now()}-${fileName}`,
@@ -743,7 +751,8 @@ export default {
 
       // Filtrar por formato si se especifica
       if (format) {
-        filters.ext = format === "xlsx" ? ".xlsx" : format === "csv" ? ".csv" : ".pdf";
+        filters.ext =
+          format === "xlsx" ? ".xlsx" : format === "csv" ? ".csv" : ".pdf";
       }
 
       // Filtrar por rango de fechas si se especifica
@@ -765,13 +774,13 @@ export default {
           sort: { createdAt: "desc" },
           start: (page - 1) * pageSize,
           limit: pageSize,
-        }
+        },
       );
 
       // Contar total de archivos para paginación
       const total = await (global as any).strapi.entityService.count(
         "plugin::upload.file",
-        { filters }
+        { filters },
       );
 
       // Procesar archivos para extraer metadatos del nombre y path
@@ -783,11 +792,11 @@ export default {
         // Extraer información del nombre del archivo
         const fileName = file.name || "";
         const fileFormat = file.ext?.replace(".", "") || "unknown";
-        
+
         // Intentar extraer metadatos del nombre del archivo
         // Formato esperado: modelo-233-YYYY-QX-concept-centerCode-timestamp
         const nameParts = fileName.replace(file.ext || "", "").split("-");
-        
+
         return {
           id: file.id,
           name: fileName,
@@ -799,8 +808,11 @@ export default {
           metadata: {
             year: yearFromPath ? parseInt(yearFromPath, 10) : null,
             month: monthFromPath ? parseInt(monthFromPath, 10) : null,
-            quarter: nameParts.find(part => part.startsWith("Q")) || null,
-            concept: nameParts.find(part => ["matricula", "comedor", "all"].includes(part)) || null,
+            quarter: nameParts.find((part) => part.startsWith("Q")) || null,
+            concept:
+              nameParts.find((part) =>
+                ["matricula", "comedor", "all"].includes(part),
+              ) || null,
             centerCode: nameParts.length > 6 ? nameParts[5] : null,
           },
           cloudinary: {
@@ -814,20 +826,20 @@ export default {
       let filteredFiles = processedFiles;
 
       if (quarter) {
-        filteredFiles = filteredFiles.filter(file => 
-          file.metadata.quarter === quarter
+        filteredFiles = filteredFiles.filter(
+          (file) => file.metadata.quarter === quarter,
         );
       }
 
       if (concept) {
-        filteredFiles = filteredFiles.filter(file => 
-          file.metadata.concept === concept
+        filteredFiles = filteredFiles.filter(
+          (file) => file.metadata.concept === concept,
         );
       }
 
       if (centerCode) {
-        filteredFiles = filteredFiles.filter(file => 
-          file.metadata.centerCode === centerCode
+        filteredFiles = filteredFiles.filter(
+          (file) => file.metadata.centerCode === centerCode,
         );
       }
 
@@ -853,7 +865,9 @@ export default {
       };
     } catch (error) {
       console.error("Error fetching report history:", error);
-      throw new errors.ApplicationError("Error al obtener el historial de reportes");
+      throw new errors.ApplicationError(
+        "Error al obtener el historial de reportes",
+      );
     }
   },
 };
