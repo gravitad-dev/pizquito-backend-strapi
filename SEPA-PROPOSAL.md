@@ -16,12 +16,14 @@ Esta solución automatizará tanto los ingresos como los pagos, reduciendo la mo
 **SEPA** (Single Euro Payments Area) es el sistema de pagos unificado europeo que permite realizar transferencias y adeudos directos de forma estandarizada en toda la zona euro.
 
 ### **🔄 Adeudos Directos SEPA (XML pain.008.001.02):**
+
 - Sistema que permite a una empresa **COBRAR** automáticamente de las cuentas bancarias de sus clientes
 - Requiere autorización previa del cliente (mandato)
 - Formato XML estándar europeo
 - Ideal para: matrículas, comedor, actividades
 
 ### **💰 Transferencias SEPA (Formato 34.14):**
+
 - Sistema que permite a una empresa **PAGAR** automáticamente a beneficiarios
 - Formato de texto plano posicional español
 - Procesado por bancos españoles
@@ -32,18 +34,21 @@ Esta solución automatizará tanto los ingresos como los pagos, reduciendo la mo
 ## 💰 **Beneficios para la Escuela**
 
 ### **🔄 Operativos - COBROS:**
+
 - **Cobro automático** de matrículas y mensualidades
 - **Reducción drástica de morosidad** (del 15-20% al 2-3%)
 - **Menos gestión administrativa** de cobros
 - **Flujo de caja predecible** y constante
 
 ### **💰 Operativos - PAGOS:**
+
 - **Pago automático** de nóminas y proveedores
 - **Eliminación de transferencias manuales**
 - **Reducción de errores** en pagos
 - **Cumplimiento puntual** de obligaciones
 
 ### **📊 Financieros:**
+
 - **Mejora del cash flow** → Cobros puntuales + pagos controlados
 - **Reducción de costes** → Menos gestión manual (cobros + pagos)
 - **Mayor liquidez** → Dinero disponible en fechas fijas
@@ -51,11 +56,13 @@ Esta solución automatizará tanto los ingresos como los pagos, reduciendo la mo
 - **Menos impagados** → Sistema bancario más fiable
 
 ### **👥 Para las Familias:**
+
 - **Comodidad** → No tienen que recordar pagar
 - **Flexibilidad** → Pueden cancelar el mandato cuando quieran
 - **Transparencia** → Saben exactamente cuándo se cobrará
 
 ### **👨‍💼 Para Empleados:**
+
 - **Puntualidad garantizada** → Nóminas siempre a tiempo
 - **Transparencia** → Fechas de pago fijas y conocidas
 
@@ -64,6 +71,7 @@ Esta solución automatizará tanto los ingresos como los pagos, reduciendo la mo
 ## 🛠️ **Implementación Técnica**
 
 ### **Fase 1: Modelos de Datos (2-3 días)**
+
 ```
 ✅ Mandatos SEPA (para cobros)
    - Guardian asociado
@@ -83,6 +91,7 @@ Esta solución automatizará tanto los ingresos como los pagos, reduciendo la mo
 ```
 
 ### **Fase 2: Generadores de Ficheros (3-4 días)**
+
 ```
 ✅ Generador XML SEPA (pain.008.001.02)
    - Para adeudos directos (cobros)
@@ -96,6 +105,7 @@ Esta solución automatizará tanto los ingresos como los pagos, reduciendo la mo
 ```
 
 ### **Fase 3: Integración con Sistema (2-3 días)**
+
 ```
 ✅ Integración con Facturas
    - Selección de facturas pendientes
@@ -108,6 +118,7 @@ Esta solución automatizará tanto los ingresos como los pagos, reduciendo la mo
 ```
 
 ### **Fase 4: API y Frontend (2-3 días)**
+
 ```
 ✅ Endpoints API
    - Gestión de mandatos
@@ -122,6 +133,7 @@ Esta solución automatizará tanto los ingresos como los pagos, reduciendo la mo
 ```
 
 ### **Fase 5: Testing y Documentación (2 días)**
+
 ```
 ✅ Pruebas
    - Validación XML y formato 34.14
@@ -141,17 +153,20 @@ Esta solución automatizará tanto los ingresos como los pagos, reduciendo la mo
 ## 📋 **Requisitos Previos**
 
 ### **🏛️ Con el Banco:**
+
 1. **Contrato de adeudos directos** → Solicitar al banco
 2. **Identificador de acreedor** → Código único que asigna el banco
 3. **Cuenta bancaria empresarial** → Donde llegan los cobros
 4. **Software bancario** → Para subir los ficheros XML
 
 ### **📄 Documentación Legal:**
+
 1. **Modelo de mandato** → Documento que firman los padres
 2. **Política de privacidad** → Tratamiento de datos bancarios
 3. **Condiciones generales** → Incluir cláusulas SEPA
 
 ### **💻 Técnicos:**
+
 1. **Validador IBAN** → Librería para validar cuentas
 2. **Generador XML** → Cumplir estándar pain.008.001.02
 3. **Base de datos** → Almacenar mandatos y estados
@@ -161,6 +176,7 @@ Esta solución automatizará tanto los ingresos como los pagos, reduciendo la mo
 ## 🔄 **Flujo de Trabajo Propuesto**
 
 ### **📝 1. Alta de Mandato**
+
 ```
 Padre/Tutor → Rellena formulario con IBAN
 Sistema → Valida IBAN y crea mandato
@@ -168,6 +184,7 @@ Empleado → Revisa y activa mandato
 ```
 
 ### **💰 2. Proceso de Cobro**
+
 ```
 Sistema → Genera facturas automáticamente (cron actual)
 Empleado → Selecciona facturas para cobrar
@@ -177,6 +194,7 @@ Banco → Procesa cobros en 2-3 días
 ```
 
 ### **📊 3. Seguimiento**
+
 ```
 Sistema → Actualiza estados de facturas
 Empleado → Revisa cobros exitosos/fallidos
@@ -190,21 +208,25 @@ Sistema → Genera reportes de morosidad
 ### **🔄 COBROS AUTOMÁTICOS (XML SEPA)**
 
 #### **🎒 Matrícula Anual**
+
 - **Cuándo:** Septiembre
 - **Importe:** 150€ por alumno
 - **Beneficio:** Cobro garantizado al inicio de curso
 
 #### **🍽️ Comedor Mensual**
+
 - **Cuándo:** Día 5 de cada mes
 - **Importe:** 80€ por alumno
 - **Beneficio:** Flujo constante y predecible
 
 #### **⚽ Actividades Extraescolares**
+
 - **Cuándo:** Inicio de trimestre
 - **Importe:** 45€ por actividad
 - **Beneficio:** Menos gestión administrativa
 
 #### **📚 Gastos Puntuales**
+
 - **Cuándo:** Según necesidad
 - **Importe:** Variable (material, excursiones)
 - **Beneficio:** Cobro inmediato sin esperas
@@ -212,21 +234,25 @@ Sistema → Genera reportes de morosidad
 ### **💰 PAGOS AUTOMÁTICOS (Formato 34.14)**
 
 #### **👨‍💼 Nóminas Empleados**
+
 - **Cuándo:** Último día del mes
 - **Importe:** Según contrato
 - **Beneficio:** Pago puntual garantizado
 
 #### **🏢 Proveedores Recurrentes**
-- **Cuándo:** Según factura
+
+- **Cuándo:** Según recibo
 - **Importe:** Variable
 - **Beneficio:** Automatización de pagos rutinarios
 
 #### **⚡ Servicios (Luz, Agua, Gas)**
+
 - **Cuándo:** Según vencimiento
 - **Importe:** Variable
 - **Beneficio:** No olvidar pagos importantes
 
 #### **🎯 Pagos Puntuales**
+
 - **Cuándo:** Según necesidad
 - **Importe:** Variable
 - **Beneficio:** Gestión centralizada
@@ -236,6 +262,7 @@ Sistema → Genera reportes de morosidad
 ## 📈 **Impacto Esperado**
 
 ### **📊 Métricas Actuales (estimadas):**
+
 - **Morosidad:** 15-20%
 - **Tiempo gestión cobros:** 8-10 horas/semana
 - **Tiempo gestión pagos:** 4-6 horas/semana
@@ -243,6 +270,7 @@ Sistema → Genera reportes de morosidad
 - **Errores en pagos:** 2-3 por mes
 
 ### **🎯 Métricas Objetivo:**
+
 - **Morosidad:** 2-3%
 - **Tiempo gestión cobros:** 2-3 horas/semana
 - **Tiempo gestión pagos:** 1-2 horas/semana
@@ -250,6 +278,7 @@ Sistema → Genera reportes de morosidad
 - **Errores en pagos:** 0-1 por mes
 
 ### **💰 Beneficio Económico Anual:**
+
 ```
 🔄 COBROS:
 Reducción morosidad: 15% → 3% = 12% mejora
@@ -273,16 +302,19 @@ TOTAL BENEFICIO ESTIMADO: 20.000€/año
 ## ⚠️ **Consideraciones y Riesgos**
 
 ### **🔒 Seguridad:**
+
 - **Datos bancarios sensibles** → Cifrado y protección GDPR
 - **Acceso restringido** → Solo personal autorizado
 - **Auditoría completa** → Logs de todas las operaciones
 
 ### **⚖️ Legales:**
+
 - **Mandatos válidos** → Firma y fecha correctas
 - **Derecho de cancelación** → Los padres pueden anular
 - **Notificación previa** → Avisar antes de cada cobro
 
 ### **🏦 Operativos:**
+
 - **Dependencia bancaria** → Necesita colaboración del banco
 - **Formación personal** → Aprender nuevos procesos
 - **Backup manual** → Mantener opciones alternativas
@@ -303,6 +335,7 @@ TOTAL BENEFICIO ESTIMADO: 20.000€/año
 8. **Profesionalización** → Imagen de modernidad y eficiencia
 
 ### **📅 Propuesta de Timeline:**
+
 - **Semana 1-2:** Desarrollo modelos y generadores
 - **Semana 3:** Integración con sistema actual
 - **Semana 4:** API y interfaces
@@ -324,4 +357,4 @@ TOTAL BENEFICIO ESTIMADO: 20.000€/año
 
 ---
 
-*Documento preparado por el equipo técnico para evaluación de la dirección.*
+_Documento preparado por el equipo técnico para evaluación de la dirección._
