@@ -38,11 +38,11 @@ export default factories.createCoreController('api::employee.employee', ({ strap
         return ctx.notFound('Empleado no encontrado')
       }
 
-      // Construir filtros para las facturas usando el ID interno del empleado
+      // Construir filtros para las facturas usando el documentId del empleado
       const filters: any = {
         employee: {
-          id: {
-            $eq: employee.id
+          documentId: {
+            $eq: employee.documentId
           }
         }
       }

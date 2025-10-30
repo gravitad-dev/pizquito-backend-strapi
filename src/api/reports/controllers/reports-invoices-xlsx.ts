@@ -25,17 +25,20 @@ async function generateEmployee(ctx: Context) {
   const { id } = ctx.params as { id: string };
   const { startDate, endDate, status } = ctx.query as Record<string, string>;
 
-  // Validar empleado por ID
-  const employee = await strapi.entityService.findOne('api::employee.employee', id);
+  // Validar empleado por documentId
+  const employee = await strapi.documents('api::employee.employee').findOne({
+    documentId: id,
+    status: 'published'
+  });
   if (!employee) {
     ctx.status = 404;
-    ctx.body = { error: `Empleado no encontrado para id=${id}` };
+    ctx.body = { error: `Empleado no encontrado para documentId=${id}` };
     return;
   }
 
-  // Filtros: por empleado y categoría
+  // Filtros: por empleado y categoría (usar documentId para relaciones)
   const filters: any = {
-    employee: { id: { $eq: employee.id } },
+    employee: { documentId: { $eq: employee.documentId } },
     invoiceCategory: { $eq: fixedCategory },
   };
   if (startDate || endDate) {
@@ -105,8 +108,10 @@ async function generateEnrollment(ctx: Context) {
   const { id } = ctx.params as { id: string };
   const { startDate, endDate, status } = ctx.query as Record<string, string>;
 
-  // Validar matrícula por ID interno
-  const enrollment = await strapi.entityService.findOne('api::enrollment.enrollment', id, {
+  // Validar matrícula por documentId
+  const enrollment = await strapi.documents('api::enrollment.enrollment').findOne({
+    documentId: id,
+    status: 'published',
     populate: {
       student: true,
       guardians: true,
@@ -116,12 +121,12 @@ async function generateEnrollment(ctx: Context) {
   });
   if (!enrollment) {
     ctx.status = 404;
-    ctx.body = { error: `Matrícula no encontrada para id=${id}` };
+    ctx.body = { error: `Matrícula no encontrada para documentId=${id}` };
     return;
   }
 
   const filters: any = {
-    enrollment: { id: { $eq: enrollment.id } },
+    enrollment: { documentId: { $eq: enrollment.documentId } },
     invoiceCategory: { $eq: fixedCategory },
   };
   if (startDate || endDate) {

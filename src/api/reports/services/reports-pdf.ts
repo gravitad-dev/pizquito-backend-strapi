@@ -5,31 +5,32 @@
 import pdfGenerator from './pdf/pdf-generator';
 
 export default {
-  async invoice(id: number) {
-    return pdfGenerator.generateInvoicePdf(id, 'invoice');
+  // Generar PDF de factura y almacenarlo en Strapi
+  async invoice(documentId: string) {
+    return pdfGenerator.generateInvoicePdf(documentId, 'invoice');
   },
-  async payroll(id: number) {
-    // Payrolls are backed by employee invoices (invoice_employ)
-    return pdfGenerator.generateInvoicePdf(id, 'payroll');
+  // Generar PDF de nómina y almacenarlo en Strapi
+  async payroll(documentId: string) {
+    return pdfGenerator.generateInvoicePdf(documentId, 'payroll');
   },
-  async service(id: number) {
-    // Service invoices are backed by service invoices (invoice_service)
-    return pdfGenerator.generateInvoicePdf(id, 'service');
+  // Generar PDF de servicio y almacenarlo en Strapi
+  async service(documentId: string) {
+    return pdfGenerator.generateInvoicePdf(documentId, 'service');
   },
-  async general(id: number) {
-    // General invoices are backed by general invoices (invoice_general)
-    return pdfGenerator.generateInvoicePdf(id, 'general');
+  // Generar PDF general y almacenarlo en Strapi
+  async general(documentId: string) {
+    return pdfGenerator.generateInvoicePdf(documentId, 'general');
   },
-  async invoiceBuffer(id: number) {
-    return pdfGenerator.generateInvoicePdfBuffer(id, 'invoice');
+  async invoiceBuffer(documentId: string) {
+    return pdfGenerator.generateInvoicePdfBuffer(documentId, 'invoice');
   },
-  async payrollBuffer(id: number) {
-    return pdfGenerator.generateInvoicePdfBuffer(id, 'payroll');
+  async payrollBuffer(documentId: string) {
+    return pdfGenerator.generateInvoicePdfBuffer(documentId, 'payroll');
   },
-  async serviceBuffer(id: number) {
-    return pdfGenerator.generateInvoicePdfBuffer(id, 'service');
+  async serviceBuffer(documentId: string) {
+    return pdfGenerator.generateInvoicePdfBuffer(documentId, 'service');
   },
-  async generalBuffer(id: number) {
-    return pdfGenerator.generateInvoicePdfBuffer(id, 'general');
+  async generalBuffer(documentId: string) {
+    return pdfGenerator.generateInvoicePdfBuffer(documentId, 'general');
   },
 };
