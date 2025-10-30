@@ -200,7 +200,7 @@ const logCronExecution = async (
 /**
  * Utility: get start and end ISO for current month
  */
-const getMonthBounds = (date = new Date()) => {
+const getMonthBounds = (date = getMadridTime()) => {
   const start = new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0);
   const end = new Date(date.getFullYear(), date.getMonth() + 1, 1, 0, 0, 0, 0);
   return { start: start.toISOString(), end: end.toISOString() };
@@ -237,17 +237,29 @@ const getLastDayOfMonth = (d: Date) =>
   new Date(d.getFullYear(), d.getMonth() + 1, 0);
 
 /**
+ * Obtiene la fecha actual en zona horaria de Madrid (Europe/Madrid)
+ * Esto asegura que el cron funcione correctamente independientemente de la zona horaria del servidor
+ */
+const getMadridTime = (): Date => {
+  const now = new Date();
+  const madridTimeString = now.toLocaleString("en-US", { timeZone: "Europe/Madrid" });
+  return new Date(madridTimeString);
+};
+
+/**
  * Obtiene el guardian principal de un enrollment
  * Prioriza el guardian marcado como principal, o toma el primero disponible
  */
 const getPrimaryGuardian = (enrollment: any) => {
-  const guardians = Array.isArray(enrollment.guardians) ? enrollment.guardians : [];
+  const guardians = Array.isArray(enrollment.guardians)
+    ? enrollment.guardians
+    : [];
   if (guardians.length === 0) return null;
-  
+
   // Buscar guardian principal
   const primaryGuardian = guardians.find((g: any) => g.isPrimary === true);
   if (primaryGuardian) return primaryGuardian;
-  
+
   // Si no hay principal, tomar el primero
   return guardians[0];
 };
@@ -260,7 +272,7 @@ const getPrimaryGuardian = (enrollment: any) => {
  */
 const isDateWithinSchoolPeriod = (
   schoolPeriod: any,
-  currentDate: Date = new Date(),
+  currentDate: Date = getMadridTime(),
 ): boolean => {
   if (
     !schoolPeriod ||
@@ -551,7 +563,7 @@ const generateEnrollmentInvoices = async ({
   created: number;
   skipped: number;
 }> => {
-  const now = new Date();
+  const now = getMadridTime(); // Usar hora de Madrid
   const { start, end } = getMonthBounds(now);
 
   strapi.log.info(`📅 [Cron] Período de facturación: ${start} a ${end}`);
@@ -641,17 +653,17 @@ const generateEnrollmentInvoices = async ({
       });
       const currentDate = now.toLocaleDateString("es-ES");
       const studentName = (enr as any).student?.name || "Estudiante";
-      const invoiceTitle = `Factura mensual - ${monthName} - ${studentName} - ${currentDate}`;
-      const invoiceNote = `Factura generada automáticamente por el sistema el ${currentDate} para los servicios del mes de ${monthName}.`;
+      const invoiceTitle = `Recibo mensual - ${monthName} - ${studentName} - ${currentDate}`;
+      const invoiceNote = `Recibo generado automáticamente por el sistema el ${currentDate} para los servicios del mes de ${monthName}.`;
 
       strapi.log.debug(
         `💰 [Cron] Guardando amounts para enrollment ${(enr as any).id}:`,
         JSON.stringify(amountsList),
       );
 
-      // Obtener guardian principal para la factura
+      // Obtener guardian principal para el recibo
       const primaryGuardian = getPrimaryGuardian(enr);
-      
+
       try {
         const invoiceData: any = {
           invoiceCategory: "invoice_enrollment",
@@ -669,12 +681,12 @@ const generateEnrollmentInvoices = async ({
           notes: invoiceNote,
           publishedAt: now.toISOString(),
         };
-        
+
         // Agregar relación con guardian si existe
         if (primaryGuardian?.documentId) {
           invoiceData.guardian = primaryGuardian.documentId;
         }
-        
+
         await strapi.entityService.create("api::invoice.invoice", {
           data: invoiceData,
         });
@@ -722,7 +734,7 @@ const generateEmployeePayrolls = async ({
   created: number;
   skipped: number;
 }> => {
-  const now = new Date();
+  const now = getMadridTime(); // Usar hora de Madrid
 
   const employeeList = await fetchAllBatched(
     strapi,
@@ -813,7 +825,7 @@ const generateEmployeePayrolls = async ({
 
       const periodLabel = periodLabels[period] || "Mensual";
       const payrollTitle = `Nómina ${periodLabel} - ${employeeName} - ${currentDate}`;
-      const payrollNote = `Nómina ${periodLabel.toLowerCase()} generada automáticamente por el sistema el ${currentDate}. Tipo de contrato: ${period}. Salario calculado: €${salary.toFixed(2)}.`;
+      const payrollNote = `Nómina ${periodLabel.toLowerCase()} generado automáticamente por el sistema el ${currentDate}. Tipo de contrato: ${period}. Salario calculado: €${salary.toFixed(2)}.`;
 
       const rawPayrollMap: Record<string, number> = {
         "Salario base": baseSalary,
@@ -918,8 +930,9 @@ export default {
       const startTime = Date.now();
 
       // Log para confirmar que el cron se está ejecutando
+      const madridTime = getMadridTime();
       ctx.strapi.log.info(
-        `🔄 [Cron] Ejecutando verificación de facturación - ${new Date().toISOString()}`,
+        `🔄 [Cron] Ejecutando verificación de facturación - Madrid: ${madridTime.toLocaleString("es-ES", { timeZone: "Europe/Madrid" })} (UTC: ${new Date().toISOString()})`,
       );
 
       // Obtener configuración de facturación
@@ -939,7 +952,7 @@ export default {
       }
 
       // Si no estamos en modo test, comprobar si es el momento configurado
-      const now = new Date();
+      const now = madridTime; // Usar la hora de Madrid ya calculada
       if (!billingConfig.testMode) {
         // Solo ejecutar si día, hora y minuto coinciden con la configuración
         if (
