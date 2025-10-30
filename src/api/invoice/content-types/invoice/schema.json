@@ -55,7 +55,8 @@
         "invoice_employ",
         "invoice_enrollment",
         "invoice_general",
-        "invoice_service"
+        "invoice_service",
+        "invoice_supplier"
       ]
     },
     "amounts": {
@@ -99,6 +100,18 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::guardian.guardian",
+      "inversedBy": "invoices"
+    },
+    "movement": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::movement.movement",
+      "inversedBy": "invoices"
+    },
+    "item": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::item.item",
       "inversedBy": "invoices"
     }
   }

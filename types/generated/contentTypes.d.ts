@@ -737,7 +737,7 @@ export interface ApiEnrollmentEnrollment extends Struct.CollectionTypeSchema {
       'api::guardian.guardian'
     >;
     invoices: Schema.Attribute.Relation<'oneToMany', 'api::invoice.invoice'>;
-    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -929,6 +929,7 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
         'invoice_enrollment',
         'invoice_general',
         'invoice_service',
+        'invoice_supplier',
       ]
     >;
     invoiceStatus: Schema.Attribute.Enumeration<
@@ -938,6 +939,7 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
       ['charge', 'payment', 'income', 'expense']
     >;
     issuedby: Schema.Attribute.String;
+    item: Schema.Attribute.Relation<'manyToOne', 'api::item.item'>;
     IVA: Schema.Attribute.Decimal;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -945,6 +947,7 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
       'api::invoice.invoice'
     > &
       Schema.Attribute.Private;
+    movement: Schema.Attribute.Relation<'manyToOne', 'api::movement.movement'>;
     notes: Schema.Attribute.Text;
     publishedAt: Schema.Attribute.DateTime;
     registeredBy: Schema.Attribute.Enumeration<
@@ -956,6 +959,81 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+}
+
+export interface ApiItemItem extends Struct.CollectionTypeSchema {
+  collectionName: 'items';
+  info: {
+    displayName: 'Item';
+    pluralName: 'items';
+    singularName: 'item';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.String;
+    invoices: Schema.Attribute.Relation<'oneToMany', 'api::invoice.invoice'>;
+    itemImage: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::item.item'> &
+      Schema.Attribute.Private;
+    min_stock: Schema.Attribute.Integer;
+    movements: Schema.Attribute.Relation<'oneToMany', 'api::movement.movement'>;
+    name: Schema.Attribute.String;
+    price: Schema.Attribute.Decimal;
+    publishedAt: Schema.Attribute.DateTime;
+    stock: Schema.Attribute.Integer;
+    supplier: Schema.Attribute.Relation<'manyToOne', 'api::supplier.supplier'>;
+    unit: Schema.Attribute.Enumeration<['unidad', 'kg', 'litro', 'paquete']>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiMovementMovement extends Struct.CollectionTypeSchema {
+  collectionName: 'movements';
+  info: {
+    displayName: 'Movements';
+    pluralName: 'movements';
+    singularName: 'movement';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    date: Schema.Attribute.DateTime;
+    invoices: Schema.Attribute.Relation<'oneToMany', 'api::invoice.invoice'>;
+    item: Schema.Attribute.Relation<'manyToOne', 'api::item.item'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::movement.movement'
+    > &
+      Schema.Attribute.Private;
+    movementType: Schema.Attribute.Enumeration<
+      ['inbound', 'outbound', 'adjustment']
+    >;
+    notes: Schema.Attribute.Text;
+    price: Schema.Attribute.Decimal;
+    publishedAt: Schema.Attribute.DateTime;
+    quantity: Schema.Attribute.Decimal;
+    unit: Schema.Attribute.Enumeration<['unidad', 'kg', 'litro', 'paquete']>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    users_permissions_user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
   };
 }
 
@@ -1164,6 +1242,55 @@ export interface ApiStudentStudent extends Struct.CollectionTypeSchema {
     >;
     publishedAt: Schema.Attribute.DateTime;
     uid: Schema.Attribute.UID;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiSupplierSupplier extends Struct.CollectionTypeSchema {
+  collectionName: 'suppliers';
+  info: {
+    displayName: 'Supplier';
+    pluralName: 'suppliers';
+    singularName: 'supplier';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    address: Schema.Attribute.String;
+    category: Schema.Attribute.Enumeration<
+      [
+        'food',
+        'cleaning',
+        'stationery',
+        'technology',
+        'services',
+        'furniture',
+        'textiles',
+        'logistics',
+        'other',
+      ]
+    >;
+    contact_name: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    email: Schema.Attribute.Email;
+    isActive: Schema.Attribute.Boolean;
+    items: Schema.Attribute.Relation<'oneToMany', 'api::item.item'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::supplier.supplier'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String;
+    notes: Schema.Attribute.Text;
+    phone: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    tax_id: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1645,6 +1772,7 @@ export interface PluginUsersPermissionsUser
       'plugin::users-permissions.user'
     > &
       Schema.Attribute.Private;
+    movement: Schema.Attribute.Relation<'oneToOne', 'api::movement.movement'>;
     name: Schema.Attribute.String;
     password: Schema.Attribute.Password &
       Schema.Attribute.Private &
@@ -1696,11 +1824,14 @@ declare module '@strapi/strapi' {
       'api::guardian.guardian': ApiGuardianGuardian;
       'api::history.history': ApiHistoryHistory;
       'api::invoice.invoice': ApiInvoiceInvoice;
+      'api::item.item': ApiItemItem;
+      'api::movement.movement': ApiMovementMovement;
       'api::observation.observation': ApiObservationObservation;
       'api::promotion.promotion': ApiPromotionPromotion;
       'api::school-period.school-period': ApiSchoolPeriodSchoolPeriod;
       'api::service.service': ApiServiceService;
       'api::student.student': ApiStudentStudent;
+      'api::supplier.supplier': ApiSupplierSupplier;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;
