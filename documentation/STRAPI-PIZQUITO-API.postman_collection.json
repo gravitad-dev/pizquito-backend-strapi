@@ -3115,6 +3115,67 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "STATISTICS",
+      "item": [
+        {
+          "name": "Dashboard Principal",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{STRAPI_URL_LOCAL}}/api/statistics/dashboard",
+              "host": ["{{STRAPI_URL_LOCAL}}"],
+              "path": ["api", "statistics", "dashboard"]
+            },
+            "description": "Obtiene estadísticas completas del dashboard incluyendo:\n\n**Datos incluidos:**\n- Cantidad de invoices pendientes (estudiantes y empleados)\n- Distribución por edad de estudiantes (0-2, 3-5, 6-8, 9-11, 12-14, +15) con promedio y grupo mayor\n- Estado de capacidad de aulas (porcentaje ocupación, disponibles, llenas)\n- Estados de pago para inscripciones, empleados y servicios generales\n- Últimos 5 recibos por vencer\n- Últimas 5 inscripciones\n- Últimos 5 estudiantes registrados\n- Estadísticas mensuales de los últimos 6 meses con promedios\n\n**Autenticación:** Requerida\n**Permisos:** Verificar que el rol tenga acceso a statistics\n\n**Respuesta exitosa:**\n- Objeto con todas las estadísticas organizadas por categorías\n- Metadata con timestamp y endpoint\n\n**Códigos de error:**\n- 401: Autenticación requerida\n- 403: Permisos insuficientes\n- 500: Error interno del servidor"
+          },
+          "response": []
+        },
+        {
+          "name": "Estadísticas de Inscripción",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{STRAPI_URL_LOCAL}}/api/statistics/enrollment/:documentId",
+              "host": ["{{STRAPI_URL_LOCAL}}"],
+              "path": ["api", "statistics", "enrollment", ":documentId"],
+              "variable": [
+                {
+                  "key": "documentId",
+                  "value": "jx2dxictp08eq7tnpjgrikfz",
+                  "description": "ID del documento de la inscripción"
+                }
+              ]
+            },
+            "description": "Obtiene estadísticas de recibos para una inscripción específica.\n\n**Parámetros:**\n- `documentId` (string): ID del documento de la inscripción\n\n**Datos incluidos:**\n- Cantidad total de recibos\n- Monto total de los recibos\n- Cantidad de recibos pagados\n- Cantidad de recibos pendientes\n- Información básica de la inscripción\n\n**Autenticación:** Requerida\n**Permisos:** Verificar que el rol tenga acceso a statistics\n\n**Respuesta exitosa:**\n- Estadísticas de facturación de la inscripción\n- Metadata con timestamp, endpoint y documentId\n\n**Códigos de error:**\n- 400: DocumentId requerido o inválido\n- 401: Autenticación requerida\n- 403: Permisos insuficientes\n- 404: Inscripción no encontrada\n- 500: Error interno del servidor"
+          },
+          "response": []
+        },
+        {
+          "name": "Estadísticas de Nóminas de Empleado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{STRAPI_URL_LOCAL}}/api/statistics/employee/:documentId/payroll",
+              "host": ["{{STRAPI_URL_LOCAL}}"],
+              "path": ["api", "statistics", "employee", ":documentId", "payroll"],
+              "variable": [
+                {
+                  "key": "documentId",
+                  "value": "abc123def456",
+                  "description": "ID del documento del empleado"
+                }
+              ]
+            },
+            "description": "Obtiene estadísticas de nóminas para un empleado específico.\n\n**Parámetros:**\n- `documentId` (string): ID del documento del empleado\n\n**Datos incluidos:**\n- Cantidad total de nóminas\n- Monto total de las nóminas\n- Cantidad de nóminas pagadas\n- Cantidad de nóminas pendientes\n- Información básica del empleado (nombre completo)\n\n**Filtros aplicados:**\n- Solo facturas de categoría 'invoice_employ'\n- Basado en la totalidad de las nóminas del empleado\n\n**Autenticación:** Requerida\n**Permisos:** Verificar que el rol tenga acceso a statistics\n\n**Respuesta exitosa:**\n- Estadísticas de nóminas del empleado\n- Metadata con timestamp, endpoint y documentId\n\n**Códigos de error:**\n- 400: DocumentId requerido o inválido\n- 401: Autenticación requerida\n- 403: Permisos insuficientes\n- 404: Empleado no encontrado\n- 500: Error interno del servidor"
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "auth": {

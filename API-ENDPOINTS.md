@@ -532,6 +532,186 @@ Estos content types usan endpoints de singleType:
 - **Almacenamiento**: Los archivos se guardan en `/backups/` (no incluidos en git)
 - **Reinicio**: Después de restaurar, se recomienda reiniciar la aplicación
 
+## Statistics (Estadísticas)
+
+### Dashboard Principal
+- Método: GET
+- URL: /api/statistics/dashboard
+- Headers: Authorization: Bearer <JWT>
+- Descripción: Obtiene estadísticas completas del dashboard
+- Respuesta:
+  ```json
+  {
+    "data": {
+       "pendingInvoices": {
+         "enrollmentActive": 2,
+         "employeeActive": 1,
+         "total": 3
+       },
+      "ageDistribution": {
+        "distribution": {
+          "0-2": 5,
+          "3-5": 12,
+          "6-8": 8,
+          "9-11": 15,
+          "12-14": 10,
+          "15+": 3
+        },
+        "averageAge": 8.5,
+        "largestGroup": {
+          "range": "9-11",
+          "count": 15
+        },
+        "totalStudents": 53
+      },
+      "classroomCapacity": {
+        "totalClassrooms": 8,
+        "totalCapacity": 200,
+        "totalOccupied": 150,
+        "occupancyPercentage": 75.0,
+        "availableClassrooms": 3,
+        "fullClassrooms": 5
+      },
+      "paymentStats": {
+        "enrollments": {
+          "totalInvoices": 45,
+          "totalAmount": 12500.00,
+          "paidInvoices": 30,
+          "pendingInvoices": 15
+        },
+        "employees": {
+          "totalInvoices": 12,
+          "totalAmount": 25000.00,
+          "paidInvoices": 10,
+          "pendingInvoices": 2
+        },
+        "general": {
+          "totalInvoices": 8,
+          "totalAmount": 3500.00,
+          "paidInvoices": 6,
+          "pendingInvoices": 2
+        }
+      },
+      "recent": {
+        "upcomingInvoices": [
+          {
+            "title": "Matrícula Octubre - Juan Pérez",
+            "expirationDate": "2025-11-15T00:00:00.000Z",
+            "amount": 250.00,
+            "status": "unpaid"
+          }
+        ],
+        "enrollments": [
+          {
+            "studentName": "María García",
+            "enrollmentDate": "2025-10-30T10:30:00.000Z",
+            "status": "active"
+          }
+        ],
+        "students": [
+          {
+            "studentName": "Carlos López",
+            "registrationDate": "2025-10-29T15:45:00.000Z",
+            "status": "active"
+          }
+        ]
+      },
+      "monthlyStats": {
+        "monthlyData": {
+          "2025-05": { "students": 5, "enrollments": 8 },
+          "2025-06": { "students": 3, "enrollments": 5 },
+          "2025-07": { "students": 7, "enrollments": 10 },
+          "2025-08": { "students": 4, "enrollments": 6 },
+          "2025-09": { "students": 6, "enrollments": 9 },
+          "2025-10": { "students": 8, "enrollments": 12 }
+        },
+        "averages": {
+          "studentsPerMonth": 5.5,
+          "enrollmentsPerMonth": 8.3
+        },
+        "totals": {
+          "students": 33,
+          "enrollments": 50
+        }
+      }
+    },
+    "meta": {
+      "timestamp": "2025-10-31T14:45:23.717Z",
+      "endpoint": "dashboard"
+    }
+  }
+  ```
+
+### Estadísticas de Inscripción
+- Método: GET
+- URL: /api/statistics/enrollment/:documentId
+- Headers: Authorization: Bearer <JWT>
+- Parámetros: documentId (string) - ID del documento de la inscripción
+- Descripción: Obtiene estadísticas de recibos para una inscripción específica
+- Ejemplo: GET /api/statistics/enrollment/jx2dxictp08eq7tnpjgrikfz
+- Respuesta:
+  ```json
+  {
+    "data": {
+      "enrollmentId": "jx2dxictp08eq7tnpjgrikfz",
+      "enrollmentTitle": "Enrollment Juan - Con Periodo",
+      "invoiceStats": {
+        "totalInvoices": 12,
+        "totalAmount": 3000.00,
+        "paidInvoices": 8,
+        "pendingInvoices": 4
+      }
+    },
+    "meta": {
+      "timestamp": "2025-10-31T14:45:23.717Z",
+      "endpoint": "enrollmentStats",
+      "documentId": "jx2dxictp08eq7tnpjgrikfz"
+    }
+  }
+  ```
+
+### Estadísticas de Nóminas de Empleado
+- Método: GET
+- URL: /api/statistics/employee/:documentId/payroll
+- Headers: Authorization: Bearer <JWT>
+- Parámetros: documentId (string) - ID del documento del empleado
+- Descripción: Obtiene estadísticas de nóminas para un empleado específico
+- Ejemplo: GET /api/statistics/employee/abc123def456/payroll
+- Respuesta:
+  ```json
+  {
+    "data": {
+      "employeeId": "abc123def456",
+      "employeeName": "Ana Martínez",
+      "payrollStats": {
+        "totalPayrolls": 6,
+        "totalAmount": 12000.00,
+        "paidPayrolls": 5,
+        "pendingPayrolls": 1
+      }
+    },
+    "meta": {
+      "timestamp": "2025-10-31T14:45:23.717Z",
+      "endpoint": "employeePayrollStats",
+      "documentId": "abc123def456"
+    }
+  }
+  ```
+
+### Códigos de error específicos de Statistics
+- 400: DocumentId requerido o inválido
+- 401: Autenticación requerida
+- 403: Permisos insuficientes
+- 404: Inscripción o empleado no encontrado
+- 500: Error interno del servidor
+
+### Notas importantes sobre Statistics
+- **Autenticación**: Todos los endpoints requieren autenticación
+- **Permisos**: Verificar que el rol tenga permisos para acceder a statistics
+- **Performance**: Los cálculos se realizan en tiempo real
+- **Datos**: Las estadísticas reflejan el estado actual de la base de datos
+- **Filtros**: El dashboard incluye solo registros publicados (publishedAt no nulo)
+
 ## Parámetros de consulta (Query params)
 - pagination[page]=1&pagination[pageSize]=25
 - sort=createdAt:desc
