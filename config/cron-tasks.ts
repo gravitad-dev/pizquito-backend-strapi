@@ -242,7 +242,9 @@ const getLastDayOfMonth = (d: Date) =>
  */
 const getMadridTime = (): Date => {
   const now = new Date();
-  const madridTimeString = now.toLocaleString("en-US", { timeZone: "Europe/Madrid" });
+  const madridTimeString = now.toLocaleString("en-US", {
+    timeZone: "Europe/Madrid",
+  });
   return new Date(madridTimeString);
 };
 
@@ -669,7 +671,7 @@ const generateEnrollmentInvoices = async ({
           invoiceCategory: "invoice_enrollment",
           invoiceType: "charge",
           invoiceStatus: "unpaid",
-          enrollment: (enr as any).documentId, // Usar documentId para relaciones en Strapi v5
+          enrollment: (enr as any).id,
           emissionDate: now.toISOString(),
           expirationDate: getLastDayOfMonth(now).toISOString(),
           amounts: amountsList as any,
@@ -683,8 +685,9 @@ const generateEnrollmentInvoices = async ({
         };
 
         // Agregar relación con guardian si existe
-        if (primaryGuardian?.documentId) {
-          invoiceData.guardian = primaryGuardian.documentId;
+        // Igual que arriba: relations con entityService esperan ID interno
+        if (primaryGuardian?.id) {
+          invoiceData.guardian = primaryGuardian.id;
         }
 
         await strapi.entityService.create("api::invoice.invoice", {
@@ -850,7 +853,8 @@ const generateEmployeePayrolls = async ({
           invoiceCategory: "invoice_employ" as const,
           invoiceType: "expense" as const,
           invoiceStatus: "unpaid" as const,
-          employee: (emp as any).documentId, // Usar documentId para relaciones en Strapi v5
+          // Al crear con entityService, usar el ID interno de la relación
+          employee: (emp as any).id,
           emissionDate: now.toISOString(),
           expirationDate: getLastDayOfMonth(now).toISOString(),
           amounts: payrollAmounts as any,
