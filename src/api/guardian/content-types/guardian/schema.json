@@ -97,9 +97,9 @@
     },
     "observations": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::observation.observation",
-      "mappedBy": "guardian"
+      "mappedBy": "guardians"
     },
     "enrollments": {
       "type": "relation",
