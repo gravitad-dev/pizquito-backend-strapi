@@ -24,7 +24,7 @@ type InvoiceEntity = {
   expirationDate?: string;
   enrollment?: any;
   employee?: any;
-  guardian?: any; // Guardian directo asociado a la factura
+  guardian?: any; // Guardian directo asociado al recibo
 };
 
 const fetchCompany = async () => {
@@ -39,11 +39,14 @@ const fetchCompany = async () => {
   return Array.isArray(company) ? company[0] : company;
 };
 
-const fetchInvoice = async (id: number): Promise<InvoiceEntity | null> => {
-  const inv = await (global as any).strapi.entityService.findOne(
-    "api::invoice.invoice",
-    id,
-    {
+const fetchInvoice = async (
+  documentId: string,
+): Promise<InvoiceEntity | null> => {
+  const inv = await (global as any).strapi
+    .documents("api::invoice.invoice")
+    .findOne({
+      documentId,
+      status: "published",
       populate: {
         enrollment: {
           populate: {
@@ -53,10 +56,9 @@ const fetchInvoice = async (id: number): Promise<InvoiceEntity | null> => {
           },
         },
         employee: true,
-        guardian: true, // Guardian directo asociado a la factura
+        guardian: true, // Guardian directo asociado al recibo
       },
-    },
-  );
+    });
   return inv ?? null;
 };
 
@@ -92,13 +94,13 @@ const prettyStatus = (s?: string) => {
 
 const prettyCategory = (c?: string) => {
   const map: Record<string, string> = {
-    invoice_enrollment: "Factura de matrícula",
-    invoice_service: "Factura de servicio",
+    invoice_enrollment: "Recibo de matrícula",
+    invoice_service: "Recibo de servicio",
     invoice_employ: "Nómina",
-    invoice: "Factura",
+    invoice: "Recibo",
   };
   if (!c) return "-";
-  return map[c] ?? c.replace(/_/g, " ").replace(/\binvoice\b/i, "Factura");
+  return map[c] ?? c.replace(/_/g, " ").replace(/\binvoice\b/i, "Recibo");
 };
 
 const prettyRegisteredBy = (r?: string) => {
@@ -114,32 +116,39 @@ const prettyRegisteredBy = (r?: string) => {
 
 /**
  * Obtiene el guardian principal para mostrar en el PDF
- * Prioriza: 1) Guardian directo de la factura, 2) Guardian principal del enrollment
+ * Prioriza: 1) Guardian directo del recibo, 2) Guardian principal del enrollment
  */
 const getPrimaryGuardianForPdf = (inv: InvoiceEntity) => {
-  // Prioridad 1: Guardian directo asociado a la factura
+  // Prioridad 1: Guardian directo asociado al recibo
   if (inv.guardian) {
     return inv.guardian;
   }
-  
+
   // Prioridad 2: Guardian principal del enrollment (por guardianType)
   const guardians = inv.enrollment?.guardians || [];
   if (guardians.length === 0) return null;
-  
+
   // Orden de prioridad para seleccionar guardian responsable
-  const priorityOrder = ['biological_parent', 'adoptive_parent', 'legal_guardian', 'other'];
-  
+  const priorityOrder = [
+    "biological_parent",
+    "adoptive_parent",
+    "legal_guardian",
+    "other",
+  ];
+
   // Ordenar guardians por prioridad de tipo
   const sortedGuardians = guardians.sort((a: any, b: any) => {
-    const aPriority = priorityOrder.indexOf(a.guardianType) !== -1 
-      ? priorityOrder.indexOf(a.guardianType) 
-      : 999;
-    const bPriority = priorityOrder.indexOf(b.guardianType) !== -1 
-      ? priorityOrder.indexOf(b.guardianType) 
-      : 999;
+    const aPriority =
+      priorityOrder.indexOf(a.guardianType) !== -1
+        ? priorityOrder.indexOf(a.guardianType)
+        : 999;
+    const bPriority =
+      priorityOrder.indexOf(b.guardianType) !== -1
+        ? priorityOrder.indexOf(b.guardianType)
+        : 999;
     return aPriority - bPriority;
   });
-  
+
   return sortedGuardians[0];
 };
 
@@ -276,22 +285,26 @@ const addKeyValue = (
     .text(value, x + 80, y, { width });
 };
 
-const addAmountsTable = (
-  doc: PDFDocument,
-  rawAmounts: any,
-  startY: number,
-) => {
+const addAmountsTable = (doc: PDFDocument, rawAmounts: any, startY: number) => {
   // Unificar amounts: aceptar array de {concept, amount} o mapa {concept: amount}
   type Pair = { concept: string; amount: number; description?: string };
   let pairs: Pair[] = [];
 
   if (Array.isArray(rawAmounts)) {
-    const acc = new Map<string, { concept: string; amount: number; description?: string }>();
+    const acc = new Map<
+      string,
+      { concept: string; amount: number; description?: string }
+    >();
     for (const item of rawAmounts) {
-      if (!item || typeof item !== 'object') continue;
-      const concept = String(item.concept || '').trim();
-      const amount = typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount || '0'));
-      const description = item.description ? String(item.description) : undefined;
+      if (!item || typeof item !== "object") continue;
+      const concept = String(item.concept || "").trim();
+      const amount =
+        typeof item.amount === "number"
+          ? item.amount
+          : parseFloat(String(item.amount || "0"));
+      const description = item.description
+        ? String(item.description)
+        : undefined;
       if (!concept || !Number.isFinite(amount)) continue;
       const key = concept.toLowerCase();
       const prev = acc.get(key);
@@ -302,11 +315,17 @@ const addAmountsTable = (
       });
     }
     pairs = Array.from(acc.values());
-  } else if (rawAmounts && typeof rawAmounts === 'object') {
+  } else if (rawAmounts && typeof rawAmounts === "object") {
     // Legacy: objeto plano { concepto: valor }
     const keys = Object.keys(rawAmounts);
     pairs = keys
-      .map((k) => ({ concept: k, amount: typeof (rawAmounts as any)[k] === 'number' ? (rawAmounts as any)[k] : parseFloat(String((rawAmounts as any)[k] || '0')) }))
+      .map((k) => ({
+        concept: k,
+        amount:
+          typeof (rawAmounts as any)[k] === "number"
+            ? (rawAmounts as any)[k]
+            : parseFloat(String((rawAmounts as any)[k] || "0")),
+      }))
       .filter((p) => p.concept && Number.isFinite(p.amount));
   }
 
@@ -355,20 +374,20 @@ const addAmountsTable = (
 
   // Helper function to check if a concept should be subtracted (solo coincidencias exactas o raíz clara)
   const isSubtractionConcept = (key: string): boolean => {
-    const normalized = key.toLowerCase().replace(/\s+/g, '_');
+    const normalized = key.toLowerCase().replace(/\s+/g, "_");
     const exact = [
-      'subvencion',
-      'subvencion_comedor',
-      'beca',
-      'descuento',
-      'ayuda',
-      'rebaja',
-      'bonificacion',
-      'subsidio',
+      "subvencion",
+      "subvencion_comedor",
+      "beca",
+      "descuento",
+      "ayuda",
+      "rebaja",
+      "bonificacion",
+      "subsidio",
     ];
     if (exact.includes(normalized)) return true;
     // raíces claras: subv, desc
-    return normalized.startsWith('subv') || normalized.startsWith('desc');
+    return normalized.startsWith("subv") || normalized.startsWith("desc");
   };
 
   // Rows
@@ -379,7 +398,9 @@ const addAmountsTable = (
     }
     const label = formatConceptName(concept);
     // Si es un concepto de descuento/subvención, convertir a negativo para restar
-    const displayValue = isSubtractionConcept(concept) ? -Math.abs(amount) : amount;
+    const displayValue = isSubtractionConcept(concept)
+      ? -Math.abs(amount)
+      : amount;
 
     doc.fontSize(11).text(label, x + 10, y + 6);
     doc.text(currency(displayValue), col2 + 10, y + 6, {
@@ -427,7 +448,7 @@ const uploadBufferAsFile = async (
       resource_type: "auto",
       use_filename: false,
       unique_filename: false,
-      public_id: fileName.replace('.pdf', ''), // Usar el nombre sin extensión como public_id
+      public_id: fileName.replace(".pdf", ""), // Usar el nombre sin extensión como public_id
     });
 
     const sizeKB = parseFloat(((buf.length || 0) / 1024).toFixed(2));
@@ -466,16 +487,20 @@ const uploadBufferAsFile = async (
 };
 
 export default {
-  async generateInvoicePdf(id: number, reportType?: string) {
+  async generateInvoicePdf(documentId: string, reportType?: string) {
     const company = await fetchCompany();
-    const inv = await fetchInvoice(id);
+    const inv = await fetchInvoice(documentId);
     if (!inv) {
-      return { stored: false, url: null, message: `Invoice ${id} not found` };
+      return {
+        stored: false,
+        url: null,
+        message: `Invoice ${documentId} not found`,
+      };
     }
 
     const doc = new PDFDocument({ size: "A4", margin: 40 });
     const mainTitle =
-      inv.invoiceCategory === "invoice_employ" ? "Nómina" : "Factura";
+      inv.invoiceCategory === "invoice_employ" ? "Nómina" : "Recibo";
     const titleBadge =
       inv.invoiceCategory === "invoice_employ" ||
       inv.invoiceCategory === "invoice_enrollment"
@@ -604,7 +629,10 @@ export default {
     // Notas
     if (inv.notes) {
       y = sectionTitle(doc, "Notas", 40, y + 40);
-      doc.fillColor("#000").fontSize(11).text(inv.notes, 40, y, { width: pageMetrics(doc).width });
+      doc
+        .fillColor("#000")
+        .fontSize(11)
+        .text(inv.notes, 40, y, { width: pageMetrics(doc).width });
     }
 
     addFooter(doc, inv.documentId || `ID: ${inv.id}`);
@@ -639,20 +667,20 @@ export default {
       },
     };
   },
-  async generateInvoicePdfBuffer(id: number, reportType?: string) {
+  async generateInvoicePdfBuffer(documentId: string, reportType?: string) {
     const company = await fetchCompany();
-    const inv = await fetchInvoice(id);
+    const inv = await fetchInvoice(documentId);
     if (!inv) {
       return {
         buffer: null,
         fileName: null,
-        message: `Invoice ${id} not found`,
+        message: `Invoice ${documentId} not found`,
       };
     }
 
     const doc = new PDFDocument({ size: "A4", margin: 40 });
     const mainTitle =
-      inv.invoiceCategory === "invoice_employ" ? "Nómina" : "Factura";
+      inv.invoiceCategory === "invoice_employ" ? "Nómina" : "Recibo";
     const titleBadge =
       inv.invoiceCategory === "invoice_employ" ||
       inv.invoiceCategory === "invoice_enrollment"
@@ -767,7 +795,10 @@ export default {
     // Notas
     if (inv.notes) {
       y = sectionTitle(doc, "Notas", 40, y + 40);
-      doc.fillColor("#000").fontSize(11).text(inv.notes, 40, y, { width: pageMetrics(doc).width });
+      doc
+        .fillColor("#000")
+        .fontSize(11)
+        .text(inv.notes, 40, y, { width: pageMetrics(doc).width });
     }
 
     addFooter(doc, inv.documentId || `ID: ${inv.id}`);

@@ -122,9 +122,9 @@
     },
     "observations": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::observation.observation",
-      "mappedBy": "employee"
+      "mappedBy": "employees"
     },
     "enrollments": {
       "type": "relation",

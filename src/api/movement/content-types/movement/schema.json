@@ -1,0 +1,62 @@
+{
+  "kind": "collectionType",
+  "collectionName": "movements",
+  "info": {
+    "singularName": "movement",
+    "pluralName": "movements",
+    "displayName": "Movements"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "movementType": {
+      "type": "enumeration",
+      "enum": [
+        "inbound",
+        "outbound",
+        "adjustment"
+      ]
+    },
+    "quantity": {
+      "type": "decimal"
+    },
+    "date": {
+      "type": "datetime"
+    },
+    "notes": {
+      "type": "text"
+    },
+    "invoices": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::invoice.invoice",
+      "mappedBy": "movement"
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user",
+      "mappedBy": "movement"
+    },
+    "item": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::item.item",
+      "inversedBy": "movements"
+    },
+    "unit": {
+      "type": "enumeration",
+      "enum": [
+        "unidad",
+        "kg",
+        "litro",
+        "paquete"
+      ]
+    },
+    "price": {
+      "type": "decimal"
+    }
+  }
+}

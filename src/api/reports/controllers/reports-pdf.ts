@@ -9,12 +9,11 @@ export default {
   async invoice(ctx: Context) {
     const { id } = ctx.params as { id: string };
     const { store } = ctx.query as Record<string, string>;
-    const invId = Number(id);
     if (store === 'true') {
-      const result = await services['reports-pdf'].invoice(invId);
+      const result = await services['reports-pdf'].invoice(id);
       ctx.body = result;
     } else {
-      const { buffer, fileName } = await services['reports-pdf'].invoiceBuffer(invId);
+      const { buffer, fileName } = await services['reports-pdf'].invoiceBuffer(id);
       if (!buffer) {
         ctx.status = 404;
         ctx.body = { error: `Invoice ${id} not found` };
@@ -29,12 +28,11 @@ export default {
   async payroll(ctx: Context) {
     const { id } = ctx.params as { id: string };
     const { store } = ctx.query as Record<string, string>;
-    const invId = Number(id);
     if (store === 'true') {
-      const result = await services['reports-pdf'].payroll(invId);
+      const result = await services['reports-pdf'].payroll(id);
       ctx.body = result;
     } else {
-      const { buffer, fileName } = await services['reports-pdf'].payrollBuffer(invId);
+      const { buffer, fileName } = await services['reports-pdf'].payrollBuffer(id);
       if (!buffer) {
         ctx.status = 404;
         ctx.body = { error: `Payroll invoice ${id} not found` };
@@ -49,12 +47,11 @@ export default {
   async service(ctx: Context) {
     const { id } = ctx.params as { id: string };
     const { store } = ctx.query as Record<string, string>;
-    const invId = Number(id);
     if (store === 'true') {
-      const result = await services['reports-pdf'].service(invId);
+      const result = await services['reports-pdf'].service(id);
       ctx.body = result;
     } else {
-      const { buffer, fileName } = await services['reports-pdf'].serviceBuffer(invId);
+      const { buffer, fileName } = await services['reports-pdf'].serviceBuffer(id);
       if (!buffer) {
         ctx.status = 404;
         ctx.body = { error: `Service invoice ${id} not found` };
@@ -69,12 +66,11 @@ export default {
   async general(ctx: Context) {
     const { id } = ctx.params as { id: string };
     const { store } = ctx.query as Record<string, string>;
-    const invId = Number(id);
     if (store === 'true') {
-      const result = await services['reports-pdf'].general(invId);
+      const result = await services['reports-pdf'].general(id);
       ctx.body = result;
     } else {
-      const { buffer, fileName } = await services['reports-pdf'].generalBuffer(invId);
+      const { buffer, fileName } = await services['reports-pdf'].generalBuffer(id);
       if (!buffer) {
         ctx.status = 404;
         ctx.body = { error: `General invoice ${id} not found` };
