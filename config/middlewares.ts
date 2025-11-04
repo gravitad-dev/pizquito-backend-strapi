@@ -1,4 +1,4 @@
-const allowedOrigins = (process.env.CORS_ORIGINS || 'https://pizquito.gravitad.xyz').split(',');
+const allowedOrigins = (process.env.CORS_ORIGINS || 'https://pizquito-dev.gravitad.xyz').split(',');
 
 export default [
   'strapi::logger',
