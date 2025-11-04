@@ -18,7 +18,9 @@ WORKDIR /opt/app
 COPY . .
 
 # Rebuild native modules after copying source code
-RUN npm rebuild @swc/core
+#RUN npm rebuild @swc/core
+
+RUN rm -rf .cache
 
 ENV PATH /opt/node_modules/.bin:$PATH
 
