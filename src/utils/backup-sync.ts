@@ -29,10 +29,10 @@ export async function syncBackupsIndex(strapi: any, options: { removeOrphanFiles
   } catch {}
 
   // 1. Obtener todos los backups registrados en la BD
-  const registeredBackups: any[] = await strapi.entityService.findMany('api::backup.backup', {
+  const registeredBackups = (await strapi.entityService.findMany('api::backup.backup', {
     fields: ['id', 'filename', 'filePath'],
     pagination: { page: 1, pageSize: 1000 },
-  });
+  })) as any[];
 
   // 2. Leer archivos físicos en la carpeta backups
   const entries = await fsp.readdir(backupsDir);
