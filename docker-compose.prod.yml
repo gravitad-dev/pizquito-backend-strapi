@@ -41,14 +41,14 @@ services:
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
       POSTGRES_DB: ${DATABASE_NAME}
     volumes:
-      - pizquito-strapi-test:/var/lib/postgresql/data/ #using a volume
+      - pizquito-strapi-dev:/var/lib/postgresql/data/ #using a volume
 
     networks:
       - pizquito-strapi-dev
 
 
 volumes:
-  pizquito-strapi-test:
+  pizquito-strapi-dev:
 
 networks:
   pizquito-strapi-dev:
