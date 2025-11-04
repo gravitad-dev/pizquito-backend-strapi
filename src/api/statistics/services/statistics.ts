@@ -84,14 +84,14 @@ const statisticsService = {
 
     // Fallback: buscar por uid si el documentId no encuentra resultados
     if (!enrollment) {
-      const enrollmentsByUid: any[] = await strapi.entityService.findMany(
+      const enrollmentsByUid = (await strapi.entityService.findMany(
         "api::enrollment.enrollment",
         {
           filters: { uid: { $eq: documentId } },
           populate: ["invoices"],
           limit: 1,
         } as any,
-      );
+      )) as any[];
       enrollment = enrollmentsByUid?.[0];
     }
 
@@ -159,14 +159,14 @@ const statisticsService = {
 
     // Fallback: buscar por uid si el documentId no encuentra resultados
     if (!employee) {
-      const employeesByUid: any[] = await strapi.entityService.findMany(
+      const employeesByUid = (await strapi.entityService.findMany(
         "api::employee.employee",
         {
           filters: { uid: { $eq: documentId } },
           populate: ["invoices"],
           limit: 1,
         } as any,
-      );
+      )) as any[];
       employee = employeesByUid?.[0];
     }
 
@@ -325,12 +325,12 @@ const statisticsService = {
    * Get classroom capacity statistics
    */
   async getClassroomCapacityStats() {
-    const classrooms: any[] = await strapi.entityService.findMany(
+    const classrooms = (await strapi.entityService.findMany(
       "api::classroom.classroom",
       {
         populate: ["enrollments"],
       },
-    );
+    )) as any[];
 
     let totalCapacity = 0;
     let totalOccupied = 0;
@@ -447,7 +447,7 @@ const statisticsService = {
    */
   async getUpcomingInvoices() {
     const currentDate = new Date();
-    const invoices: any[] = await strapi.entityService.findMany(
+    const invoices = (await strapi.entityService.findMany(
       "api::invoice.invoice",
       {
         filters: {
@@ -458,7 +458,7 @@ const statisticsService = {
         limit: 5,
         fields: ["title", "expirationDate", "total", "invoiceStatus"],
       },
-    );
+    )) as any[];
 
     return invoices.map((invoice: any) => ({
       title: invoice.title,
