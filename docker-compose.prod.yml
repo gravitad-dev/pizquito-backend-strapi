@@ -2,7 +2,7 @@ services:
   pizquito-strapi-dev:
     container_name: pizquito-strapi-dev
     build: .
-    image: pizquito-strapi:latest
+    image: pizquito-strapi:dev
     restart: unless-stopped
     env_file:
       - .env
