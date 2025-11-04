@@ -8,13 +8,13 @@ import { factories } from '@strapi/strapi';
 
 export default factories.createCoreController('api::backup.backup', ({ strapi }) => ({
 
-  // Crear backup tar.gz
+  // Crear backup de Postgres con pg_dump (.dump)
   async create(ctx) {
     try {
       const description = (ctx.request.body as any)?.description || undefined;
       const service = strapi.service('api::backup.backup');
-      const created = await (service as any).createTarGzBackup(description);
-      ctx.body = { data: created, message: 'Backup tar.gz creado correctamente' };
+      const created = await (service as any).createPgDumpBackup(description);
+      ctx.body = { data: created, message: 'Backup Postgres (.dump) creado correctamente' };
     } catch (error: any) {
       strapi.log.error(`Error creando backup: ${error?.message}`);
       ctx.badRequest('Error al crear backup', { error: error?.message });
@@ -92,47 +92,27 @@ export default factories.createCoreController('api::backup.backup', ({ strapi })
     }
   },
 
-  // Restaurar desde tar.gz por documentId (no modifica la tabla/entries de backups)
+  // Restaurar desde .dump por documentId (pg_restore)
   async restore(ctx) {
     try {
       const { documentId } = ctx.params;
       const service = strapi.service('api::backup.backup');
-      const pruneMissing = String(ctx?.query?.prune || '').toLowerCase() === 'true' || String(ctx?.query?.mode || '').toLowerCase() === 'prune';
-      const pruneUids = typeof ctx?.query?.pruneUids === 'string'
-        ? (ctx.query.pruneUids as string).split(',').map((s) => s.trim()).filter(Boolean)
-        : Array.isArray(ctx?.query?.pruneUids)
-          ? (ctx.query.pruneUids as string[]).map((s) => String(s).trim()).filter(Boolean)
-          : undefined;
-      const summary = await (service as any).restoreFromTarGzByDocumentId(documentId, {
-        preserveBackupsTable: true,
-        pruneMissing,
-        pruneUids,
-      });
-      ctx.body = { data: summary, message: 'Restore completado sin modificar el content-type backup' };
+      const summary = await (service as any).restoreFromPgDumpByDocumentId(documentId);
+      ctx.body = { data: summary, message: 'Restore (pg_restore) completado' };
     } catch (error: any) {
       strapi.log.error(`Error al restaurar backup: ${error?.message}`);
       ctx.badRequest('Error al restaurar backup', { error: error?.message });
     }
   },
 
-  // Restaurar desde upload (.tar.gz) sin crear/modificar entradas de backup
+  // Restaurar desde upload (.dump) sin crear/modificar entradas de backup
   async restoreFromUpload(ctx) {
     try {
       const service = strapi.service('api::backup.backup');
       const file: any = (ctx.request.files as any)?.file || (ctx.request.files as any)?.backup;
-      if (!file) return ctx.badRequest('Debe enviar un archivo .tar.gz en multipart/form-data (campo "file")');
-      const pruneMissing = String(ctx?.query?.prune || '').toLowerCase() === 'true' || String(ctx?.query?.mode || '').toLowerCase() === 'prune';
-      const pruneUids = typeof ctx?.query?.pruneUids === 'string'
-        ? (ctx.query.pruneUids as string).split(',').map((s) => s.trim()).filter(Boolean)
-        : Array.isArray(ctx?.query?.pruneUids)
-          ? (ctx.query.pruneUids as string[]).map((s) => String(s).trim()).filter(Boolean)
-          : undefined;
-      const summary = await (service as any).restoreFromUploadTarGz(file, {
-        preserveBackupsTable: true,
-        pruneMissing,
-        pruneUids,
-      });
-      ctx.body = { data: summary, message: 'Restore desde upload completado sin modificar el content-type backup' };
+      if (!file) return ctx.badRequest('Debe enviar un archivo .dump en multipart/form-data (campo "file")');
+      const summary = await (service as any).restoreFromUploadPgDump(file);
+      ctx.body = { data: summary, message: 'Restore desde upload (.dump) completado' };
     } catch (error: any) {
       strapi.log.error(`Error en restoreFromUpload: ${error?.message}`);
       ctx.badRequest('Error al restaurar desde upload', { error: error?.message });
