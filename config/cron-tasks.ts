@@ -216,6 +216,37 @@ const num = (v: unknown, fallback = 0): number => {
 };
 
 /**
+ * Resolve the internal numeric ID from a document or documentId
+ * Documents service returns objects with documentId; entityService expects numeric id.
+ */
+const resolveInternalId = async (
+  strapi: Core.Strapi,
+  uid: string,
+  doc: any,
+): Promise<number | undefined> => {
+  // If we already have a numeric id, use it
+  if (typeof doc?.id === "number") return doc.id as number;
+
+  // If we have documentId, query DB for the internal id
+  const documentId = doc?.documentId || doc?.id; // some callers may pass documentId directly
+  if (!documentId || typeof documentId !== "string") return undefined;
+
+  try {
+    const ref = await (strapi.db as any)
+      .query(uid)
+      .findOne({ where: { documentId }, select: ["id"] });
+    return typeof ref?.id === "number" ? ref.id : undefined;
+  } catch (e) {
+    strapi.log.warn(
+      `⚠️ [resolveInternalId] No se pudo resolver id interno para ${uid} docId=${documentId}: ${
+        (e as any)?.message || e
+      }`,
+    );
+    return undefined;
+  }
+};
+
+/**
  * Calculate VAT and total
  * TEMPORAL: IVA desactivado - solo devuelve el subtotal como total
  */
@@ -667,11 +698,13 @@ const generateEnrollmentInvoices = async ({
       const primaryGuardian = getPrimaryGuardian(enr);
 
       try {
+        // Usar Document Service y 'connect' con documentId para relaciones
         const invoiceData: any = {
           invoiceCategory: "invoice_enrollment",
           invoiceType: "charge",
           invoiceStatus: "unpaid",
-          enrollment: (enr as any).id,
+          // Relaciones one/many-to-one: para Document Service usar directamente el documentId o connect: documentId
+          enrollment: (enr as any).documentId,
           emissionDate: now.toISOString(),
           expirationDate: getLastDayOfMonth(now).toISOString(),
           amounts: amountsList as any,
@@ -681,18 +714,16 @@ const generateEnrollmentInvoices = async ({
           registeredBy: "system" as const,
           title: invoiceTitle,
           notes: invoiceNote,
-          publishedAt: now.toISOString(),
         };
 
-        // Agregar relación con guardian si existe
-        // Igual que arriba: relations con entityService esperan ID interno
-        if (primaryGuardian?.id) {
-          invoiceData.guardian = primaryGuardian.id;
+        // Agregar relación con guardian si existe (con documentId)
+        if (primaryGuardian?.documentId) {
+          invoiceData.guardian = primaryGuardian.documentId;
         }
 
-        await strapi.entityService.create("api::invoice.invoice", {
-          data: invoiceData,
-        });
+        await strapi
+          .documents("api::invoice.invoice")
+          .create({ data: invoiceData, status: "published" });
         createdCount++;
       } catch (err) {
         strapi.log.error(
@@ -844,17 +875,15 @@ const generateEmployeePayrolls = async ({
       }
 
       const payrollAmounts = normalizeInvoiceAmounts(rawPayrollMap);
-      const payrollSubtotal = subtotalFromAmounts(payrollAmounts);
-
-      // (Se elimina control de duplicados para permitir múltiples nóminas por mes según solicitud)
 
       try {
+        // Usar Document Service y 'connect' con documentId para relacionar el empleado
         const invoiceData = {
           invoiceCategory: "invoice_employ" as const,
           invoiceType: "expense" as const,
           invoiceStatus: "unpaid" as const,
-          // Al crear con entityService, usar el ID interno de la relación
-          employee: (emp as any).id,
+          // Relaciones one/many-to-one: pasar el documentId directamente
+          employee: (emp as any).documentId,
           emissionDate: now.toISOString(),
           expirationDate: getLastDayOfMonth(now).toISOString(),
           amounts: payrollAmounts as any,
@@ -864,18 +893,14 @@ const generateEmployeePayrolls = async ({
           registeredBy: "system" as const,
           title: payrollTitle,
           notes: payrollNote,
-          publishedAt: now.toISOString(),
         };
 
-        const createdInvoice = await strapi.entityService.create(
-          "api::invoice.invoice",
-          {
-            data: invoiceData,
-          },
-        );
+        const createdInvoice = await strapi
+          .documents("api::invoice.invoice")
+          .create({ data: invoiceData, status: "published" });
 
         strapi.log.info(
-          `✅ [Cron] Nómina creada para ${employeeName} (${periodLabel}): €${salary.toFixed(2)} - ID: ${createdInvoice.id}`,
+          `✅ [Cron] Nómina creada para ${employeeName} (${periodLabel}): €${salary.toFixed(2)} - DocumentID: ${createdInvoice.documentId}`,
         );
         createdCount++;
       } catch (err) {

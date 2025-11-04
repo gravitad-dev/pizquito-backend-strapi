@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  pizquito-strapi-db-dev:
+    container_name: pizquito-strapi-db-dev
+    platform: linux/amd64
+    restart: unless-stopped
+    image: postgres:14.5-alpine
+    environment:
+      POSTGRES_USER: strapi_dev
+      POSTGRES_PASSWORD: strapi123
+      POSTGRES_DB: pizquito_dev
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"
+    volumes:
+      - pizquito-strapi-dev:/var/lib/postgresql/data/
+    ports:
+      - '5433:5432'  # Puerto diferente para no conflictar
+    networks:
+      - pizquito-strapi-dev
+    command: >
+      postgres -c listen_addresses='*'
+               -c log_statement=all
+               -c log_destination=stderr
+               -c logging_collector=off
+
+volumes:
+  pizquito-strapi-dev:
+
+networks:
+  pizquito-strapi-dev:
+    name: Pizquito-strapi-dev
+    driver: bridge

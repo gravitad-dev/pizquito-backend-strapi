@@ -3162,7 +3162,13 @@
             "url": {
               "raw": "{{STRAPI_URL_LOCAL}}/api/statistics/employee/:documentId/payroll",
               "host": ["{{STRAPI_URL_LOCAL}}"],
-              "path": ["api", "statistics", "employee", ":documentId", "payroll"],
+              "path": [
+                "api",
+                "statistics",
+                "employee",
+                ":documentId",
+                "payroll"
+              ],
               "variable": [
                 {
                   "key": "documentId",

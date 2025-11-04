@@ -504,7 +504,7 @@ export interface ApiClassroomClassroom extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     observations: Schema.Attribute.Relation<
-      'oneToMany',
+      'manyToMany',
       'api::observation.observation'
     >;
     publishedAt: Schema.Attribute.DateTime;
@@ -673,7 +673,7 @@ export interface ApiEmployeeEmployee extends Struct.CollectionTypeSchema {
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
     observations: Schema.Attribute.Relation<
-      'oneToMany',
+      'manyToMany',
       'api::observation.observation'
     >;
     phone: Schema.Attribute.String;
@@ -840,7 +840,7 @@ export interface ApiGuardianGuardian extends Struct.CollectionTypeSchema {
       Schema.Attribute.Unique;
     notes: Schema.Attribute.Blocks;
     observations: Schema.Attribute.Relation<
-      'oneToMany',
+      'manyToMany',
       'api::observation.observation'
     >;
     phone: Schema.Attribute.String;
@@ -1048,8 +1048,8 @@ export interface ApiObservationObservation extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   attributes: {
-    classroom: Schema.Attribute.Relation<
-      'manyToOne',
+    classrooms: Schema.Attribute.Relation<
+      'manyToMany',
       'api::classroom.classroom'
     >;
     content: Schema.Attribute.Blocks;
@@ -1058,12 +1058,18 @@ export interface ApiObservationObservation extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     date: Schema.Attribute.Date;
     description: Schema.Attribute.Text;
-    employee: Schema.Attribute.Relation<'manyToOne', 'api::employee.employee'>;
+    employees: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::employee.employee'
+    >;
     files: Schema.Attribute.Media<
       'images' | 'files' | 'videos' | 'audios',
       true
     >;
-    guardian: Schema.Attribute.Relation<'manyToOne', 'api::guardian.guardian'>;
+    guardians: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::guardian.guardian'
+    >;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1071,8 +1077,8 @@ export interface ApiObservationObservation extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
-    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
-    title: Schema.Attribute.String;
+    students: Schema.Attribute.Relation<'manyToMany', 'api::student.student'>;
+    title: Schema.Attribute.Text;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1233,7 +1239,7 @@ export interface ApiStudentStudent extends Struct.CollectionTypeSchema {
     nationality: Schema.Attribute.String;
     notes: Schema.Attribute.Blocks;
     observations: Schema.Attribute.Relation<
-      'oneToMany',
+      'manyToMany',
       'api::observation.observation'
     >;
     postcode: Schema.Attribute.String;
