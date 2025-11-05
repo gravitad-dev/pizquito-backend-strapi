@@ -21,6 +21,7 @@
     "@strapi/plugin-users-permissions": "5.29.0",
     "@strapi/provider-upload-cloudinary": "^5.29.0",
     "@strapi/strapi": "5.29.0",
+    "axios": "^1.13.2",
     "better-sqlite3": "^12.4.1",
     "cloudinary": "^2.7.0",
     "dotenv": "^17.2.3",

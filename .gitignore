@@ -141,3 +141,4 @@ postgresql_data
 scripts/
 tmp/
 backups/
+clean-data.js
