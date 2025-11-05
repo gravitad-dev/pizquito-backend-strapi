@@ -17,9 +17,9 @@
   },
   "dependencies": {
     "@strapi/plugin-cloud": "5.29.0",
-    "@strapi/plugin-graphql": "^5.23.6",
+    "@strapi/plugin-graphql": "^5.29.0",
     "@strapi/plugin-users-permissions": "5.29.0",
-    "@strapi/provider-upload-cloudinary": "^5.26.0",
+    "@strapi/provider-upload-cloudinary": "^5.29.0",
     "@strapi/strapi": "5.29.0",
     "better-sqlite3": "^12.4.1",
     "cloudinary": "^2.7.0",
@@ -37,7 +37,7 @@
     "tar": "^7.5.1"
   },
   "devDependencies": {
-    "@strapi/types": "^5.27.0",
+    "@strapi/types": "^5.29.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
