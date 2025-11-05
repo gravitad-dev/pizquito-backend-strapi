@@ -1,7 +1,7 @@
 FROM --platform=linux/amd64 node:20-alpine
 
 # Installing libvips-dev for sharp Compatibility + build tools for native modules
-RUN apk update && apk add --no-cache build-base gcc autoconf automake zlib-dev libpng-dev nasm bash vips-dev python3 make g++
+RUN apk update && apk add --no-cache build-base gcc autoconf automake zlib-dev libpng-dev nasm bash vips-dev python3 make g++ postgresql-client
 
 ENV NODE_ENV=${NODE_ENV:-production}
 
