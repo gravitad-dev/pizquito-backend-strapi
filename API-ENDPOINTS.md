@@ -248,63 +248,59 @@ Soportan query params: populate, filters, sort, pagination.
   - GET /api/classrooms
   - POST /api/classrooms
 
-## Backups (Sistema de respaldo .tar.gz)
+## Backups (PostgreSQL dump .dump)
 
 Resumen:
-- Formato nativo: cada backup es un archivo .tar.gz con la estructura:
-  - manifest.json (metadatos del backup)
-  - data/*.json (dump por content-type)
-  - assets/uploads (archivos subidos del media library)
+- Formato nativo: cada backup se genera con pg_dump en un archivo `.dump` (formato "custom") y se guarda en la carpeta `/backups` o en Cloudinary (resource_type: raw).
 - Identificador: todos los endpoints usan `documentId` (string) para referenciar un backup.
-- Seguridad: durante restauración se excluye el content-type `api::backup.backup` para no modificar el índice de respaldos.
+- Exportaciones: desde un backup `.dump` se ofrecen exportaciones auxiliares (XLSX/JSON) que, si el archivo es `.dump` o falta físicamente, exportan desde la BD actual como fallback.
 
 Endpoints:
 - Listar backups: GET /api/backups
-- Crear backup: POST /api/backups
-- Descargar backup (.tar.gz): GET /api/backups/:documentId/download
+- Crear backup (.dump): POST /api/backups
+- Descargar backup (.dump o URL): GET /api/backups/:documentId/download
 - Eliminar backup: DELETE /api/backups/:documentId
-- Restaurar backup desde .tar.gz: POST /api/backups/:documentId/restore
-- Restaurar desde archivo subido (.tar.gz): POST /api/backups/restore/upload (multipart/form-data)
+- Restaurar backup (.dump via pg_restore): POST /api/backups/:documentId/restore
+- Restaurar desde archivo subido (.dump): POST /api/backups/restore/upload (multipart/form-data)
 - Exportar resumen XLSX (BD actual): GET /api/backups/export/xlsx
-- Exportar XLSX desde un backup .tar.gz: GET /api/backups/:documentId/export/xlsx
-- Exportar JSON consolidado desde un backup .tar.gz: GET /api/backups/:documentId/export/json
+- Exportar XLSX desde un backup: GET /api/backups/:documentId/export/xlsx
+- Exportar JSON consolidado desde un backup: GET /api/backups/:documentId/export/json
 - Sincronizar índice de backups (FS → BD): POST /api/backups/sync
-  - Revisa archivos en `/backups/` y los compara con registros de BD
-  - No elimina archivos huérfanos por defecto
+  - Revisa archivos en `/backups/` y reporta huérfanos; no elimina por defecto.
+
+Variables de entorno relacionadas:
+- DATABASE_CLIENT=postgres y credenciales: DATABASE_URL (opcional), DATABASE_HOST, DATABASE_PORT, DATABASE_NAME, DATABASE_USERNAME, DATABASE_PASSWORD, DATABASE_SCHEMA.
+- PG_DUMP_PATH y PG_RESTORE_PATH: ruta/binarios de `pg_dump` y `pg_restore` si no están en PATH.
+- BACKUP_STORAGE=local|cloudinary, CLOUDINARY_BACKUP_FOLDER (por defecto "backups"), BACKUP_KEEP_LOCAL=true|false.
 
 Notas importantes:
 - Autenticación: requiere JWT y permisos de Roles & Permissions.
-- Ubicación de archivos: todos los .tar.gz se almacenan en `/backups`.
-- Exportación XLSX (BD actual):
-  - Hoja "Resumen" y una hoja por cada content-type
-  - Cada hoja incluye `documentId` y hasta 7 campos de texto por entry
-  - Límite de filas por hoja configurable con `?limit=<n>` (por defecto 1000)
-  - Excluye el content-type `api::backup.backup`
+- Descarga: si `filePath` es una URL (Cloudinary), el endpoint responde con redirect 302 a esa URL.
+- Exportación XLSX/JSON: cuando el backup es `.dump` o el archivo del backup no existe, las exportaciones leen desde la BD actual.
+- Restauración: usa `pg_restore` con flags `--clean`, `--if-exists`, `--no-owner`, `--no-privileges`. Tolera el warning de `transaction_timeout` no reconocido en algunas versiones.
 
 Ejemplos rápidos:
-- Crear backup:
+- Crear backup (.dump):
   - POST /api/backups
   - Body opcional: { "description": "Backup manual de prueba" }
-  - Respuesta: { data: { documentId, filename, filePath, originalSize, checksum, statusBackup: "completed", backupType: "manual", metadata: { ... } } }
+  - Respuesta: { data: { documentId, filename: "backup_YYYYMMDD_HHMMSS.dump", filePath, originalSize, checksum, statusBackup: "completed", backupType: "manual", metadata: { type: "postgres-dump", schema, createdAt } } }
 - Listar backups:
   - GET /api/backups?sort[0]=createdAt:desc&pagination[page]=1&pagination[pageSize]=10
-- Descargar backup (.tar.gz):
-  - GET /api/backups/:documentId/download
+- Descargar backup:
+  - GET /api/backups/:documentId/download (octet-stream o redirect si Cloudinary)
 - Eliminar backup:
   - DELETE /api/backups/:documentId
-- Restaurar backup desde .tar.gz:
+- Restaurar backup (.dump):
   - POST /api/backups/:documentId/restore
-  - Body opcional: { "createSafetyBackup": true }
-- Restaurar desde archivo subido (.tar.gz):
+- Restaurar desde archivo subido (.dump):
   - POST /api/backups/restore/upload
-  - Content-Type: multipart/form-data (campo "file" con el .tar.gz)
-  - Body opcional: { "createSafetyBackup": true }
+  - Content-Type: multipart/form-data (campo "file" o "backup" con el .dump)
 - Exportar resumen XLSX (BD actual):
   - GET /api/backups/export/xlsx
-  - Respuesta: archivo `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` con `Content-Disposition: attachment`
-- Exportar XLSX desde un backup .tar.gz:
+  - Respuesta: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` con `Content-Disposition: attachment`
+- Exportar XLSX desde un backup:
   - GET /api/backups/:documentId/export/xlsx
-- Exportar JSON consolidado desde un backup .tar.gz:
+- Exportar JSON consolidado desde un backup:
   - GET /api/backups/:documentId/export/json
 
 ### Enrollments
@@ -407,7 +403,7 @@ Estos content types usan endpoints de singleType:
 - Logs de facturación del CRON: GET /api/histories?filters[event_type][$contains]=cron_billing
 - Headers: Authorization: Bearer <JWT>
 
-## Backups (Gestión y exportación .tar.gz)
+## Backups (PostgreSQL dump .dump)
 
 ### Listar backups
 - Método: GET
@@ -422,34 +418,31 @@ Estos content types usan endpoints de singleType:
 - Headers: Authorization: Bearer <JWT>, Content-Type: application/json
 - Body (JSON opcional):
   ```json
-  { "description": "Backup antes de migración importante" }
+  { "description": "Backup manual de prueba" }
   ```
-- Respuesta: registro creado con `documentId` y detalles del .tar.gz.
+- Comportamiento: genera un archivo `.dump` (formato custom de pg_dump) y lo almacena en `/backups` o en Cloudinary (resource_type: raw) según configuración.
+- Respuesta: registro creado con `documentId` y detalles del `.dump` (filename, filePath, tamaño, checksum, estado, metadata).
 
-### Descargar backup (.tar.gz)
+### Descargar backup (.dump)
 - Método: GET
 - URL: /api/backups/:documentId/download
 - Headers: Authorization: Bearer <JWT>
-- Respuesta: archivo .tar.gz con headers `Content-Type` y `Content-Disposition` para descarga.
+- Respuesta: archivo `.dump` con headers `Content-Type: application/octet-stream` y `Content-Disposition: attachment; filename="backup_YYYYMMDD_HHMMSS.dump"`.
+- Nota: si `filePath` es una URL (Cloudinary), el endpoint hace redirect 302 a esa URL.
 
-### Restaurar backup desde .tar.gz
+### Restaurar backup desde .dump
 - Método: POST
 - URL: /api/backups/:documentId/restore
 - Headers: Authorization: Bearer <JWT>
-- Body opcional:
-  ```json
-  { "createSafetyBackup": true }
-  ```
-- Comportamiento: restaura datos y archivos del .tar.gz, excluyendo `api::backup.backup`.
+- Comportamiento: restaura usando `pg_restore --clean --if-exists --no-owner --no-privileges`. Si el backup referenciado es `.tar.gz` (legado), se aplica el flujo de restauración histórico.
 
-### Restaurar desde archivo subido (.tar.gz)
+### Restaurar desde archivo subido (.dump)
 - Método: POST
 - URL: /api/backups/restore/upload
 - Headers: Authorization: Bearer <JWT>, Content-Type: multipart/form-data
 - Form-data:
-  - file: archivo .tar.gz
-  - createSafetyBackup: (opcional) "true"
-- Respuesta: detalles del proceso de restauración (dry-run no habilitado en esta versión).
+  - file (o backup): archivo `.dump`
+- Respuesta: resumen del proceso de restauración con contadores por tablas afectadas.
 
 ### Exportar resumen XLSX (BD actual)
 - Método: GET
@@ -458,17 +451,17 @@ Estos content types usan endpoints de singleType:
 - Query opcional: `limit=<n>` (por defecto 1000)
 - Descripción: Genera un Excel con hoja "Resumen" y hojas por content-type, incluyendo `documentId` y hasta 7 campos de texto por entry. Excluye `api::backup.backup`.
 
-### Exportar XLSX desde un backup .tar.gz
+### Exportar XLSX desde un backup
 - Método: GET
 - URL: /api/backups/:documentId/export/xlsx
 - Headers: Authorization: Bearer <JWT>
-- Descripción: Genera el mismo Excel pero leyendo exclusivamente el contenido del .tar.gz identificado por `documentId`.
+- Comportamiento: si el backup es `.tar.gz` (legado), exporta desde ese archivo; si es `.dump` o falta el archivo, exporta desde la BD actual.
 
-### Exportar JSON consolidado desde un backup .tar.gz
+### Exportar JSON consolidado desde un backup
 - Método: GET
 - URL: /api/backups/:documentId/export/json
 - Headers: Authorization: Bearer <JWT>
-- Respuesta: `application/json` con estructura `{ manifest, data, assets }` derivada del .tar.gz.
+- Comportamiento: si el backup es `.tar.gz` (legado), exporta desde ese archivo; si es `.dump` o falta el archivo, exporta desde la BD actual.
 
 ### Eliminar backup
 - Método: DELETE
@@ -480,7 +473,7 @@ Estos content types usan endpoints de singleType:
 - Método: POST
 - URL: /api/backups/sync
 - Headers: Authorization: Bearer <JWT>
-- Descripción: sincroniza entradas con los .tar.gz presentes en `/backups`. No elimina archivos huérfanos por defecto.
+- Descripción: revisa los archivos presentes en `/backups` y reporta archivos huérfanos (presentes en FS sin registro en BD). No elimina archivos ni modifica registros por defecto.
 
 ### Códigos de error específicos de Backups
 - 400: `documentId` inválido
@@ -491,9 +484,9 @@ Estos content types usan endpoints de singleType:
 
 ### Notas importantes sobre Backups
 - **Seguridad**: Todos los endpoints requieren autenticación
-- **Integridad**: Se valida estructura y se excluye `api::backup.backup` al restaurar
-- **Almacenamiento**: Los archivos se guardan en `/backups/`
-- **Reinicio**: No se fuerza reinicio automático; evaluar según infraestructura
+- **Integridad**: En restauración se excluye `api::backup.backup`. Las exportaciones desde backup hacen fallback a BD cuando el archivo es `.dump`.
+- **Almacenamiento**: Los archivos `.dump` se guardan en `/backups/` o en Cloudinary (resource_type: raw) según configuración.
+- **Descarga**: Si `filePath` es URL (Cloudinary), la descarga hace redirect 302.
 
 ## Statistics (Estadísticas)
 

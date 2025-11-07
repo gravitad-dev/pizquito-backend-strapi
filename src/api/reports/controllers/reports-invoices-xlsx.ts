@@ -84,12 +84,8 @@ async function generateEmployee(ctx: Context) {
     const row = worksheet.addRow([
       invoice.id,
       invoice.title || "",
-      invoice.emissionDate
-        ? new Date(invoice.emissionDate).toLocaleDateString("es-ES")
-        : "",
-      invoice.expirationDate
-        ? new Date(invoice.expirationDate).toLocaleDateString("es-ES")
-        : "",
+      invoice.emissionDate ? new Date(invoice.emissionDate) : null,
+      invoice.expirationDate ? new Date(invoice.expirationDate) : null,
       statusMap[invoice.invoiceStatus || ""] || invoice.invoiceStatus || "",
       categoryMap[invoice.invoiceCategory || ""] ||
         invoice.invoiceCategory ||
@@ -115,16 +111,24 @@ async function generateEmployee(ctx: Context) {
   // Encabezado informativo para empleado
   worksheet.insertRow(1, []);
   worksheet.insertRow(1, [`Empleado: ${employee.name} ${employee.lastname}`]);
-  worksheet.insertRow(2, [`DNI: ${employee.DNI || "N/A"}`]);
-  worksheet.insertRow(3, [`Categoría: ${categoryMap[fixedCategory]}`]);
-  worksheet.insertRow(4, [
+  worksheet.insertRow(2, [
+    `DNI: ${employee.DNI || "N/A"}`,
+    `NIF: ${employee.NIF || "N/A"}`,
+  ]);
+  worksheet.insertRow(3, [
+    `BIC: ${(employee as any).BIC || "N/A"}`,
+    `SWIFT: ${(employee as any).SWIFT || "N/A"}`,
+  ]);
+  worksheet.insertRow(4, [`Categoría: ${categoryMap[fixedCategory]}`]);
+  worksheet.insertRow(5, [
     `Fecha de exportación: ${new Date().toLocaleDateString("es-ES")}`,
   ]);
-  worksheet.insertRow(5, []);
-  for (let i = 1; i <= 4; i++) worksheet.getRow(i).font = { bold: true };
+  worksheet.insertRow(6, []);
+  for (let i = 1; i <= 5; i++) worksheet.getRow(i).font = { bold: true };
 
   const fileName = `historial_facturas_${employee.name}_${employee.lastname}_${new Date().toISOString().split("T")[0]}.xlsx`;
   setDownloadHeaders(ctx, fileName);
+  applyAutoFilter(worksheet);
   const buffer = await (setupWorkbook as any).workbookWriteBuffer(workbook);
   ctx.body = buffer;
   strapi.log.info(
@@ -199,12 +203,8 @@ async function generateEnrollment(ctx: Context) {
     const row = worksheet.addRow([
       invoice.id,
       invoice.title || "",
-      invoice.emissionDate
-        ? new Date(invoice.emissionDate).toLocaleDateString("es-ES")
-        : "",
-      invoice.expirationDate
-        ? new Date(invoice.expirationDate).toLocaleDateString("es-ES")
-        : "",
+      invoice.emissionDate ? new Date(invoice.emissionDate) : null,
+      invoice.expirationDate ? new Date(invoice.expirationDate) : null,
       statusMap[invoice.invoiceStatus || ""] || invoice.invoiceStatus || "",
       categoryMap[invoice.invoiceCategory || ""] ||
         invoice.invoiceCategory ||
@@ -253,19 +253,52 @@ async function generateEnrollment(ctx: Context) {
 
   worksheet.insertRow(1, []);
   worksheet.insertRow(1, [`Matrícula ID: ${id}`]);
-  worksheet.insertRow(2, [
-    `Estudiante: ${studentFullName || "N/A"} (DNI: ${studentDNI})`,
-  ]);
-  worksheet.insertRow(3, [`Padres/Tutores: ${guardiansText}`]);
-  worksheet.insertRow(4, [`Categoría: ${categoryMap[fixedCategory]}`]);
-  worksheet.insertRow(5, [
+  worksheet.getRow(1).font = { bold: true };
+  worksheet.insertRow(2, [`Estudiante: ${studentFullName || "N/A"}`]);
+  worksheet.getRow(2).font = { bold: true };
+  worksheet.insertRow(3, [`DNI Alumno: ${studentDNI}`]);
+  worksheet.getRow(3).font = { bold: true };
+  // Bloque de Padres/Tutores con más datos
+  worksheet.insertRow(4, ["Padres/Tutores:"]);
+  worksheet.getRow(4).font = { bold: true };
+  const guardianTypeMap: Record<string, string> = {
+    biological_parent: "Padre/Madre",
+    adoptive_parent: "Padre/Madre adoptivo",
+    legal_guardian: "Tutor legal",
+    other: "Otro",
+  };
+  let currentRow = 5;
+  for (const g of guardians) {
+    const gName = [g?.name, g?.lastname].filter(Boolean).join(" ") || "N/A";
+    const gType = guardianTypeMap[g?.guardianType || ""] || "N/A";
+    const gDNI = g?.DNI || "N/A";
+    const gNIF = g?.NIF || "N/A";
+    const gPhone = g?.phone || "N/A";
+    const gMail = g?.mail || "N/A";
+    const addressParts = [g?.address, g?.city, g?.postcode, g?.country]
+      .filter((x) => !!x)
+      .join(", ");
+    const gAddress = addressParts || "N/A";
+    worksheet.insertRow(currentRow++, [`- ${gName} (${gType})`]);
+    worksheet.insertRow(currentRow++, [`  DNI: ${gDNI} | NIF: ${gNIF}`]);
+    worksheet.insertRow(currentRow++, [
+      `  Teléfono: ${gPhone} | Email: ${gMail}`,
+    ]);
+    worksheet.insertRow(currentRow++, [`  Dirección: ${gAddress}`]);
+  }
+  // Período
+  worksheet.insertRow(currentRow, [`Periodo escolar: ${schoolPeriodTitle}`]);
+  worksheet.getRow(currentRow++).font = { bold: true };
+  // Fecha de exportación
+  worksheet.insertRow(currentRow, [
     `Fecha de exportación: ${new Date().toLocaleDateString("es-ES")}`,
   ]);
-  worksheet.insertRow(6, []);
-  for (let i = 1; i <= 5; i++) worksheet.getRow(i).font = { bold: true };
+  worksheet.getRow(currentRow++).font = { bold: true };
+  worksheet.insertRow(currentRow++, []);
 
   const fileName = `historial_matriculas_${id}_${new Date().toISOString().split("T")[0]}.xlsx`;
   setDownloadHeaders(ctx, fileName);
+  applyAutoFilter(worksheet);
   const buffer = await (setupWorkbook as any).workbookWriteBuffer(workbook);
   ctx.body = buffer;
   strapi.log.info(
@@ -336,12 +369,8 @@ async function generateGlobal(
     const row = worksheet.addRow([
       invoice.id,
       invoice.title || "",
-      invoice.emissionDate
-        ? new Date(invoice.emissionDate).toLocaleDateString("es-ES")
-        : "",
-      invoice.expirationDate
-        ? new Date(invoice.expirationDate).toLocaleDateString("es-ES")
-        : "",
+      invoice.emissionDate ? new Date(invoice.emissionDate) : null,
+      invoice.expirationDate ? new Date(invoice.expirationDate) : null,
       statusMap[invoice.invoiceStatus || ""] || invoice.invoiceStatus || "",
       categoryMap[invoice.invoiceCategory || ""] ||
         invoice.invoiceCategory ||
@@ -374,6 +403,7 @@ async function generateGlobal(
 
   const fileName = `${title.replace(/\s+/g, "_").toLowerCase()}_${new Date().toISOString().split("T")[0]}.xlsx`;
   setDownloadHeaders(ctx, fileName);
+  applyAutoFilter(worksheet);
   const buffer = await (setupWorkbook as any).workbookWriteBuffer(workbook);
   ctx.body = buffer;
   strapi.log.info(
@@ -425,6 +455,10 @@ function setupWorkbook() {
     { width: 15 },
     { width: 25 },
   ];
+
+  // Formato de fecha para columnas de Fecha Emisión (C) y Fecha Vencimiento (D)
+  worksheet.getColumn(3).numFmt = "dd/mm/yyyy";
+  worksheet.getColumn(4).numFmt = "dd/mm/yyyy";
 
   const statusMap: Record<string, string> = {
     unpaid: "Pendiente",
@@ -496,6 +530,21 @@ function addTotalsRow(worksheet: ExcelJS.Worksheet, invoicesList: any[]) {
       fgColor: { argb: "E3F2FD" },
     };
   }
+}
+
+// Aplica AutoFilter a la fila de encabezados (muestra la flechita para ordenar/filtrar)
+function applyAutoFilter(worksheet: ExcelJS.Worksheet) {
+  // Buscar la fila que contiene el encabezado "ID Recibo" en la primera columna
+  let headerRowIndex = 1;
+  for (let i = 1; i <= worksheet.rowCount; i++) {
+    const cellVal = worksheet.getRow(i).getCell(1).value;
+    if (cellVal === "ID Recibo") {
+      headerRowIndex = i;
+      break;
+    }
+  }
+  // Rango A..L en la fila detectada
+  worksheet.autoFilter = `A${headerRowIndex}:L${headerRowIndex}`;
 }
 
 function setDownloadHeaders(ctx: Context, fileName: string) {
