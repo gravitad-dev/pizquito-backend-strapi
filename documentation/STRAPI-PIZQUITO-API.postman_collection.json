@@ -926,7 +926,7 @@
 							"variable": [
 								{
 									"key": "documentID",
-									"value": "wbsoi4srffn1e8rdvy8hoqc8"
+									"value": "s8a05115j0dry6gjfewmnkrp"
 								}
 							]
 						}
@@ -997,7 +997,7 @@
 				{
 					"name": "Delete by documentID",
 					"request": {
-						"method": "PUT",
+						"method": "DELETE",
 						"header": [
 							{
 								"key": "Content-Type",
@@ -1021,7 +1021,7 @@
 							"variable": [
 								{
 									"key": "documentID",
-									"value": "nk6x36vgq7vek8kkl1s4lvx1"
+									"value": "s8a05115j0dry6gjfewmnkrp"
 								}
 							]
 						}
@@ -1166,7 +1166,7 @@
 							"variable": [
 								{
 									"key": "documentId",
-									"value": "r8d1mgtjwbtc524o47dznrlv"
+									"value": "dxp6wtaw0k7bulz48r1rmulo"
 								}
 							]
 						}
@@ -1231,156 +1231,6 @@
 						}
 					},
 					"response": []
-				},
-				{
-					"name": "Export Invoice History [REMOVIDO]",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Accept",
-								"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-								"description": "Tipo de contenido esperado (Excel)"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{jwt_token}}",
-								"description": "Token JWT para autenticación (si es requerido)",
-								"disabled": true
-							}
-						],
-						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/employees/:id/export-invoice-history?category=invoice_employ",
-							"host": [
-								"{{STRAPI_URL_LOCAL}}"
-							],
-							"path": [
-								"api",
-								"employees",
-								":id",
-								"export-invoice-history"
-							],
-							"query": [
-								{
-									"key": "category",
-									"value": "invoice_employ",
-									"description": "Categoría de recibo (invoice_employ para facturas de empleados)"
-								},
-								{
-									"key": "startDate",
-									"value": "2024-01-01",
-									"description": "Fecha de inicio en formato YYYY-MM-DD (opcional)",
-									"disabled": true
-								},
-								{
-									"key": "endDate",
-									"value": "2024-12-31",
-									"description": "Fecha de fin en formato YYYY-MM-DD (opcional)",
-									"disabled": true
-								},
-								{
-									"key": "status",
-									"value": "paid",
-									"description": "Estado del recibo: unpaid, inprocess, paid, canceled (opcional)",
-									"disabled": true
-								}
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "1",
-									"description": "ID del empleado"
-								}
-							]
-						},
-						"description": "Exporta el historial de facturas de un empleado específico en formato Excel (.xlsx).\n\n**Funcionalidad:**\n- Genera un archivo Excel con todas las facturas del empleado\n- Incluye filtros opcionales por fecha y estado\n- Formato profesional con encabezados, totales y estilos\n\n**Parámetros de ruta:**\n- `documentId`: Identificador del documento del empleado (requerido)\n\n**Parámetros de consulta opcionales:**\n- `startDate`: Fecha de inicio en formato YYYY-MM-DD\n- `endDate`: Fecha de fin en formato YYYY-MM-DD\n- `status`: Estado del recibo (unpaid, inprocess, paid, canceled)\n\n**Respuesta exitosa (200):**\n- Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n- Content-Disposition: attachment; filename=\"historial_facturas_[Nombre]_[Apellido]_[Fecha].xlsx\"\n- Body: Archivo Excel binario\n\n**Estructura del Excel:**\n- ID, Título, Fecha Emisión, Fecha Vencimiento\n- Estado, Categoría, Tipo, Subtotal, IVA, Total\n- Origen, Notas\n- Fila de totales al final\n- Formato profesional con colores y filtros\n\n**Notas:**\n- Endpoint antiguo mantenido por compatibilidad. Se recomienda usar los nuevos endpoints en Reports XLSX:\n  - /api/reports/xlsx/invoices/employees/:documentId\n  - /api/reports/xlsx/invoices/enrollments/:documentId\n  - /api/reports/xlsx/invoices/general/:documentId\n  - /api/reports/xlsx/invoices/services/:documentId\n\n**Errores posibles:**\n- 404: Empleado no encontrado\n- 500: Error interno del servidor\n\n**Ejemplo de uso:**\n```\nGET /api/employees/:documentId/export-invoice-history?startDate=2024-01-01&endDate=2024-12-31\n```"
-					},
-					"response": [
-						{
-							"name": "Successful Export",
-							"originalRequest": {
-								"method": "GET",
-								"header": [
-									{
-										"key": "Accept",
-										"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-									}
-								],
-								"url": {
-									"raw": "{{STRAPI_URL_LOCAL}}/api/employees/1/export-invoice-history?category=invoice_employ",
-									"host": [
-										"{{STRAPI_URL_LOCAL}}"
-									],
-									"path": [
-										"api",
-										"employees",
-										"1",
-										"export-invoice-history"
-									],
-									"query": [
-										{
-											"key": "category",
-											"value": "invoice_employ"
-										}
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-								},
-								{
-									"key": "Content-Disposition",
-									"value": "attachment; filename=\"historial_facturas_Laura_Fernández Ruiz_2024-10-18.xlsx\""
-								},
-								{
-									"key": "Access-Control-Expose-Headers",
-									"value": "Content-Disposition"
-								}
-							],
-							"cookie": [],
-							"body": "[Binary Excel file content - 7.01 KB]"
-						},
-						{
-							"name": "Employee Not Found",
-							"originalRequest": {
-								"method": "GET",
-								"header": [
-									{
-										"key": "Accept",
-										"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-									}
-								],
-								"url": {
-									"raw": "{{STRAPI_URL_LOCAL}}/api/employees/999/export-invoice-history",
-									"host": [
-										"{{STRAPI_URL_LOCAL}}"
-									],
-									"path": [
-										"api",
-										"employees",
-										"999",
-										"export-invoice-history"
-									]
-								}
-							},
-							"status": "Not Found",
-							"code": 404,
-							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/json"
-								}
-							],
-							"cookie": [],
-							"body": "{\n  \"error\": {\n    \"status\": 404,\n    \"name\": \"NotFoundError\",\n    \"message\": \"Empleado no encontrado\"\n  }\n}"
-						}
-					]
 				}
 			]
 		},
@@ -1430,7 +1280,7 @@
 							"variable": [
 								{
 									"key": "documentId",
-									"value": "c8s2gdkn8lmamotwuq7tzjdg"
+									"value": "cyvekpz4jqj1olki416u3m4q"
 								}
 							]
 						},
@@ -1840,7 +1690,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/enrollments?sort[0]=title:asc&pagination[page]=1&pagination[pageSize]=10&populate=*",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/enrollments?sort[0]=title:asc&pagination[page]=11&pagination[pageSize]=10&populate=*",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
@@ -1856,7 +1706,7 @@
 								},
 								{
 									"key": "pagination[page]",
-									"value": "1",
+									"value": "11",
 									"description": "Número de página para paginación"
 								},
 								{
@@ -1871,7 +1721,7 @@
 								},
 								{
 									"key": "filters[title][$containsi]",
-									"value": "",
+									"value": "13",
 									"description": "Filtrar por título (contiene, sin distinción de mayúsculas)",
 									"disabled": true
 								},
@@ -1937,7 +1787,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/enrollments/:documentId",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/enrollments/:documentId?populate=*",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
@@ -1946,10 +1796,16 @@
 								"enrollments",
 								":documentId"
 							],
+							"query": [
+								{
+									"key": "populate",
+									"value": "*"
+								}
+							],
 							"variable": [
 								{
 									"key": "documentId",
-									"value": "bl0afbsz535fuf9z3jbpljze"
+									"value": "n3qf4i0xkxn11o7w27mmx4kg"
 								}
 							]
 						}
@@ -2008,7 +1864,7 @@
 							"variable": [
 								{
 									"key": "documentId",
-									"value": "bl0afbsz535fuf9z3jbpljze"
+									"value": "wrlyd73yd3nw3q9zjl1pt5gt"
 								}
 							]
 						}
@@ -2026,7 +1882,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices?filters[invoiceCategory][$eq]=invoice_service&sort[0]=title:asc&pagination[page]=1&pagination[pageSize]=10&populate=*",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
@@ -2038,27 +1894,32 @@
 								{
 									"key": "filters[invoiceCategory][$eq]",
 									"value": "invoice_service",
-									"description": "Filtrar por categoría (invoice_enrollment, invoice_service, invoice_employ, invoice_general)"
+									"description": "Filtrar por categoría (invoice_enrollment, invoice_service, invoice_employ, invoice_general)",
+									"disabled": true
 								},
 								{
 									"key": "sort[0]",
 									"value": "title:asc",
-									"description": "Ordenar por título ascendente (opciones: title:asc, title:desc, total:asc, total:desc, emissionDate:asc, emissionDate:desc, expirationDate:asc, expirationDate:desc, createdAt:asc, createdAt:desc)"
+									"description": "Ordenar por título ascendente (opciones: title:asc, title:desc, total:asc, total:desc, emissionDate:asc, emissionDate:desc, expirationDate:asc, expirationDate:desc, createdAt:asc, createdAt:desc)",
+									"disabled": true
 								},
 								{
 									"key": "pagination[page]",
 									"value": "1",
-									"description": "Número de página para paginación"
+									"description": "Número de página para paginación",
+									"disabled": true
 								},
 								{
 									"key": "pagination[pageSize]",
 									"value": "10",
-									"description": "Número de elementos por página (máximo 100)"
+									"description": "Número de elementos por página (máximo 100)",
+									"disabled": true
 								},
 								{
 									"key": "populate",
 									"value": "*",
-									"description": "Poblar todas las relaciones"
+									"description": "Poblar todas las relaciones",
+									"disabled": true
 								},
 								{
 									"key": "filters[title][$containsi]",
@@ -2153,7 +2014,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"data\": {\n        \"title\": \"Recibo de ejemplo\",\n        \"notes\": \"Notas del recibo\",\n        \"issuedby\": \"Administración\",\n        \"invoiceStatus\": \"unpaid\",\n        \"invoiceType\": \"charge\",\n        \"registeredBy\": \"administration\",\n        \"invoiceCategory\": \"invoice_general\",\n        \"amounts\": {\n            \"subtotal\": 100,\n            \"tax\": 21,\n            \"total\": 121\n        },\n        \"total\": 121.00,\n        \"IVA\": 21,\n        \"emissionDate\": \"2025-01-15T10:00:00.000Z\",\n        \"expirationDate\": \"2025-02-15T10:00:00.000Z\",\n        \"employee\": 1,\n        \"enrollment\": 1\n    }\n}"
+							"raw": "{\n    \"data\": {\n        \"title\": \"Prueba Nómina snapshot VFinal\",\n        \"invoiceCategory\": \"invoice_employ\",\n        \"invoiceStatus\": \"unpaid\",\n        \"invoiceType\": \"charge\",\n        \"emissionDate\": \"2025-11-07T00:00:00.000Z\",\n        \"amounts\": [\n            {\n                \"amount\": 502.7008,\n                \"concept\": \"Término: Contrato 11\",\n                \"description\": \"Condiciones laborales (31.36h × 16.03€)\"\n            },\n            {\n                \"amount\": 13.63,\n                \"concept\": \"Monto adicional: Plus transporte\",\n                \"description\": \"Monto adicional del empleado\"\n            },\n            {\n                \"amount\": 6.01,\n                \"concept\": \"Monto adicional: Bonus rendimiento\",\n                \"description\": \"Monto adicional del empleado\"\n            }\n        ],\n        \"employee\": \"dxp6wtaw0k7bulz48r1rmulo\"\n    }\n}"
 						},
 						"url": {
 							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices",
@@ -2179,7 +2040,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices/:documentId",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices/:documentId?populate=*",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
@@ -2188,10 +2049,16 @@
 								"invoices",
 								":documentId"
 							],
+							"query": [
+								{
+									"key": "populate",
+									"value": "*"
+								}
+							],
 							"variable": [
 								{
 									"key": "documentId",
-									"value": "vpiovieb0wbibcyqor6icppv"
+									"value": "x210u37jtuod1m0v9xkevrzq"
 								}
 							]
 						}
@@ -2259,7 +2126,7 @@
 							"variable": [
 								{
 									"key": "documentId",
-									"value": "vpiovieb0wbibcyqor6icppv"
+									"value": "bswo1nu9q48cch7jstlvzp3p"
 								}
 							]
 						}
@@ -3125,7 +2992,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/233/preview?concept=all&studentId=1&page=1&pageSize=25&year=2025&studentName=Sá",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/233/preview?concept=all&page=1&pageSize=25&year=2025",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
@@ -3144,7 +3011,8 @@
 								{
 									"key": "studentId",
 									"value": "1",
-									"description": "ID específico del estudiante para filtrar"
+									"description": "ID específico del estudiante para filtrar",
+									"disabled": true
 								},
 								{
 									"key": "page",
@@ -3170,7 +3038,8 @@
 								{
 									"key": "studentName",
 									"value": "Sá",
-									"description": "Filtro por nombre o apellido del estudiante (búsqueda case-insensitive)"
+									"description": "Filtro por nombre o apellido del estudiante (búsqueda case-insensitive)",
+									"disabled": true
 								},
 								{
 									"key": "centerCode",
@@ -3271,7 +3140,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/pdf/invoice/:id?store=false",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/pdf/invoice/:documentId?store=false",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
@@ -3280,7 +3149,7 @@
 								"reports",
 								"pdf",
 								"invoice",
-								":id"
+								":documentId"
 							],
 							"query": [
 								{
@@ -3291,8 +3160,8 @@
 							],
 							"variable": [
 								{
-									"key": "id",
-									"value": "1158"
+									"key": "documentId",
+									"value": "th641qcgloxv53dew44ui0kx"
 								}
 							]
 						}
@@ -3310,7 +3179,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/pdf/payroll/:id?store=false",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/pdf/payroll/:documentId?store=false",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
@@ -3319,7 +3188,7 @@
 								"reports",
 								"pdf",
 								"payroll",
-								":id"
+								":documentId"
 							],
 							"query": [
 								{
@@ -3330,8 +3199,8 @@
 							],
 							"variable": [
 								{
-									"key": "id",
-									"value": "1160"
+									"key": "documentId",
+									"value": "t7itatnnrct9u6tgkqntiref"
 								}
 							]
 						}
@@ -3349,7 +3218,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/pdf/service/:id?store=false",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/pdf/service/:documentId?store=false",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
@@ -3358,7 +3227,7 @@
 								"reports",
 								"pdf",
 								"service",
-								":id"
+								":documentId"
 							],
 							"query": [
 								{
@@ -3369,8 +3238,8 @@
 							],
 							"variable": [
 								{
-									"key": "id",
-									"value": "1199"
+									"key": "documentId",
+									"value": ""
 								}
 							]
 						}
@@ -3388,7 +3257,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/pdf/general/:id?store=false",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/reports/pdf/general/:documentId?store=false",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
@@ -3397,7 +3266,7 @@
 								"reports",
 								"pdf",
 								"general",
-								":id"
+								":documentId"
 							],
 							"query": [
 								{
@@ -3408,8 +3277,8 @@
 							],
 							"variable": [
 								{
-									"key": "id",
-									"value": "1197"
+									"key": "documentId",
+									"value": ""
 								}
 							]
 						}

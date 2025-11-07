@@ -25,6 +25,22 @@ type InvoiceEntity = {
   enrollment?: any;
   employee?: any;
   guardian?: any; // Guardian directo asociado al recibo
+  // Snapshot-first fields (Option A)
+  partySnapshot?: {
+    partyType?: string;
+    partyDocumentId?: string;
+    enrollmentDocumentId?: string;
+    employeeDocumentId?: string;
+    guardianDocumentId?: string;
+    student?: { documentId?: string; name?: string; lastname?: string; DNI?: string };
+    guardian?: { documentId?: string; name?: string; lastname?: string; DNI?: string; NIF?: string; phone?: string; email?: string; address?: string };
+    employee?: { documentId?: string; name?: string; lastname?: string; DNI?: string; NIF?: string; role?: string; profession?: string; phone?: string; email?: string; address?: string };
+    classroom?: { documentId?: string; name?: string };
+    schoolPeriod?: { documentId?: string; title?: string; start?: string; end?: string };
+    company?: { name?: string; code?: string; NIF?: string; IBAN?: string; BIC?: string; address?: string };
+    billing?: { amounts?: any; IVA?: number | string | null; total?: number | string | null; additionalAmount?: any };
+    snapshotVersion?: string;
+  } | null;
 };
 
 const fetchCompany = async () => {
@@ -530,12 +546,12 @@ export default {
     // Espacio adicional antes de los datos del alumno
     y += 15;
 
-    // Subject details
+    // Subject details (Snapshot-first)
+    const snap = inv.partySnapshot || null;
     if (inv.invoiceCategory === "invoice_enrollment") {
-      const student = inv.enrollment?.student;
-      const classroom = inv.enrollment?.classroom;
-      const guardians = inv.enrollment?.guardians;
-      const primaryGuardian = getPrimaryGuardianForPdf(inv); // Prioriza guardian directo o principal del enrollment
+      const student = snap?.student ?? inv.enrollment?.student;
+      const classroom = snap?.classroom ?? inv.enrollment?.classroom;
+      const primaryGuardian = snap?.guardian ?? getPrimaryGuardianForPdf(inv); // Snapshot primero, luego fallback
 
       y = sectionTitle(doc, "Alumno", 40, y);
       doc.fillColor("#000");
@@ -583,7 +599,7 @@ export default {
 
       // Periodo se muestra junto al título en el encabezado
     } else if (inv.invoiceCategory === "invoice_employ") {
-      const emp = inv.employee;
+      const emp = snap?.employee ?? inv.employee;
       y = sectionTitle(doc, "Empleado", 40, y);
       doc.fillColor("#000");
       addKeyValue(
@@ -614,17 +630,25 @@ export default {
     }
 
     // Amounts table
-    y = addAmountsTable(doc, inv.amounts || {}, y + 10);
+    const amountsFromSnap = snap?.billing?.amounts ?? inv.amounts ?? {};
+    y = addAmountsTable(doc, amountsFromSnap, y + 10);
 
     // Totals
     doc
       .fontSize(12)
       .fillColor("#000")
-      .text(`IVA: ${currency(inv.IVA)}`, 40, y + 10);
+      .text(`IVA: ${currency(typeof snap?.billing?.IVA === "number" ? snap?.billing?.IVA : inv.IVA)}`, 40, y + 10);
     doc
       .fontSize(16)
       .fillColor("#000")
-      .text(`Total: ${currency(inv.total)}`, 300, y + 6, { align: "right" });
+      .text(
+        `Total: ${currency(
+          typeof snap?.billing?.total === "number" ? snap?.billing?.total : inv.total,
+        )}`,
+        300,
+        y + 6,
+        { align: "right" },
+      );
 
     // Notas
     if (inv.notes) {
@@ -710,12 +734,12 @@ export default {
     // Espacio adicional antes de los datos del alumno
     y += 15;
 
-    // Subject details
+    // Subject details (Snapshot-first)
+    const snap = inv.partySnapshot || null;
     if (inv.invoiceCategory === "invoice_enrollment") {
-      const student = inv.enrollment?.student;
-      const classroom = inv.enrollment?.classroom;
-      const guardians = inv.enrollment?.guardians;
-      const primaryGuardian = getPrimaryGuardianForPdf(inv); // Prioriza guardian directo o principal del enrollment
+      const student = snap?.student ?? inv.enrollment?.student;
+      const classroom = snap?.classroom ?? inv.enrollment?.classroom;
+      const primaryGuardian = snap?.guardian ?? getPrimaryGuardianForPdf(inv); // Snapshot primero, luego fallback
 
       y = sectionTitle(doc, "Alumno", 40, y);
       doc.fillColor("#000");
@@ -763,7 +787,7 @@ export default {
 
       // Periodo se muestra junto al título en el encabezado
     } else if (inv.invoiceCategory === "invoice_employ") {
-      const emp = inv.employee;
+      const emp = snap?.employee ?? inv.employee;
       y = sectionTitle(doc, "Empleado", 40, y);
       doc.fillColor("#000");
       addKeyValue(
@@ -780,17 +804,25 @@ export default {
     }
 
     // Amounts table
-    y = addAmountsTable(doc, inv.amounts || {}, y + 10);
+    const amountsFromSnap = snap?.billing?.amounts ?? inv.amounts ?? {};
+    y = addAmountsTable(doc, amountsFromSnap, y + 10);
 
     // Totals
     doc
       .fontSize(12)
       .fillColor("#000")
-      .text(`IVA: ${currency(inv.IVA)}`, 40, y + 10);
+      .text(`IVA: ${currency(typeof snap?.billing?.IVA === "number" ? snap?.billing?.IVA : inv.IVA)}`, 40, y + 10);
     doc
       .fontSize(16)
       .fillColor("#000")
-      .text(`Total: ${currency(inv.total)}`, 300, y + 6, { align: "right" });
+      .text(
+        `Total: ${currency(
+          typeof snap?.billing?.total === "number" ? snap?.billing?.total : inv.total,
+        )}`,
+        300,
+        y + 6,
+        { align: "right" },
+      );
 
     // Notas
     if (inv.notes) {
