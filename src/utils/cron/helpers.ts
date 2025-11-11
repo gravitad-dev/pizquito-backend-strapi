@@ -360,6 +360,74 @@ export const shouldBillEmployee = (
 };
 
 /**
+ * Formatea una fecha a clave mensual "YYYY-MM".
+ */
+export const formatMonthKey = (date: Date): string => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+};
+
+/**
+ * Reglas de control de facturación mensual:
+ * - Si enabled === false => no facturar.
+ * - Si months[yyyy-MM] === false => no facturar.
+ * - En cualquier otro caso => facturar (por defecto true).
+ */
+export const shouldBillForMonth = (
+  billingControl: { enabled?: boolean; months?: Record<string, boolean> } | undefined,
+  yyyyMM: string,
+): boolean => {
+  const enabled = billingControl?.enabled;
+  if (enabled === false) return false;
+  const months = billingControl?.months || {};
+  if (Object.prototype.hasOwnProperty.call(months, yyyyMM)) {
+    return months[yyyyMM] !== false;
+  }
+  return true;
+};
+
+/**
+ * Determina si la fecha actual está dentro del rango [start, end] (inclusive).
+ * Si solo hay start, verifica current >= start. Si solo hay end, verifica current <= end.
+ * Si no hay límites, devuelve true.
+ */
+export const isDateWithinRange = (
+  start?: Date | string | null,
+  end?: Date | string | null,
+  currentDate: Date = getMadridTime(),
+): boolean => {
+  const currentDateOnly = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    currentDate.getDate(),
+  );
+
+  let startDateOnly: Date | undefined;
+  let endDateOnly: Date | undefined;
+
+  if (start) {
+    const s = new Date(start as any);
+    startDateOnly = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+  }
+  if (end) {
+    const e = new Date(end as any);
+    endDateOnly = new Date(e.getFullYear(), e.getMonth(), e.getDate());
+  }
+
+  if (startDateOnly && endDateOnly) {
+    return currentDateOnly >= startDateOnly && currentDateOnly <= endDateOnly;
+  }
+  if (startDateOnly) {
+    return currentDateOnly >= startDateOnly;
+  }
+  if (endDateOnly) {
+    return currentDateOnly <= endDateOnly;
+  }
+  return true;
+};
+
+/**
  * Calculate salary amount (returns a monthly-equivalent or the correct slice)
  *
  * Expectations:
@@ -586,6 +654,7 @@ export const generateEnrollmentInvoices = async ({
       student: true,
       guardians: true,
       school_period: { populate: { period: true } },
+      billingControl: true,
     },
     500,
     { isActive: true },
@@ -598,6 +667,7 @@ export const generateEnrollmentInvoices = async ({
   let skippedCount = 0;
   let skippedNoSchoolPeriod = 0;
   let skippedOutOfRange = 0;
+  let skippedByBillingControl = 0;
 
   for (const enr of enrollmentList) {
     try {
@@ -617,6 +687,17 @@ export const generateEnrollmentInvoices = async ({
           `📅 [Cron] Enrollment ${(enr as any).id} fuera del rango del periodo escolar, omitiendo facturación`,
         );
         skippedOutOfRange++;
+        skippedCount++;
+        continue;
+      }
+
+      // Evaluar control de facturación mensual (billingControl)
+      const monthKey = formatMonthKey(now);
+      if (!shouldBillForMonth((enr as any).billingControl, monthKey)) {
+        strapi.log.warn(
+          `⏭️ [Cron] Enrollment ${(enr as any).id} desactivado para ${monthKey} por billingControl, omitiendo`,
+        );
+        skippedByBillingControl++;
         skippedCount++;
         continue;
       }
@@ -753,6 +834,12 @@ export const generateEnrollmentInvoices = async ({
   const skippedText =
     skippedDetails.length > 0 ? `, omitidos: ${skippedDetails.join(", ")}` : "";
 
+  if (skippedByBillingControl > 0) {
+    strapi.log.info(
+      `🚫 [Cron] Omisiones por billingControl: ${skippedByBillingControl}`,
+    );
+  }
+
   strapi.log.info(
     `📊 [Cron] Facturas de alumnos creadas: ${createdCount}${skippedText}`,
   );
@@ -774,7 +861,7 @@ export const generateEmployeePayrolls = async ({
   const employeeList = await fetchAllBatched(
     strapi,
     "api::employee.employee",
-    { terms: true },
+    { terms: true, billingControl: true },
     500,
     { isActive: true },
   );
@@ -784,6 +871,7 @@ export const generateEmployeePayrolls = async ({
   );
   let createdCount = 0;
   let skippedCount = 0;
+  let skippedByBillingControlEmp = 0;
 
   for (const emp of employeeList) {
     try {
@@ -804,6 +892,17 @@ export const generateEmployeePayrolls = async ({
       const period = latest?.paymentPeriod || "monthly";
       const employeeName = (emp as any).name || "Empleado";
 
+      // Verificar que la fecha actual esté dentro del rango del contrato más reciente
+      const termStart = latest?.start;
+      const termEnd = latest?.end;
+      if (!isDateWithinRange(termStart, termEnd, now)) {
+        strapi.log.warn(
+          `📅 [Cron] Empleado ${employeeName} fuera del rango de contrato (${termStart || "-"} a ${termEnd || "-"}), omitiendo`,
+        );
+        skippedCount++;
+        continue;
+      }
+
       // En modo test, forzar día efectivo al día actual para no depender de billingDay
       const effectiveBillingDay = billingConfig?.testMode
         ? now.getDate()
@@ -814,6 +913,17 @@ export const generateEmployeePayrolls = async ({
           `⏭️ [Cron] Empleado ${employeeName} (${period}) no debe ser facturado hoy, omitiendo`,
         );
         skippedCount++;
+        continue;
+      }
+
+      // Evaluar control de facturación mensual (billingControl)
+      const monthKeyEmp = formatMonthKey(now);
+      if (!shouldBillForMonth((emp as any).billingControl, monthKeyEmp)) {
+        strapi.log.warn(
+          `⏭️ [Cron] Empleado ${employeeName} desactivado para ${monthKeyEmp} por billingControl, omitiendo`,
+        );
+        skippedCount++;
+        skippedByBillingControlEmp++;
         continue;
       }
 

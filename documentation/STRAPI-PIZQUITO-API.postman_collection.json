@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "021ce799-e4d2-4af0-a6c2-7752b09b1204",
+		"_postman_id": "f96a5231-b7e0-4010-b335-786d17e17002",
 		"name": "STRAPI-PIZQUITO-API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "43592215"
@@ -1231,6 +1231,33 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Billing Months (allowedMonths)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/employees/:documentId/billing-months",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"employees",
+								":documentId",
+								"billing-months"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "q3e4nrqoteozs9iubyl7y5qw"
+								}
+							]
+						},
+						"description": "Devuelve los meses permitidos para facturación del empleado (allowedMonths). Habilitar permiso público 'Employees -> billingMonths' o usar token de autenticación."
+					},
+					"response": []
 				}
 			]
 		},
@@ -1868,6 +1895,33 @@
 								}
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Billing Months (allowedMonths)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/enrollments/:documentId/billing-months",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"enrollments",
+								":documentId",
+								"billing-months"
+							],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "xxxxxxxxxxxxxxxxxxxxxxxx"
+								}
+							]
+						},
+						"description": "Devuelve los meses permitidos para facturación de la matrícula (allowedMonths). Habilitar permiso público 'Enrollments -> billingMonths' o usar token de autenticación."
 					},
 					"response": []
 				}

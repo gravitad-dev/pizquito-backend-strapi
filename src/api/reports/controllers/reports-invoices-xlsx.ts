@@ -108,7 +108,8 @@ async function generateEmployee(ctx: Context) {
   addTotalsRow(worksheet, invoicesList);
 
   // Encabezado informativo para empleado (con fallback si el empleado fue eliminado)
-  const empHeader = employee || (invoicesList[0]?.partySnapshot?.employee as any) || {};
+  const empHeader =
+    employee || (invoicesList[0]?.partySnapshot?.employee as any) || {};
   worksheet.insertRow(1, []);
   worksheet.insertRow(1, [
     `Empleado: ${[empHeader?.name, empHeader?.lastname].filter(Boolean).join(" ") || "N/A"}`,
@@ -231,8 +232,10 @@ async function generateEnrollment(ctx: Context) {
   // Cabecera enriquecida: alumno, tutores, aula, período (fallback a snapshot si la matrícula no existe)
   const snap = (invoicesList[0]?.partySnapshot as any) || {};
   const student: any = (enrollment as any)?.student || snap?.student || {};
-  const classroom: any = (enrollment as any)?.classroom || snap?.classroom || {};
-  const schoolPeriod: any = (enrollment as any)?.school_period || snap?.schoolPeriod || {};
+  const classroom: any =
+    (enrollment as any)?.classroom || snap?.classroom || {};
+  const schoolPeriod: any =
+    (enrollment as any)?.school_period || snap?.schoolPeriod || {};
   const guardians: any[] = Array.isArray((enrollment as any)?.guardians)
     ? (enrollment as any).guardians
     : snap?.guardian

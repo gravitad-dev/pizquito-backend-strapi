@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_shared_billing_controls",
+  "info": {
+    "displayName": "Billing Control",
+    "description": "Control de facturación mensual (habilitar/deshabilitar y overrides por mes)",
+    "icon": "calendar"
+  },
+  "options": {},
+  "attributes": {
+    "enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "months": {
+      "type": "json",
+      "default": null
+    }
+  }
+}
