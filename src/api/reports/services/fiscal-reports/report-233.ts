@@ -4,6 +4,16 @@ import * as path from "path";
 import * as os from "os";
 import { errors } from "@strapi/utils";
 
+// Tipos mínimos para snapshot con el fin de evitar dependencias frágiles en relaciones en vivo
+type PartySnapshot = {
+  partyType?: string;
+  student?: { documentId?: string; DNI?: string; name?: string; lastname?: string; birthdate?: string } | null;
+  guardian?: { documentId?: string; DNI?: string; NIF?: string; name?: string; lastname?: string } | null;
+  schoolPeriod?: { start?: string; end?: string } | null;
+  billing?: { total?: number | string | null; IVA?: number | string | null } | null;
+  company?: { NIF?: string; IBAN?: string; BIC?: string } | null;
+};
+
 /**
  * Fiscal Report Service: Modelo 233
  * Obtiene datos reales desde la BD (enrollments, invoices, student, guardians, school_period)
@@ -186,8 +196,10 @@ export default {
           if (!emission || !inRange(emission, year, quarter)) return;
           monthsWith.add(monthIndex(emission));
 
-          // Usar el total del recibo (que incluye IVA) en lugar de amounts
-          const invoiceTotal = ensureNumber(inv.total);
+          // Usar el total del recibo preferentemente desde snapshot (que incluye IVA) en lugar de amounts
+          const invoiceTotal = ensureNumber(
+            (inv?.partySnapshot as PartySnapshot | undefined)?.billing?.total ?? inv.total,
+          );
           const rawAmounts = inv.amounts;
 
           // Unificar amounts: aceptar array de {concept, amount} o mapa {concept: amount}
@@ -294,28 +306,45 @@ export default {
             }
           : undefined;
 
-        const primaryNIF = guardians[0]?.NIF || guardians[0]?.DNI || undefined;
-        const secondaryNIF =
-          guardians[1]?.NIF || guardians[1]?.DNI || undefined;
+        // Tomar datos del snapshot de la primera factura utilizable como fuente de identidad
+        const firstSnapshot = (invoices.find(
+          (i: any) => i?.partySnapshot && inRange(new Date(i.emissionDate), year, quarter),
+        )?.partySnapshot || null) as PartySnapshot | null;
+
+        const primaryNIF =
+          firstSnapshot?.guardian?.NIF ||
+          firstSnapshot?.guardian?.DNI ||
+          guardians[0]?.NIF ||
+          guardians[0]?.DNI ||
+          undefined;
+        const secondaryNIF = guardians[1]?.NIF || guardians[1]?.DNI || undefined;
 
         return {
           enrollmentId: enr?.id,
           studentId: student?.id,
           student: {
-            dni: student?.DNI,
-            name: student?.name,
-            lastname: student?.lastname,
-            birthdate: student?.birthdate,
+            dni: firstSnapshot?.student?.DNI ?? student?.DNI,
+            name: firstSnapshot?.student?.name ?? student?.name,
+            lastname: firstSnapshot?.student?.lastname ?? student?.lastname,
+            birthdate: firstSnapshot?.student?.birthdate ?? student?.birthdate,
           },
           guardians: {
             primaryNIF,
             secondaryNIF,
-            firstGuardianName: guardians[0]?.name,
-            firstGuardianLastname: guardians[0]?.lastname,
+            firstGuardianName:
+              firstSnapshot?.guardian?.name ?? guardians[0]?.name,
+            firstGuardianLastname:
+              firstSnapshot?.guardian?.lastname ?? guardians[0]?.lastname,
           },
           servicePeriod: {
-            start: schoolPeriod?.period?.[0]?.start || undefined,
-            end: schoolPeriod?.period?.[0]?.end || undefined,
+            start:
+              firstSnapshot?.schoolPeriod?.start ||
+              schoolPeriod?.period?.[0]?.start ||
+              undefined,
+            end:
+              firstSnapshot?.schoolPeriod?.end ||
+              schoolPeriod?.period?.[0]?.end ||
+              undefined,
           },
           months: rowMonths,
           amounts: rowAmounts,

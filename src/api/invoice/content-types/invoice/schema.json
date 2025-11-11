@@ -114,5 +114,35 @@
       "target": "api::item.item",
       "inversedBy": "invoices"
     }
+    ,
+    "partySnapshot": {
+      "type": "json"
+    },
+    "partyType": {
+      "type": "enumeration",
+      "enum": [
+        "enrollment",
+        "employee",
+        "guardian",
+        "service",
+        "general",
+        "supplier"
+      ]
+    },
+    "partyDocumentId": {
+      "type": "string"
+    },
+    "employeeDocumentId": {
+      "type": "string"
+    },
+    "enrollmentDocumentId": {
+      "type": "string"
+    },
+    "guardianDocumentId": {
+      "type": "string"
+    },
+    "snapshotVersion": {
+      "type": "string"
+    }
   }
 }

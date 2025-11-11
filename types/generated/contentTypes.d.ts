@@ -913,16 +913,19 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     emissionDate: Schema.Attribute.DateTime;
     employee: Schema.Attribute.Relation<'manyToOne', 'api::employee.employee'>;
+    employeeDocumentId: Schema.Attribute.String;
     enrollment: Schema.Attribute.Relation<
       'manyToOne',
       'api::enrollment.enrollment'
     >;
+    enrollmentDocumentId: Schema.Attribute.String;
     expirationDate: Schema.Attribute.DateTime;
     files: Schema.Attribute.Media<
       'images' | 'files' | 'videos' | 'audios',
       true
     >;
     guardian: Schema.Attribute.Relation<'manyToOne', 'api::guardian.guardian'>;
+    guardianDocumentId: Schema.Attribute.String;
     invoiceCategory: Schema.Attribute.Enumeration<
       [
         'invoice_employ',
@@ -949,10 +952,16 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     movement: Schema.Attribute.Relation<'manyToOne', 'api::movement.movement'>;
     notes: Schema.Attribute.Text;
+    partyDocumentId: Schema.Attribute.String;
+    partySnapshot: Schema.Attribute.JSON;
+    partyType: Schema.Attribute.Enumeration<
+      ['enrollment', 'employee', 'guardian', 'service', 'general', 'supplier']
+    >;
     publishedAt: Schema.Attribute.DateTime;
     registeredBy: Schema.Attribute.Enumeration<
       ['administration', 'bank', 'system']
     >;
+    snapshotVersion: Schema.Attribute.String;
     title: Schema.Attribute.String;
     total: Schema.Attribute.Decimal;
     uid: Schema.Attribute.UID;

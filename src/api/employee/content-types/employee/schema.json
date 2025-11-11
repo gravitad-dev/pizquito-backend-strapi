@@ -111,6 +111,11 @@
       "component": "shared.employee-contract-terms",
       "repeatable": true
     },
+    "billingControl": {
+      "type": "component",
+      "component": "shared.billing-control",
+      "repeatable": false
+    },
     "additionalAmount": {
       "type": "json"
     },

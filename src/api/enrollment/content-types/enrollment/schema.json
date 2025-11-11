@@ -71,6 +71,11 @@
       "target": "api::service.service",
       "mappedBy": "enrollments"
     },
+    "billingControl": {
+      "type": "component",
+      "component": "shared.billing-control",
+      "repeatable": false
+    },
     "invoices": {
       "type": "relation",
       "relation": "oneToMany",

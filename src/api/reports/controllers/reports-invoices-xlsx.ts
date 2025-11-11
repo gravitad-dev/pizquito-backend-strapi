@@ -29,21 +29,20 @@ async function generateEmployee(ctx: Context) {
   const { id } = ctx.params as { id: string };
   const { startDate, endDate, status } = ctx.query as Record<string, string>;
 
-  // Validar empleado por documentId
-  const employee = await strapi.documents("api::employee.employee").findOne({
-    documentId: id,
-    status: "published",
-  });
-  if (!employee) {
-    ctx.status = 404;
-    ctx.body = { error: `Empleado no encontrado para documentId=${id}` };
-    return;
-  }
+  // Intentar encontrar el empleado por documentId (publicado)
+  const employee = await strapi
+    .documents("api::employee.employee")
+    .findOne({ documentId: id, status: "published" })
+    .catch(() => null);
 
-  // Filtros: por empleado y categoría (usar documentId para relaciones)
+  // Filtros por categoría y por el identificador suministrado
+  // Incluye fallback por campos de snapshot/documentId para evitar 404 cuando el empleado fue eliminado
   const filters: any = {
-    employee: { documentId: { $eq: employee.documentId } },
     invoiceCategory: { $eq: fixedCategory },
+    $or: [
+      { employee: { documentId: { $eq: id } } },
+      { employeeDocumentId: { $eq: id } },
+    ],
   };
   if (startDate || endDate) {
     filters.emissionDate = {};
@@ -53,7 +52,7 @@ async function generateEmployee(ctx: Context) {
   if (status) filters.invoiceStatus = { $eq: status };
 
   strapi.log.info(
-    `Reports XLSX → Empleado id=${id} (ID interno: ${employee.id}) | categoría=${fixedCategory}`,
+    `Reports XLSX → Empleado docId=${id} | categoría=${fixedCategory} | empleado ${employee ? "existe" : "ELIMINADO/no publicado"}`,
   );
 
   const invoices = await strapi.entityService.findMany("api::invoice.invoice", {
@@ -108,16 +107,20 @@ async function generateEmployee(ctx: Context) {
 
   addTotalsRow(worksheet, invoicesList);
 
-  // Encabezado informativo para empleado
+  // Encabezado informativo para empleado (con fallback si el empleado fue eliminado)
+  const empHeader =
+    employee || (invoicesList[0]?.partySnapshot?.employee as any) || {};
   worksheet.insertRow(1, []);
-  worksheet.insertRow(1, [`Empleado: ${employee.name} ${employee.lastname}`]);
+  worksheet.insertRow(1, [
+    `Empleado: ${[empHeader?.name, empHeader?.lastname].filter(Boolean).join(" ") || "N/A"}`,
+  ]);
   worksheet.insertRow(2, [
-    `DNI: ${employee.DNI || "N/A"}`,
-    `NIF: ${employee.NIF || "N/A"}`,
+    `DNI: ${empHeader?.DNI || "N/A"}`,
+    `NIF: ${empHeader?.NIF || "N/A"}`,
   ]);
   worksheet.insertRow(3, [
-    `BIC: ${(employee as any).BIC || "N/A"}`,
-    `SWIFT: ${(employee as any).SWIFT || "N/A"}`,
+    `BIC: ${(employee as any)?.BIC || "N/A"}`,
+    `SWIFT: ${(employee as any)?.SWIFT || "N/A"}`,
   ]);
   worksheet.insertRow(4, [`Categoría: ${categoryMap[fixedCategory]}`]);
   worksheet.insertRow(5, [
@@ -141,7 +144,7 @@ async function generateEnrollment(ctx: Context) {
   const { id } = ctx.params as { id: string };
   const { startDate, endDate, status } = ctx.query as Record<string, string>;
 
-  // Validar matrícula por documentId
+  // Intentar cargar matrícula por documentId; si no existe, continuar con filtros por snapshot/documentId
   const enrollment = await strapi
     .documents("api::enrollment.enrollment")
     .findOne({
@@ -153,16 +156,15 @@ async function generateEnrollment(ctx: Context) {
         classroom: true,
         school_period: true,
       },
-    });
-  if (!enrollment) {
-    ctx.status = 404;
-    ctx.body = { error: `Matrícula no encontrada para documentId=${id}` };
-    return;
-  }
+    })
+    .catch(() => null);
 
   const filters: any = {
-    enrollment: { documentId: { $eq: enrollment.documentId } },
     invoiceCategory: { $eq: fixedCategory },
+    $or: [
+      { enrollment: { documentId: { $eq: id } } },
+      { enrollmentDocumentId: { $eq: id } },
+    ],
   };
   if (startDate || endDate) {
     filters.emissionDate = {};
@@ -172,7 +174,7 @@ async function generateEnrollment(ctx: Context) {
   if (status) filters.invoiceStatus = { $eq: status };
 
   strapi.log.info(
-    `Reports XLSX → Matrícula id=${id} (ID interno: ${enrollment.id}) | categoría=${fixedCategory}`,
+    `Reports XLSX → Matrícula docId=${id} | categoría=${fixedCategory} | matrícula ${enrollment ? "existe" : "ELIMINADA/no publicada"}`,
   );
 
   const invoices = await strapi.entityService.findMany("api::invoice.invoice", {
@@ -227,13 +229,18 @@ async function generateEnrollment(ctx: Context) {
 
   addTotalsRow(worksheet, invoicesList);
 
-  // Cabecera enriquecida: alumno, tutores, aula, período
-  const student: any = (enrollment as any)?.student || {};
-  const classroom: any = (enrollment as any)?.classroom || {};
-  const schoolPeriod: any = (enrollment as any)?.school_period || {};
+  // Cabecera enriquecida: alumno, tutores, aula, período (fallback a snapshot si la matrícula no existe)
+  const snap = (invoicesList[0]?.partySnapshot as any) || {};
+  const student: any = (enrollment as any)?.student || snap?.student || {};
+  const classroom: any =
+    (enrollment as any)?.classroom || snap?.classroom || {};
+  const schoolPeriod: any =
+    (enrollment as any)?.school_period || snap?.schoolPeriod || {};
   const guardians: any[] = Array.isArray((enrollment as any)?.guardians)
     ? (enrollment as any).guardians
-    : [];
+    : snap?.guardian
+      ? [snap.guardian]
+      : [];
 
   const studentFullName = [student?.name, student?.lastname]
     .filter(Boolean)

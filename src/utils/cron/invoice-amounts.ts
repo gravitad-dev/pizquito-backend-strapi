@@ -1,5 +1,3 @@
-// Utility helpers for normalizing invoice amounts
-
 export interface InvoiceAmount {
   concept: string;
   amount: number;
@@ -9,9 +7,15 @@ export interface InvoiceAmount {
 // Accepts various input shapes (array of objects, plain object map, or null)
 // Returns a sanitized array of {concept, amount, description?} or null when no valid items
 export function normalizeInvoiceAmounts(input: any): InvoiceAmount[] | null {
-  const addItem = (acc: Map<string, InvoiceAmount>, conceptRaw: any, amountRaw: any, description?: any) => {
-    const concept = String(conceptRaw || '').trim();
-    const amount = typeof amountRaw === 'number' ? amountRaw : Number(amountRaw);
+  const addItem = (
+    acc: Map<string, InvoiceAmount>,
+    conceptRaw: any,
+    amountRaw: any,
+    description?: any,
+  ) => {
+    const concept = String(conceptRaw || "").trim();
+    const amount =
+      typeof amountRaw === "number" ? amountRaw : Number(amountRaw);
 
     // Validations
     if (!concept) return acc; // concept cannot be empty
@@ -26,7 +30,11 @@ export function normalizeInvoiceAmounts(input: any): InvoiceAmount[] | null {
         existing.description = String(description);
       }
     } else {
-      acc.set(key, { concept, amount, description: description ? String(description) : undefined });
+      acc.set(key, {
+        concept,
+        amount,
+        description: description ? String(description) : undefined,
+      });
     }
     return acc;
   };
@@ -37,10 +45,10 @@ export function normalizeInvoiceAmounts(input: any): InvoiceAmount[] | null {
     // null or undefined
   } else if (Array.isArray(input)) {
     for (const item of input) {
-      if (!item || typeof item !== 'object') continue;
+      if (!item || typeof item !== "object") continue;
       addItem(accumulator, item.concept, item.amount, item.description);
     }
-  } else if (typeof input === 'object') {
+  } else if (typeof input === "object") {
     // Plain object map: { concept: amount }
     for (const [key, value] of Object.entries(input)) {
       addItem(accumulator, key, value);
@@ -54,7 +62,12 @@ export function normalizeInvoiceAmounts(input: any): InvoiceAmount[] | null {
 }
 
 // Helper to compute subtotal from normalized amounts
-export function subtotalFromAmounts(amounts: InvoiceAmount[] | null | undefined): number {
+export function subtotalFromAmounts(
+  amounts: InvoiceAmount[] | null | undefined,
+): number {
   if (!amounts || !Array.isArray(amounts)) return 0;
-  return amounts.reduce((sum, a) => sum + (Number.isFinite(a.amount) ? a.amount : 0), 0);
+  return amounts.reduce(
+    (sum, a) => sum + (Number.isFinite(a.amount) ? a.amount : 0),
+    0,
+  );
 }

@@ -10,6 +10,81 @@ export default factories.createCoreController(
   "api::employee.employee",
   ({ strapi }) => ({
     /**
+     * GET /api/employees/:documentId/billing-months
+     * Devuelve los meses permitidos según el último término de contrato del empleado
+     * junto con el estado actual del billingControl.
+     */
+    async billingMonths(ctx: Context) {
+      try {
+        const { documentId } = ctx.params as { documentId: string };
+
+        // Buscar por documentId y popular relaciones necesarias
+        const { getEntryByDocumentId } = await import("../../../utils/document-id");
+        const employee: any = await getEntryByDocumentId(
+          strapi,
+          "api::employee.employee",
+          documentId,
+          {
+            populate: { terms: true, billingControl: true },
+          } as any,
+        );
+
+        if (!employee) return ctx.notFound("Empleado no encontrado");
+
+        const terms = Array.isArray(employee?.terms) ? employee.terms : [];
+        const latest = terms[terms.length - 1];
+        if (!latest) {
+          return ctx.body = {
+            allowedMonths: [],
+            billingControl: employee.billingControl || {},
+            reason: "Empleado sin términos de contrato",
+          };
+        }
+
+        const start = latest.start ? new Date(latest.start) : null;
+        const end = latest.end ? new Date(latest.end) : null;
+
+        // Generar meses entre start y end (inclusive)
+        const months: string[] = [];
+        if (start && end) {
+          const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+          const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+          while (cursor <= endMonth) {
+            const y = cursor.getFullYear();
+            const m = String(cursor.getMonth() + 1).padStart(2, "0");
+            months.push(`${y}-${m}`);
+            cursor.setMonth(cursor.getMonth() + 1);
+          }
+        } else if (start && !end) {
+          // Si no hay fin, devolvemos desde start hasta 12 meses adelante
+          const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+          for (let i = 0; i < 12; i++) {
+            const y = cursor.getFullYear();
+            const m = String(cursor.getMonth() + 1).padStart(2, "0");
+            months.push(`${y}-${m}`);
+            cursor.setMonth(cursor.getMonth() + 1);
+          }
+        } else if (!start && end) {
+          // Si solo hay fin, devolvemos los 12 meses previos
+          const cursor = new Date(end.getFullYear(), end.getMonth(), 1);
+          for (let i = 0; i < 12; i++) {
+            const y = cursor.getFullYear();
+            const m = String(cursor.getMonth() + 1).padStart(2, "0");
+            months.unshift(`${y}-${m}`);
+            cursor.setMonth(cursor.getMonth() - 1);
+          }
+        }
+
+        ctx.body = {
+          allowedMonths: months,
+          billingControl: employee?.billingControl || {},
+        };
+      } catch (error) {
+        strapi.log.error("❌ Error obteniendo meses del empleado:", error);
+        return ctx.internalServerError("Error obteniendo meses válidos del contrato");
+      }
+    },
+    /**
      * Export employee invoice history to Excel
      * GET /api/employees/:documentId/export-invoice-history
      * @param documentId - Identificador de documento del empleado (documentId)
