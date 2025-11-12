@@ -2,6 +2,8 @@
  * Statistics service
  */
 
+import { normalizeInvoiceAmounts } from "../../../utils/cron/invoice-amounts";
+
 const statisticsService = {
   /**
    * Get comprehensive dashboard statistics
@@ -18,6 +20,9 @@ const statisticsService = {
       recentEnrollments,
       recentStudents,
       monthlyStats,
+      enrollmentConceptDistribution,
+      enrollmentConceptsQuarterly,
+      enrollmentMatriculaMonthly,
     ] = await Promise.all([
       statisticsService.getDashboardSummary(),
       statisticsService.getStudentAgeDistribution(),
@@ -29,6 +34,9 @@ const statisticsService = {
       statisticsService.getRecentEnrollments(),
       statisticsService.getRecentStudents(),
       statisticsService.getMonthlyStats(),
+      statisticsService.getEnrollmentConceptDistribution(),
+      statisticsService.getEnrollmentConceptsQuarterly(),
+      statisticsService.getEnrollmentMatriculaMonthly(),
     ]);
 
     return {
@@ -46,6 +54,9 @@ const statisticsService = {
         students: recentStudents,
       },
       monthlyStats,
+      enrollmentConceptsDistribution: enrollmentConceptDistribution,
+      enrollmentConceptsQuarterly,
+      enrollmentMatriculaMonthly,
     };
   },
 
@@ -132,26 +143,22 @@ const statisticsService = {
     // Primero, intenta obtener el empleado usando el Document Service por documentId
     let employee: any = null;
     try {
-      employee = await strapi
-        .documents("api::employee.employee")
-        .findOne({
+      employee = await strapi.documents("api::employee.employee").findOne({
+        documentId,
+        status: "published",
+        populate: {
+          invoices: true,
+        },
+      });
+      // Si la versión publicada no existe, intenta con borrador
+      if (!employee) {
+        employee = await strapi.documents("api::employee.employee").findOne({
           documentId,
-          status: "published",
+          status: "draft",
           populate: {
             invoices: true,
           },
         });
-      // Si la versión publicada no existe, intenta con borrador
-      if (!employee) {
-        employee = await strapi
-          .documents("api::employee.employee")
-          .findOne({
-            documentId,
-            status: "draft",
-            populate: {
-              invoices: true,
-            },
-          });
       }
     } catch (err) {
       // Ignora y prueba el fallback por uid abajo
@@ -416,6 +423,223 @@ const statisticsService = {
     );
 
     return statisticsService.calculatePaymentStats(generalInvoices);
+  },
+
+  /**
+   * Enrollments - Distribution by Concepts
+   * Returns the top 3 concepts totals and the remaining grouped as "Others"
+   */
+  async getEnrollmentConceptDistribution() {
+    const invoices = (await strapi.entityService.findMany(
+      "api::invoice.invoice",
+      {
+        filters: {
+          invoiceCategory: "invoice_enrollment",
+          invoiceType: "charge",
+        },
+        fields: ["amounts"],
+      },
+    )) as any[];
+
+    // Sum amounts by concept across all enrollment invoices
+    const conceptSums = new Map<string, number>();
+
+    for (const inv of invoices) {
+      const items = normalizeInvoiceAmounts(inv?.amounts);
+      if (!items || !Array.isArray(items)) continue;
+      for (const it of items) {
+        const key = String(it.concept || "").trim();
+        const amount = Number(it.amount) || 0;
+        if (!key || !(amount > 0)) continue;
+        conceptSums.set(key, (conceptSums.get(key) || 0) + amount);
+      }
+    }
+
+    const pairs = Array.from(conceptSums.entries())
+      .map(([concept, total]) => ({ concept, total }))
+      .sort((a, b) => b.total - a.total);
+
+    const topConcepts = pairs.slice(0, 3).map((p) => ({
+      concept: p.concept,
+      total: parseFloat(p.total.toFixed(2)),
+    }));
+    const othersTotal = pairs
+      .slice(3)
+      .reduce((sum, p) => sum + (p.total || 0), 0);
+
+    return {
+      topConcepts,
+      others: {
+        concept: "Others",
+        total: parseFloat(othersTotal.toFixed(2)),
+      },
+    };
+  },
+
+  /**
+   * Enrollments - Quarterly evolution by concepts for a given year (default: current year)
+   * Series: totalGeneral, matricula, comedor, others
+   */
+  async getEnrollmentConceptsQuarterly(year?: number) {
+    const targetYear = Number.isFinite(year as number)
+      ? (year as number)
+      : new Date().getFullYear();
+
+    const start = new Date(targetYear, 0, 1, 0, 0, 0, 0);
+    const end = new Date(targetYear, 11, 31, 23, 59, 59, 999);
+
+    const invoices = (await strapi.entityService.findMany(
+      "api::invoice.invoice",
+      {
+        filters: {
+          invoiceCategory: "invoice_enrollment",
+          invoiceType: "charge",
+          $and: [
+            {
+              $or: [
+                { emissionDate: { $gte: start, $lte: end } },
+                { createdAt: { $gte: start, $lte: end } },
+              ],
+            },
+          ],
+        },
+        fields: ["amounts", "emissionDate", "createdAt"],
+      },
+    )) as any[];
+
+    const quarters = {
+      Q1: { totalGeneral: 0, matricula: 0, others: 0 },
+      Q2: { totalGeneral: 0, matricula: 0, others: 0 },
+      Q3: { totalGeneral: 0, matricula: 0, others: 0 },
+      Q4: { totalGeneral: 0, matricula: 0, others: 0 },
+    } as Record<
+      string,
+      { totalGeneral: number; matricula: number; others: number }
+    >;
+
+    const isMatricula = (key: string) => {
+      const k = key.toLowerCase();
+      return k.includes("matricula") || k.includes("tuition");
+    };
+
+    for (const inv of invoices) {
+      const dateRaw = inv?.emissionDate || inv?.createdAt;
+      const d = new Date(dateRaw);
+      if (!d || isNaN(d.getTime())) continue;
+      const month = d.getMonth(); // 0..11
+      const qIndex = Math.floor(month / 3) + 1; // 1..4
+      const qKey = `Q${qIndex}`;
+
+      const items = normalizeInvoiceAmounts(inv?.amounts);
+      if (!items || !Array.isArray(items)) continue;
+
+      let totalThisInvoice = 0;
+      let sumMatricula = 0;
+      let sumOthers = 0;
+
+      for (const it of items) {
+        const label = String(it.concept || "").trim();
+        const amount = Number(it.amount) || 0;
+        if (!label || !(amount > 0)) continue;
+        totalThisInvoice += amount;
+        if (isMatricula(label)) sumMatricula += amount;
+        else sumOthers += amount;
+      }
+
+      quarters[qKey].totalGeneral += totalThisInvoice;
+      quarters[qKey].matricula += sumMatricula;
+      quarters[qKey].others += sumOthers;
+    }
+
+    // Round to 2 decimals
+    for (const q of Object.keys(quarters)) {
+      const v = quarters[q];
+      v.totalGeneral = parseFloat(v.totalGeneral.toFixed(2));
+      v.matricula = parseFloat(v.matricula.toFixed(2));
+      v.others = parseFloat(v.others.toFixed(2));
+    }
+
+    return {
+      year: targetYear,
+      quarters,
+    };
+  },
+
+  /**
+   * Enrollments - Monthly totals for 'Matrícula' concept for a given year (default: current year)
+   */
+  async getEnrollmentMatriculaMonthly(year?: number) {
+    const targetYear = Number.isFinite(year as number)
+      ? (year as number)
+      : new Date().getFullYear();
+
+    const start = new Date(targetYear, 0, 1, 0, 0, 0, 0);
+    const end = new Date(targetYear, 11, 31, 23, 59, 59, 999);
+
+    const invoices = (await strapi.entityService.findMany(
+      "api::invoice.invoice",
+      {
+        filters: {
+          invoiceCategory: "invoice_enrollment",
+          invoiceType: "charge",
+          $and: [
+            {
+              $or: [
+                { emissionDate: { $gte: start, $lte: end } },
+                { createdAt: { $gte: start, $lte: end } },
+              ],
+            },
+          ],
+        },
+        fields: ["amounts", "emissionDate", "createdAt", "total"],
+      },
+    )) as any[];
+
+    const months: Record<string, number> = {
+      "01": 0,
+      "02": 0,
+      "03": 0,
+      "04": 0,
+      "05": 0,
+      "06": 0,
+      "07": 0,
+      "08": 0,
+      "09": 0,
+      "10": 0,
+      "11": 0,
+      "12": 0,
+    };
+
+    for (const inv of invoices) {
+      const dateRaw = inv?.emissionDate || inv?.createdAt;
+      const d = new Date(dateRaw);
+      if (!d || isNaN(d.getTime())) continue;
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+
+      const items = normalizeInvoiceAmounts(inv?.amounts);
+      let sum = 0;
+      if (items && Array.isArray(items) && items.length > 0) {
+        for (const it of items) {
+          const amount = Number(it.amount) || 0;
+          if (amount > 0) sum += amount;
+        }
+      } else {
+        // Fallback: use invoice.total if amounts are not available
+        sum = Number(inv?.total) || 0;
+      }
+
+      months[mm] += sum;
+    }
+
+    // Round to 2 decimals
+    for (const k of Object.keys(months)) {
+      months[k] = parseFloat(months[k].toFixed(2));
+    }
+
+    return {
+      year: targetYear,
+      months,
+    };
   },
 
   /**

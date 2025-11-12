@@ -375,7 +375,9 @@ export const formatMonthKey = (date: Date): string => {
  * - En cualquier otro caso => facturar (por defecto true).
  */
 export const shouldBillForMonth = (
-  billingControl: { enabled?: boolean; months?: Record<string, boolean> } | undefined,
+  billingControl:
+    | { enabled?: boolean; months?: Record<string, boolean> }
+    | undefined,
   yyyyMM: string,
 ): boolean => {
   const enabled = billingControl?.enabled;

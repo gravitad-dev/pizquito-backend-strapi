@@ -589,6 +589,40 @@ Estos content types usan endpoints de singleType:
           "students": 33,
           "enrollments": 50
         }
+      },
+      "enrollmentConceptsDistribution": {
+        "topConcepts": [
+          { "concept": "matricula", "total": 1250.00 },
+          { "concept": "comedor", "total": 830.50 },
+          { "concept": "transporte", "total": 420.00 }
+        ],
+        "others": { "concept": "Others", "total": 150.25 }
+      },
+      "enrollmentConceptsQuarterly": {
+        "year": 2025,
+        "quarters": {
+          "Q1": { "totalGeneral": 5200.00, "matricula": 950.00, "others": 300.50 },
+          "Q2": { "totalGeneral": 5900.00, "matricula": 980.00, "others": 340.00 },
+          "Q3": { "totalGeneral": 6300.00, "matricula": 1000.00, "others": 370.00 },
+          "Q4": { "totalGeneral": 6700.00, "matricula": 1015.00, "others": 390.00 }
+        }
+      },
+      "enrollmentMatriculaMonthly": {
+        "year": 2025,
+        "months": {
+          "01": 2200.00,
+          "02": 2300.50,
+          "03": 2400.00,
+          "04": 2250.75,
+          "05": 2320.10,
+          "06": 2425.00,
+          "07": 2280.00,
+          "08": 2350.40,
+          "09": 2450.00,
+          "10": 4100.00,
+          "11": 4200.50,
+          "12": 4400.00
+        }
       }
     },
     "meta": {
