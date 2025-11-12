@@ -35,14 +35,16 @@
     "react-router-dom": "^6.0.0",
     "sharp": "^0.34.4",
     "styled-components": "^6.0.0",
-    "tar": "^7.5.1"
+    "tar": "^7.5.1",
+    "jszip": "^3.10.1"
   },
   "devDependencies": {
     "@strapi/types": "^5.29.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@types/jszip": "^3.1.10"
   },
   "engines": {
     "node": ">=18.0.0 <=22.x.x",
@@ -50,6 +52,6 @@
   },
   "strapi": {
     "uuid": "507ad7a6-f59e-4b65-b6cd-3965a7c74817",
-    "installId": "1f6eb216de8ecf8a0ae1fa19c36f23cc42a620c88584f5be655c7259f54c1488"
+    "installId": "1f6eb216de8ecf8a0ae1fa19c36f23cc42a620c88584f5be655c7259f54c1488"  
   }
 }
