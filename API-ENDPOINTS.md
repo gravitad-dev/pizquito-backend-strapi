@@ -398,6 +398,61 @@ Estos content types usan endpoints de singleType:
   }
 
 ### System Logs (Logs del sistema)
+
+## Inventario – Exportación de Movimientos (XLSX)
+
+Resumen:
+- Se exportan movimientos de items a Excel (XLSX) con filtros por periodo y agrupación en hojas.
+- Los endpoints usan documentId (string) cuando aplican.
+- Cabeceras: Accept: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+### Exportar movimientos de un Item
+- Método: GET
+- URL: /api/items/:documentId/movements/export
+- Path params:
+  - documentId (string) – ID del documento del Item
+- Query params opcionales:
+  - period=YYYY-MM (ej: 2025-11) – atajo para año/mes
+  - year=YYYY, month=MM – año y mes específicos
+  - startDate=YYYY-MM-DD, endDate=YYYY-MM-DD – rango de fechas
+  - movementType=inbound|outbound|adjustment (múltiples separados por coma)
+  - sheetBy=none|month – none: una sola hoja “Movimientos”; month: hoja por mes
+  - includeInvoices=true|false – incluir columna de facturas relacionadas
+  - includeSummary=true|false – incluir hoja “Resumen”
+- Respuesta: XLSX (Content-Disposition: attachment)
+
+### Exportar movimientos (general, multi-item)
+- Método: GET
+- URL: /api/items/movements/export
+- Query params opcionales:
+  - period, year/month o startDate/endDate (igual que el endpoint anterior)
+  - movementType=inbound|outbound|adjustment
+  - sheetBy=item|supplier|none – item: una hoja por ítem; supplier: una hoja por proveedor; none: hoja consolidada
+  - includeInvoices=true|false
+  - includeSummary=true|false – añade hoja “Resumen general” con totales por ítem
+  - Nota: si sheetBy genera más de 30 hojas, se aplica fallback automático a hoja consolidada.
+- Respuesta: XLSX (Content-Disposition: attachment)
+
+### Exportar movimientos de Items por Proveedor
+- Método: GET
+- URL: /api/suppliers/:documentId/items-movements/export
+- Path params:
+  - documentId (string) – ID del documento del Proveedor
+- Query params opcionales:
+  - period, year/month o startDate/endDate
+  - movementType=inbound|outbound|adjustment
+  - sheetBy=item|none – item: hoja por ítem (hasta 30); none: hoja consolidada
+  - includeInvoices=true|false
+  - includeSummary=true|false – añade hoja “Resumen” por proveedor
+- Respuesta: XLSX (Content-Disposition: attachment)
+
+Ejemplos rápidos:
+- Descargar movimientos de un item por mes:
+  - GET /api/items/:documentId/movements/export?period=2025-11&sheetBy=none&includeInvoices=true
+- Export general agrupado por proveedor:
+  - GET /api/items/movements/export?startDate=2025-11-01&endDate=2025-11-30&sheetBy=supplier
+- Export por proveedor con hojas por ítem:
+  - GET /api/suppliers/:documentId/items-movements/export?year=2025&month=11&sheetBy=item
 - Listar todos los logs: GET /api/histories
 - Logs de ejecución del CRON: GET /api/histories?filters[event_type][$eq]=cron_execution
 - Logs de facturación del CRON: GET /api/histories?filters[event_type][$contains]=cron_billing
@@ -588,6 +643,40 @@ Estos content types usan endpoints de singleType:
         "totals": {
           "students": 33,
           "enrollments": 50
+        }
+      },
+      "enrollmentConceptsDistribution": {
+        "topConcepts": [
+          { "concept": "matricula", "total": 1250.00 },
+          { "concept": "comedor", "total": 830.50 },
+          { "concept": "transporte", "total": 420.00 }
+        ],
+        "others": { "concept": "Others", "total": 150.25 }
+      },
+      "enrollmentConceptsQuarterly": {
+        "year": 2025,
+        "quarters": {
+          "Q1": { "totalGeneral": 5200.00, "matricula": 950.00, "others": 300.50 },
+          "Q2": { "totalGeneral": 5900.00, "matricula": 980.00, "others": 340.00 },
+          "Q3": { "totalGeneral": 6300.00, "matricula": 1000.00, "others": 370.00 },
+          "Q4": { "totalGeneral": 6700.00, "matricula": 1015.00, "others": 390.00 }
+        }
+      },
+      "enrollmentMatriculaMonthly": {
+        "year": 2025,
+        "months": {
+          "01": 2200.00,
+          "02": 2300.50,
+          "03": 2400.00,
+          "04": 2250.75,
+          "05": 2320.10,
+          "06": 2425.00,
+          "07": 2280.00,
+          "08": 2350.40,
+          "09": 2450.00,
+          "10": 4100.00,
+          "11": 4200.50,
+          "12": 4400.00
         }
       }
     },

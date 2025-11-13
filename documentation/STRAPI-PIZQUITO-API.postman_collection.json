@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "f96a5231-b7e0-4010-b335-786d17e17002",
+		"_postman_id": "00a8d075-9aa1-4dc5-ad0f-792eec3917dc",
 		"name": "STRAPI-PIZQUITO-API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "43592215"
@@ -1936,7 +1936,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices",
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices?filters[invoiceCategory][$eq]=invoice_enrollment",
 							"host": [
 								"{{STRAPI_URL_LOCAL}}"
 							],
@@ -1947,9 +1947,8 @@
 							"query": [
 								{
 									"key": "filters[invoiceCategory][$eq]",
-									"value": "invoice_service",
-									"description": "Filtrar por categoría (invoice_enrollment, invoice_service, invoice_employ, invoice_general)",
-									"disabled": true
+									"value": "invoice_enrollment",
+									"description": "Filtrar por categoría (invoice_enrollment, invoice_service, invoice_employ, invoice_general)"
 								},
 								{
 									"key": "sort[0]",
@@ -2182,6 +2181,76 @@
 									"key": "documentId",
 									"value": "bswo1nu9q48cch7jstlvzp3p"
 								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SEPA Enrollments",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"year\": 2025,\r\n    \"month\": 11,\r\n    \"format\": \"xlsx\" // txt | xml | xlsx\r\n    // statuses?: string[]; paid,inprocess,unpaid. Opcional se puede mandar los estados que deberían tener las facturas para ser incluídas, si no incluye a todas menos las canceladas.\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices/sepa/batch/enrollments",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"sepa",
+								"batch",
+								"enrollments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SEPA Employees",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"year\": 2025,\r\n    \"month\": 11,\r\n    \"format\": \"xlsx\" // txt | xml | xlsx\r\n    // statuses?: string[]; paid,inprocess,unpaid. Opcional se puede mandar los estados que deberían tener las facturas para ser incluídas, si no incluye a todas menos las canceladas.\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices/sepa/batch/employees",
+							"host": [
+								"{{STRAPI_URL_LOCAL}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"sepa",
+								"batch",
+								"employees"
 							]
 						}
 					},
@@ -3702,7 +3771,7 @@
 								"dashboard"
 							]
 						},
-						"description": "Obtiene estadísticas completas del dashboard incluyendo:\n\n**Datos incluidos:**\n- Cantidad de invoices pendientes (estudiantes y empleados)\n- Distribución por edad de estudiantes (0-2, 3-5, 6-8, 9-11, 12-14, +15) con promedio y grupo mayor\n- Estado de capacidad de aulas (porcentaje ocupación, disponibles, llenas)\n- Estados de pago para inscripciones, empleados y servicios generales\n- Últimos 5 recibos por vencer\n- Últimas 5 inscripciones\n- Últimos 5 estudiantes registrados\n- Estadísticas mensuales de los últimos 6 meses con promedios\n\n**Autenticación:** Requerida\n**Permisos:** Verificar que el rol tenga acceso a statistics\n\n**Respuesta exitosa:**\n- Objeto con todas las estadísticas organizadas por categorías\n- Metadata con timestamp y endpoint\n\n**Códigos de error:**\n- 401: Autenticación requerida\n- 403: Permisos insuficientes\n- 500: Error interno del servidor"
+						"description": "Obtiene estadísticas completas del dashboard incluyendo:\n\n**Datos incluidos:**\n- Cantidad de invoices pendientes (estudiantes y empleados)\n- Distribución por edad de estudiantes (0-2, 3-5, 6-8, 9-11, 12-14, +15) con promedio y grupo mayor\n- Estado de capacidad de aulas (porcentaje ocupación, disponibles, llenas)\n- Estados de pago para inscripciones, empleados y servicios generales\n- Inscripciones - Distribución por conceptos (Top 3 + Others)\n- Inscripciones - Evolución trimestral del año actual (Total general, Matrícula, Comedor, Others)\n- Últimos 5 recibos por vencer\n- Últimas 5 inscripciones\n- Últimos 5 estudiantes registrados\n- Estadísticas mensuales de los últimos 6 meses con promedios\n\n**Autenticación:** Requerida\n**Permisos:** Verificar que el rol tenga acceso a statistics\n\n**Respuesta exitosa:**\n- Objeto con todas las estadísticas organizadas por categorías\n- Metadata con timestamp y endpoint\n\n**Códigos de error:**\n- 401: Autenticación requerida\n- 403: Permisos insuficientes\n- 500: Error interno del servidor"
 					},
 					"response": []
 				},
