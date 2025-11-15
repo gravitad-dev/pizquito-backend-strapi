@@ -3834,6 +3834,64 @@
 				}
 			]
 		}
+	,
+		{
+			"name": "INVOICES TEST",
+			"item": [
+				{
+					"name": "Generate Year",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": { "mode": "raw", "raw": "{\n  \"year\": 2025,\n  \"months\": [1,2,3,4,5,6,7,8,9,10,11,12],\n  \"includeEnrollments\": true,\n  \"includeEmployees\": true,\n  \"deleteExisting\": true,\n  \"tag\": \"auto-test-2025\",\n  \"statusDistribution\": { \"paid\": 60, \"unpaid\": 30, \"canceled\": 10 }\n}" },
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices/test/generate-year",
+							"host": ["{{STRAPI_URL_LOCAL}}"],
+							"path": ["api","invoices","test","generate-year"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cleanup Simulations",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": { "mode": "raw", "raw": "{ \n  \"year\": 2025, \n  \"tag\": \"auto-test-2025\" \n}" },
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices/test/cleanup",
+							"host": ["{{STRAPI_URL_LOCAL}}"],
+							"path": ["api","invoices","test","cleanup"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Status",
+					"request": {
+						"method": "GET",
+						"header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+						"url": {
+							"raw": "{{STRAPI_URL_LOCAL}}/api/invoices/test/status?year=2025&month=1&tag=auto-test-2025",
+							"host": ["{{STRAPI_URL_LOCAL}}"],
+							"path": ["api","invoices","test","status"],
+							"query": [
+								{ "key": "year", "value": "2025" },
+								{ "key": "month", "value": "1" },
+								{ "key": "tag", "value": "auto-test-2025", "disabled": true }
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
 	],
 	"auth": {
 		"type": "bearer",
