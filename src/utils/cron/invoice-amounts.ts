@@ -6,7 +6,11 @@ export interface InvoiceAmount {
 
 // Accepts various input shapes (array of objects, plain object map, or null)
 // Returns a sanitized array of {concept, amount, description?} or null when no valid items
-export function normalizeInvoiceAmounts(input: any): InvoiceAmount[] | null {
+export function normalizeInvoiceAmounts(
+  input: any,
+  options?: { allowNegative?: boolean },
+): InvoiceAmount[] | null {
+  const allowNegative = !!options?.allowNegative;
   const addItem = (
     acc: Map<string, InvoiceAmount>,
     conceptRaw: any,
@@ -19,7 +23,8 @@ export function normalizeInvoiceAmounts(input: any): InvoiceAmount[] | null {
 
     // Validations
     if (!concept) return acc; // concept cannot be empty
-    if (!Number.isFinite(amount) || amount < 0) return acc; // amount must be >= 0
+    if (!Number.isFinite(amount)) return acc;
+    if (!allowNegative && amount < 0) return acc;
 
     const key = concept.toLowerCase();
     const existing = acc.get(key);
