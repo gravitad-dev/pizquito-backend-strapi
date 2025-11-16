@@ -468,14 +468,14 @@ export default factories.createCoreService(
 
       const { host, port, database, user, password } = pgConfig();
       const { restore } = pgBins();
-      const args = ["-h", host, "-p", String(port), "-U", user, "-d", database, "--clean", "--if-exists", "--no-owner", "--no-privileges", localPath];
+      const args = ["-h", host, "-p", String(port), "-U", user, "-d", database, "--clean", "--if-exists", "--no-owner", "--no-privileges", "--role", user, localPath];
       const res = await spawnAsync(restore, args, { PGPASSWORD: String(password) });
       let toleratedTxnWarning = false;
       if (res.code !== 0) {
         const stderr = String(res.stderr || "");
-        const onlyTxnTimeoutError = /unrecognized configuration parameter\s+"transaction_timeout"/i.test(stderr)
-          && !/ERROR:(?![^\n]*transaction_timeout)/i.test(stderr.replace(/\n/g, ' \n '));
-        if (onlyTxnTimeoutError) {
+        const onlyUnrecognizedGucErrors = /ERROR:\s+unrecognized configuration parameter/i.test(stderr)
+          && !/ERROR:(?![^\n]*unrecognized configuration parameter)/i.test(stderr.replace(/\n/g, ' \n '));
+        if (onlyUnrecognizedGucErrors) {
           toleratedTxnWarning = true;
           strapi.log.warn("pg_restore terminó con error de 'transaction_timeout' no reconocido, continuando como éxito por compatibilidad de versiones.");
         } else {
@@ -549,15 +549,15 @@ export default factories.createCoreService(
 
       const { host, port, database, user, password } = pgConfig();
       const { restore } = pgBins();
-      const args = ["-h", host, "-p", String(port), "-U", user, "-d", database, "--clean", "--if-exists", "--no-owner", "--no-privileges", destPath];
+      const args = ["-h", host, "-p", String(port), "-U", user, "-d", database, "--clean", "--if-exists", "--no-owner", "--no-privileges", "--role", user, destPath];
       const res = await spawnAsync(restore, args, { PGPASSWORD: String(password) });
       try { await fsp.unlink(destPath); } catch {}
       let toleratedTxnWarning = false;
       if (res.code !== 0) {
         const stderr = String(res.stderr || "");
-        const onlyTxnTimeoutError = /unrecognized configuration parameter\s+"transaction_timeout"/i.test(stderr)
-          && !/ERROR:(?![^\n]*transaction_timeout)/i.test(stderr.replace(/\n/g, ' \n '));
-        if (onlyTxnTimeoutError) {
+        const onlyUnrecognizedGucErrors = /ERROR:\s+unrecognized configuration parameter/i.test(stderr)
+          && !/ERROR:(?![^\n]*unrecognized configuration parameter)/i.test(stderr.replace(/\n/g, ' \n '));
+        if (onlyUnrecognizedGucErrors) {
           toleratedTxnWarning = true;
           strapi.log.warn("pg_restore terminó con error de 'transaction_timeout' no reconocido, continuando como éxito por compatibilidad de versiones.");
         } else {
