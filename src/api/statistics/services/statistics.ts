@@ -2,7 +2,7 @@
  * Statistics service
  */
 
-import { normalizeInvoiceAmounts } from "../../../utils/cron/invoice-amounts";
+import { normalizeInvoiceAmounts, subtotalFromAmounts } from "../../../utils/cron/invoice-amounts";
 
 const statisticsService = {
   /**
@@ -384,7 +384,9 @@ const statisticsService = {
       {
         filters: {
           invoiceCategory: "invoice_enrollment",
+          invoiceType: "charge",
         },
+        fields: ["invoiceStatus", "total", "amounts"],
       },
     );
 
@@ -436,6 +438,7 @@ const statisticsService = {
         filters: {
           invoiceCategory: "invoice_enrollment",
           invoiceType: "charge",
+          invoiceStatus: { $ne: "canceled" },
         },
         fields: ["amounts"],
       },
@@ -445,12 +448,12 @@ const statisticsService = {
     const conceptSums = new Map<string, number>();
 
     for (const inv of invoices) {
-      const items = normalizeInvoiceAmounts(inv?.amounts);
+      const items = normalizeInvoiceAmounts(inv?.amounts, { allowNegative: true });
       if (!items || !Array.isArray(items)) continue;
       for (const it of items) {
         const key = String(it.concept || "").trim();
         const amount = Number(it.amount) || 0;
-        if (!key || !(amount > 0)) continue;
+        if (!key) continue;
         conceptSums.set(key, (conceptSums.get(key) || 0) + amount);
       }
     }
@@ -646,23 +649,39 @@ const statisticsService = {
    * Calculate payment statistics for a set of invoices
    */
   calculatePaymentStats(invoices) {
-    const totalInvoices = invoices.length;
-    const totalAmount = invoices.reduce(
-      (sum, invoice) => sum + (parseFloat(String(invoice.total)) || 0),
-      0,
-    );
-    const paidInvoices = invoices.filter(
-      (invoice) => invoice.invoiceStatus === "paid",
+    const active = Array.isArray(invoices)
+      ? invoices.filter((inv) => inv && inv.invoiceStatus !== "canceled")
+      : [];
+    const totalPaid = active.filter((inv) => inv.invoiceStatus === "paid").length;
+    const totalNoPaid = active.filter(
+      (inv) => inv.invoiceStatus === "unpaid" || inv.invoiceStatus === "inprocess",
     ).length;
-    const pendingInvoices = invoices.filter(
-      (invoice) => invoice.invoiceStatus === "unpaid",
-    ).length;
+    const totalInvoices = totalPaid + totalNoPaid;
+    const paidAmount = active
+      .filter((inv) => inv.invoiceStatus === "paid")
+      .reduce((sum, inv) => {
+        const items = normalizeInvoiceAmounts(inv?.amounts, { allowNegative: true });
+        const subtotal = subtotalFromAmounts(items);
+        const fallback = parseFloat(String(inv?.total)) || 0;
+        return sum + (subtotal || fallback);
+      }, 0);
+    const noPaidAmount = active
+      .filter((inv) => inv.invoiceStatus === "unpaid" || inv.invoiceStatus === "inprocess")
+      .reduce((sum, inv) => {
+        const items = normalizeInvoiceAmounts(inv?.amounts, { allowNegative: true });
+        const subtotal = subtotalFromAmounts(items);
+        const fallback = parseFloat(String(inv?.total)) || 0;
+        return sum + (subtotal || fallback);
+      }, 0);
+    const totalAmount = paidAmount + noPaidAmount;
 
     return {
       totalInvoices,
       totalAmount: parseFloat(totalAmount.toFixed(2)),
-      paidInvoices,
-      pendingInvoices,
+      totalAmountPaid: parseFloat(paidAmount.toFixed(2)),
+      totalAmountNoPaid: parseFloat(noPaidAmount.toFixed(2)),
+      totalNoPaid,
+      totalPaid,
     };
   },
 

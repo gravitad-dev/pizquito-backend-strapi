@@ -192,6 +192,7 @@ export default {
         };
 
         invoices.forEach((inv: any) => {
+          if (inv?.invoiceStatus === "canceled") return;
           const emission = inv.emissionDate ? new Date(inv.emissionDate) : null;
           if (!emission || !inRange(emission, year, quarter)) return;
           monthsWith.add(monthIndex(emission));
@@ -213,7 +214,7 @@ export default {
               if (!item || typeof item !== "object") continue;
               const concept = String(item.concept || "").trim();
               const amount = ensureNumber(item.amount);
-              if (!concept || !Number.isFinite(amount) || amount < 0) continue;
+              if (!concept || !Number.isFinite(amount)) continue;
               const key = concept.toLowerCase();
               const prev = acc.get(key);
               acc.set(key, {
@@ -230,9 +231,7 @@ export default {
                 concept: k,
                 amount: ensureNumber((rawAmounts as any)[k]),
               }))
-              .filter(
-                (p) => p.concept && Number.isFinite(p.amount) && p.amount >= 0,
-              );
+              .filter((p) => p.concept && Number.isFinite(p.amount));
           }
 
           if (pairs.length === 0) {

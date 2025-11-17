@@ -27,7 +27,7 @@ export default {
 async function generateEmployee(ctx: Context) {
   const fixedCategory = "invoice_employ";
   const { id } = ctx.params as { id: string };
-  const { startDate, endDate, status } = ctx.query as Record<string, string>;
+  const { startDate, endDate, status, invoiceType } = ctx.query as Record<string, string>;
 
   // Intentar encontrar el empleado por documentId (publicado)
   const employee = await strapi
@@ -50,6 +50,8 @@ async function generateEmployee(ctx: Context) {
     if (endDate) filters.emissionDate.$lte = new Date(endDate);
   }
   if (status) filters.invoiceStatus = { $eq: status };
+  else filters.invoiceStatus = { $in: ["unpaid", "inprocess", "paid"] };
+  if (invoiceType) filters.invoiceType = { $eq: invoiceType };
 
   strapi.log.info(
     `Reports XLSX → Empleado docId=${id} | categoría=${fixedCategory} | empleado ${employee ? "existe" : "ELIMINADO/no publicado"}`,
@@ -142,7 +144,7 @@ async function generateEmployee(ctx: Context) {
 async function generateEnrollment(ctx: Context) {
   const fixedCategory = "invoice_enrollment";
   const { id } = ctx.params as { id: string };
-  const { startDate, endDate, status } = ctx.query as Record<string, string>;
+  const { startDate, endDate, status, invoiceType } = ctx.query as Record<string, string>;
 
   // Intentar cargar matrícula por documentId; si no existe, continuar con filtros por snapshot/documentId
   const enrollment = await strapi
@@ -172,6 +174,9 @@ async function generateEnrollment(ctx: Context) {
     if (endDate) filters.emissionDate.$lte = new Date(endDate);
   }
   if (status) filters.invoiceStatus = { $eq: status };
+  else filters.invoiceStatus = { $in: ["unpaid", "inprocess", "paid"] };
+  if (invoiceType) filters.invoiceType = { $eq: invoiceType };
+  else filters.invoiceType = { $eq: "charge" };
 
   strapi.log.info(
     `Reports XLSX → Matrícula docId=${id} | categoría=${fixedCategory} | matrícula ${enrollment ? "existe" : "ELIMINADA/no publicada"}`,
@@ -337,7 +342,9 @@ async function generateGlobal(
     if (endDate) filters.emissionDate.$lte = new Date(endDate);
   }
   if (status) filters.invoiceStatus = { $eq: status };
+  else filters.invoiceStatus = { $in: ["unpaid", "inprocess", "paid"] };
   if (invoiceType) filters.invoiceType = { $eq: invoiceType };
+  else filters.invoiceType = { $eq: "charge" };
   if (registeredBy) filters.registeredBy = { $eq: registeredBy };
 
   const sortField = sortBy || "emissionDate";
