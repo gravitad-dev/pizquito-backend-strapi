@@ -9,8 +9,7 @@ WORKDIR /opt/
 COPY package.json ./
 
 # Install dependencies with longer timeout and rebuild native modules
-RUN npm config set fetch-retry-maxtimeout 600000 -g && \
-    npm install && \
+RUN npm install && \
     npm install pg --save && \
     npm rebuild
 
