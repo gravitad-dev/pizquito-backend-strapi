@@ -1,44 +1,41 @@
-FROM --platform=linux/amd64 node:20-alpine
+FROM node:22
 
-# Dependencies needed for sharp and other native modules
-RUN apk update && apk add --no-cache \
-    build-base \
-    gcc \
+# Installing libvips-dev for sharp compatibility
+RUN apt-get update && apt-get install -y \
+    build-essential \
     autoconf \
     automake \
-    zlib-dev \
+    zlib1g-dev \
     libpng-dev \
-    nasm \
-    bash \
-    vips-dev \
-    python3 \
-    make \
-    g++
+    libjpeg-dev \
+    libvips-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=${NODE_ENV}
 
+# Fix SWC native binding issue
+# ENV SWC_DISABLE_BINARY=1
+
 WORKDIR /opt/
+
 COPY package.json ./
-
-# Fix sharp compilation: install node-addon-api first
-RUN npm install node-addon-api --save
-
-# Install project dependencies
-RUN npm install && \
-    npm install pg --save
+RUN npm install --legacy-peer-deps
 
 WORKDIR /opt/app
 COPY . .
 
-# Avoid building SWC native binaries in Alpine
-ENV DISABLE_SWC=true
+ENV PATH="/opt/node_modules/.bin:$PATH"
 
-# Change ownership before switching user
 RUN chown -R node:node /opt/app
+
+RUN chmod -R 755 /opt/app
+
+#RUN chown -R node:node /opt/app/public/uploads
+
 USER node
 
-# Build the application
-RUN npm run build
+RUN ["npm", "run", "build"]
 
 EXPOSE 1337
+
 CMD ["npm", "run", "start"]
