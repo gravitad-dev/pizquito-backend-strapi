@@ -70,9 +70,9 @@
     },
     "observations": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::observation.observation",
-      "mappedBy": "student"
+      "mappedBy": "students"
     },
     "enrollments": {
       "type": "relation",

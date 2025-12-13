@@ -45,9 +45,9 @@
     },
     "observations": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::observation.observation",
-      "mappedBy": "classroom"
+      "mappedBy": "classrooms"
     }
   }
 }

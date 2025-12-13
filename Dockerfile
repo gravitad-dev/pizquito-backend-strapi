@@ -1,33 +1,41 @@
-FROM --platform=linux/amd64 node:20-alpine
+FROM node:22
 
-# Installing libvips-dev for sharp Compatibility + build tools for native modules
-RUN apk update && apk add --no-cache build-base gcc autoconf automake zlib-dev libpng-dev nasm bash vips-dev python3 make g++
+# Installing libvips-dev for sharp compatibility
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    autoconf \
+    automake \
+    zlib1g-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libvips-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=${NODE_ENV}
 
-WORKDIR /opt/
-COPY package.json ./
+# Fix SWC native binding issue
+# ENV SWC_DISABLE_BINARY=1
 
-# Install dependencies with longer timeout and rebuild native modules
-RUN npm config set fetch-retry-maxtimeout 600000 -g && \
-    npm install && \
-    npm install pg --save && \
-    npm rebuild
+WORKDIR /opt/
+
+COPY package.json ./
+RUN npm install --legacy-peer-deps
 
 WORKDIR /opt/app
 COPY . .
 
-# Rebuild native modules after copying source code
-RUN npm rebuild @swc/core
+ENV PATH="/opt/node_modules/.bin:$PATH"
 
-ENV PATH /opt/node_modules/.bin:$PATH
-
-# Change ownership and switch user
 RUN chown -R node:node /opt/app
+
+RUN chmod -R 755 /opt/app
+
+#RUN chown -R node:node /opt/app/public/uploads
+
 USER node
-ENV DISABLE_SWC=true
-# Build the application
+
 RUN ["npm", "run", "build"]
 
 EXPOSE 1337
+
 CMD ["npm", "run", "start"]

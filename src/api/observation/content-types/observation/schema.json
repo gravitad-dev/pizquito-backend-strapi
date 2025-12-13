@@ -12,7 +12,7 @@
   "pluginOptions": {},
   "attributes": {
     "title": {
-      "type": "string"
+      "type": "text"
     },
     "description": {
       "type": "text"
@@ -23,9 +23,9 @@
     "date": {
       "type": "date"
     },
-    "employee": {
+    "employees": {
       "type": "relation",
-      "relation": "manyToOne",
+      "relation": "manyToMany",
       "target": "api::employee.employee",
       "inversedBy": "observations"
     },
@@ -39,21 +39,21 @@
         "audios"
       ]
     },
-    "guardian": {
+    "guardians": {
       "type": "relation",
-      "relation": "manyToOne",
+      "relation": "manyToMany",
       "target": "api::guardian.guardian",
       "inversedBy": "observations"
     },
-    "student": {
+    "students": {
       "type": "relation",
-      "relation": "manyToOne",
+      "relation": "manyToMany",
       "target": "api::student.student",
       "inversedBy": "observations"
     },
-    "classroom": {
+    "classrooms": {
       "type": "relation",
-      "relation": "manyToOne",
+      "relation": "manyToMany",
       "target": "api::classroom.classroom",
       "inversedBy": "observations"
     }

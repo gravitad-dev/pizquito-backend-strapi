@@ -29,7 +29,7 @@
     "isActive": {
       "type": "boolean",
       "required": false,
-      "default": true
+      "default": false
     },
     "files": {
       "type": "media",
