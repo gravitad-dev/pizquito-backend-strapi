@@ -84,14 +84,14 @@ const statisticsService = {
 
     // Fallback: buscar por uid si el documentId no encuentra resultados
     if (!enrollment) {
-      const enrollmentsByUid: any[] = await strapi.entityService.findMany(
+      const enrollmentsByUid: any[] = (await strapi.entityService.findMany(
         "api::enrollment.enrollment",
         {
           filters: { uid: { $eq: documentId } },
           populate: ["invoices"],
           limit: 1,
         } as any,
-      );
+      )) as any[];
       enrollment = enrollmentsByUid?.[0];
     }
 
@@ -132,26 +132,22 @@ const statisticsService = {
     // Primero, intenta obtener el empleado usando el Document Service por documentId
     let employee: any = null;
     try {
-      employee = await strapi
-        .documents("api::employee.employee")
-        .findOne({
+      employee = await strapi.documents("api::employee.employee").findOne({
+        documentId,
+        status: "published",
+        populate: {
+          invoices: true,
+        },
+      });
+      // Si la versión publicada no existe, intenta con borrador
+      if (!employee) {
+        employee = await strapi.documents("api::employee.employee").findOne({
           documentId,
-          status: "published",
+          status: "draft",
           populate: {
             invoices: true,
           },
         });
-      // Si la versión publicada no existe, intenta con borrador
-      if (!employee) {
-        employee = await strapi
-          .documents("api::employee.employee")
-          .findOne({
-            documentId,
-            status: "draft",
-            populate: {
-              invoices: true,
-            },
-          });
       }
     } catch (err) {
       // Ignora y prueba el fallback por uid abajo
@@ -159,14 +155,14 @@ const statisticsService = {
 
     // Fallback: buscar por uid si el documentId no encuentra resultados
     if (!employee) {
-      const employeesByUid: any[] = await strapi.entityService.findMany(
+      const employeesByUid: any[] = (await strapi.entityService.findMany(
         "api::employee.employee",
         {
           filters: { uid: { $eq: documentId } },
           populate: ["invoices"],
           limit: 1,
         } as any,
-      );
+      )) as any[];
       employee = employeesByUid?.[0];
     }
 
@@ -325,12 +321,12 @@ const statisticsService = {
    * Get classroom capacity statistics
    */
   async getClassroomCapacityStats() {
-    const classrooms: any[] = await strapi.entityService.findMany(
+    const classrooms: any[] = (await strapi.entityService.findMany(
       "api::classroom.classroom",
       {
         populate: ["enrollments"],
       },
-    );
+    )) as any[];
 
     let totalCapacity = 0;
     let totalOccupied = 0;
@@ -447,7 +443,7 @@ const statisticsService = {
    */
   async getUpcomingInvoices() {
     const currentDate = new Date();
-    const invoices: any[] = await strapi.entityService.findMany(
+    const invoices: any[] = (await strapi.entityService.findMany(
       "api::invoice.invoice",
       {
         filters: {
@@ -458,7 +454,7 @@ const statisticsService = {
         limit: 5,
         fields: ["title", "expirationDate", "total", "invoiceStatus"],
       },
-    );
+    )) as any[];
 
     return invoices.map((invoice: any) => ({
       title: invoice.title,
