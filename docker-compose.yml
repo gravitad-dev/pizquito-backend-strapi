@@ -48,6 +48,7 @@ services:
 #      - '5432:5432'
     networks:
       - pizquito-strapi
+      - dokploy-network
 
 
 volumes:
