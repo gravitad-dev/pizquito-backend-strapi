@@ -22,8 +22,8 @@ services:
  #     - ./package.json:/opt/app/package.json
  #     - ./package-lock.json:/opt/app/package-lock.json
       - ./public/uploads:/opt/app/public/uploads
-    ports:
-      - '${PORTX}:1337'
+ #   ports:
+ #     - '${PORTX}:1337'
     networks:
       - pizquito-strapi
     depends_on:
@@ -48,7 +48,7 @@ services:
 #      - '5432:5432'
     networks:
       - pizquito-strapi
-      - dokploy-network
+
 
 
 volumes:
