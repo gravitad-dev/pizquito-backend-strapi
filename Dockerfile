@@ -19,8 +19,9 @@ RUN npm config set fetch-retry-maxtimeout 600000 && \
 COPY . .
 
 # Clean any existing cache and build
-RUN rm -rf .cache build dist && \
-    chown -R node:node /opt/app
+RUN rm -rf .cache build dist
+
+RUN chown -R node:node /opt/app
 
 USER node
 
